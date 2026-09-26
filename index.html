@@ -47,6 +47,7 @@
   --ok:#5CC894; --warn:#F0A94B; --bad:#F2867A; --warn-soft:#3A2B17; --bad-soft:#3E1F1C;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--sans);-webkit-text-size-adjust:100%}
 .wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:0 96px}
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0 10px;border-bottom:1px solid var(--line)}
@@ -91,9 +92,9 @@ details.card[open]>summary::after{content:"–"}
 .well{background:none;border:0;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--ink);font:inherit}
 .well .no{font:600 11px var(--mono);color:var(--muted)}
 .well .slot{width:100%;height:14px;border-radius:0 0 4px 4px;border:1.5px solid var(--gel-edge);border-top:0;background:var(--bg)}
-.well .lane{width:78%;height:100px;position:relative;border-radius:2px}
+.well .lane{width:78%;height:70px;position:relative;border-radius:2px}
 .well .lane .b{position:absolute;left:0;right:0;height:4px;border-radius:2px}
-.well .nm{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11.5px;font-weight:600;max-height:78px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.well .nm{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11.5px;font-weight:600;height:92px;max-height:92px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .well .ul{font:700 13px var(--mono);letter-spacing:-.03em;color:var(--ink);background:var(--surface);border:1.5px solid var(--accent);border-radius:6px;padding:3px 1px;width:100%;text-align:center;font-variant-numeric:tabular-nums;line-height:1.1}
 .well .ul:empty{display:none}
 .well.ladder .ul{border-color:var(--line);color:var(--muted)}
@@ -211,17 +212,21 @@ tr.lrow.loaded td:first-child{color:var(--ok);opacity:1}
 .gelstrip .cnt{font:500 11.5px var(--mono);opacity:.75;margin-left:4px}
 .card.fs{position:fixed;inset:0;z-index:30;border-radius:0;border:0;box-shadow:none;margin:0;overflow:auto;
   padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--bg);gap:14px}
-.card.fs #gel-title{font-size:20px!important}
+
 .card.fs .gelbox{flex:1;display:flex;align-items:flex-start}
-.card.fs .gel{min-width:calc(var(--n) * 56px);width:100%;padding:12px 8px 14px;gap:6px}
+.card.fs .gel{min-width:0;width:100%;grid-template-columns:repeat(var(--n),minmax(0,1fr));padding:10px 6px 12px;gap:4px}
 .card.fs .well .no{font-size:14px}
 .card.fs .well .slot{height:20px}
-.card.fs .well .lane{height:clamp(90px,28dvh,220px)}
-.card.fs .well .nm{font-size:14px;max-height:150px}
+.card.fs .well .lane{height:clamp(30px,12dvh,90px)}
+.card.fs .well .nm{font-size:14px;height:clamp(64px,30dvh,170px);max-height:none;color:var(--ink)}
 .card.fs .well .ul{font-size:17px;padding:5px 1px;border-width:2px}
-.card.fs #gel-hint{font-size:17px;font-weight:600;color:var(--ink)}
+.card.fs #gel-hint{font-size:15px;font-weight:600;color:var(--ink)}
 .card.fs #gel-hint b{color:var(--accent)}
-.card.fs .btn{padding:11px 16px;font-size:15px}
+.card.fs .btn{padding:7px 12px;font-size:13.5px}
+.card.fs .chip{font-size:12px;padding:3px 9px}
+.card.fs{gap:8px}
+.card.fs #gel-title{font-size:16px!important}
+.card.fs .gel{padding-bottom:6px}
 body.fslock{overflow:hidden}
 .chead{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .ctog{background:none;border:0;color:var(--muted);cursor:pointer;width:32px;height:32px;display:grid;place-items:center;border-radius:8px;flex:none;margin:-6px -6px -6px 0}
@@ -280,7 +285,9 @@ table.xl td.o.amt{color:var(--accent);font-size:14px}
 .legend{display:flex;gap:6px 12px;flex-wrap:wrap;font-size:12.5px}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
-.card.fs .plate{--pw:1;min-width:calc(var(--c) * 44px + 30px);gap:6px}
+.platebox{flex-shrink:0}
+.card.fs .platebox{flex:none;overflow:visible}
+.card.fs .plate{min-width:0;width:min(100%,calc((100dvh - 150px) * 1.45));margin:0 auto;gap:5px;grid-template-columns:22px repeat(var(--c),minmax(0,1fr))}
 .card.fs .pw{font-size:10.5px}
 .card.fs .plate .hd{font-size:13px}
 .report{display:flex;flex-direction:column;gap:14px}
@@ -358,6 +365,9 @@ nav.tabs button{position:relative}
 #sm-table tr.off td:not(:first-child){opacity:.45}
 .addn{display:inline-flex;align-items:center;gap:4px}
 .addn .nrows{width:3.6rem;padding:6px 6px;font:13px var(--mono);text-align:center}
+.grip{cursor:grab;touch-action:none;user-select:none;font:700 18px/1 var(--sans);color:var(--muted);padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
+.grip:active{cursor:grabbing}
+.sedit.dragging{background:var(--accent-soft);border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.25);position:relative;z-index:2}
 .status{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 11px;font:500 12px var(--sans);color:var(--muted);cursor:pointer;white-space:nowrap;max-width:60%;overflow:hidden;text-overflow:ellipsis}
 .status.err{color:var(--bad);border-color:var(--bad)}
 </style>
@@ -479,8 +489,9 @@ nav.tabs button{position:relative}
       <select id="assay-select" aria-label="Selected assay"></select>
       <button class="btn primary" id="assay-new">+ New</button>
     </div>
-    <label class="f">Method<select id="a-method"><option value="lowry">Lowry (standard curve)</option><option value="bca">BCA (standard curve)</option><option value="bradford">Bradford (standard curve)</option><option value="direct">Direct reading (NanoDrop / A280)</option></select></label>
+    <label class="f">Method<select id="a-method"><option value="lowry">Lowry (standard curve)</option><option value="bca">BCA (standard curve)</option><option value="bradford">Bradford (standard curve)</option><option value="elisa">ELISA (standard curve)</option><option value="direct">Direct reading (NanoDrop / A280)</option></select></label>
 
+    <div id="plate-home"></div>
     <div class="card collapsible" data-ck="plate" id="plate-card">
       <div class="row chead" style="justify-content:space-between"><h2>Plate layout</h2></div>
       <div class="row" style="justify-content:space-between">
@@ -509,9 +520,9 @@ nav.tabs button{position:relative}
       <div class="chartbox" id="a-chart"></div>
       <div class="fitline" id="a-fit"></div>
       <div class="grid3">
-        <label class="f">Curve fit<select id="a-model"><option value="linear">Linear</option><option value="quad">Quadratic</option></select></label>
+        <label class="f">Curve fit<select id="a-model"><option value="linear">Linear</option><option value="quad">Quadratic</option><option value="4pl">4-parameter logistic</option></select></label>
         <label class="f">Blank<select id="a-blank"><option value="1">Subtract 0 standard</option><option value="0">Don't subtract</option></select></label>
-        <label class="f">Result units<select id="a-runit"><option value="mg/mL">mg/mL (µg/µL)</option><option value="ug/mL">µg/mL (ng/µL)</option><option value="ng/mL">ng/mL</option></select></label>
+        <label class="f">Result units<select id="a-runit"><option value="mg/mL">mg/mL (µg/µL)</option><option value="ug/mL">µg/mL (ng/µL)</option><option value="ng/mL">ng/mL</option><option value="pg/mL">pg/mL</option></select></label>
       </div>
     </div>
 
@@ -520,7 +531,7 @@ nav.tabs button{position:relative}
       <p class="note" style="margin:0">Copy cells in Excel (name + absorbance columns), tap the first <b>Sample</b> cell and paste. Extra rows and replicate columns are added automatically; a header row is skipped.</p>
       <div class="row">
         <label class="f" style="flex-direction:row;align-items:center;gap:8px">Default dilution<input id="a-dil" type="text" inputmode="decimal" style="width:70px"></label>
-        <label class="f" id="a-unit2-wrap" style="flex-direction:row;align-items:center;gap:8px" hidden>Reading units<select id="a-unit2" style="width:auto"><option value="mg/mL">mg/mL (µg/µL)</option><option value="ug/mL">µg/mL (ng/µL)</option><option value="ng/mL">ng/mL</option></select></label>
+        <label class="f" id="a-unit2-wrap" style="flex-direction:row;align-items:center;gap:8px" hidden>Reading units<select id="a-unit2" style="width:auto"><option value="mg/mL">mg/mL (µg/µL)</option><option value="ug/mL">µg/mL (ng/µL)</option><option value="ng/mL">ng/mL</option><option value="pg/mL">pg/mL</option></select></label>
       </div>
       <div class="tablewrap"><table class="xl" id="a-samples"></table></div>
       <div class="flags" id="a-flags"></div>
@@ -540,7 +551,7 @@ nav.tabs button{position:relative}
     <div class="card collapsible" data-ck="stds">
       <div class="row chead" style="justify-content:space-between"><h2>Standards</h2></div>
       <div class="row" style="justify-content:flex-end"><span class="addn"><input class="nrows" id="a-std-add-n" type="number" min="1" max="200" value="1" aria-label="How many"><button class="btn sm ghost" id="a-std-add">Add rows</button></span></div>
-      <label class="f">Standard concentration units<select id="a-unit"><option value="mg/mL">mg/mL (µg/µL)</option><option value="ug/mL">µg/mL (ng/µL)</option><option value="ng/mL">ng/mL</option></select></label>
+      <label class="f">Standard concentration units<select id="a-unit"><option value="mg/mL">mg/mL (µg/µL)</option><option value="ug/mL">µg/mL (ng/µL)</option><option value="ng/mL">ng/mL</option><option value="pg/mL">pg/mL</option></select></label>
       <p class="note" style="margin:0">Paste concentration + absorbances, or only the absorbance block into the first A cell.</p>
       <div class="tablewrap"><table class="xl" id="a-stds"></table></div>
     </div>
@@ -578,12 +589,51 @@ nav.tabs button{position:relative}
           <label class="chk"><input type="checkbox" data-tool="protein"> <span id="p-tool-prot">Protein concentration</span></label>
           <label class="chk"><input type="checkbox" data-tool="gel"> Gel</label>
           <label class="chk"><input type="checkbox" data-tool="images"> Images</label>
+          <label class="chk"><input type="checkbox" data-tool="qpcr"> qPCR</label>
           <label class="chk"><input type="checkbox" data-tool="solutions"> Solutions</label>
         </div>
       </div>
       <label class="f">Notes<textarea id="p-notes" style="min-height:70px;font-family:var(--sans);font-size:14px"></textarea></label>
       <div class="row" style="justify-content:flex-end"><button class="btn sm" id="prot-savetpl" hidden>Save as protocol</button><button class="btn sm" id="prot-dup">Duplicate</button><button class="btn danger sm" id="prot-del">Delete</button></div>
     </details>
+  </section>
+
+  <!-- qPCR SETUP -->
+  <section class="tab" id="tab-qset" hidden>
+    <div class="card"><div class="row"><h2>Genes</h2></div>
+      <p class="note" style="margin:0">Tick the reference (housekeeping) genes. You can paste a list from Excel.</p>
+      <div class="tablewrap"><table class="xl" id="qg-table"></table></div><span class="addn"><input class="nrows" id="qg-add-n" type="number" min="1" max="400" value="1" aria-label="How many"><button class="btn sm ghost" id="qg-add">Add rows</button></span></div>
+    <div class="card"><div class="row"><h2>Samples</h2></div>
+      <p class="note" style="margin:0">Name and group of each cDNA sample (e.g. Control, STZ, STZ+INS). Paste two columns from Excel.</p>
+      <div class="tablewrap"><table class="xl" id="qs-table"></table></div><datalist id="qs-groups"></datalist><span class="addn"><input class="nrows" id="qs-add-n" type="number" min="1" max="400" value="6" aria-label="How many"><button class="btn sm ghost" id="qs-add">Add rows</button></span></div>
+    <div class="card"><div class="row"><h2>Reaction and master mix</h2></div>
+      <div class="row"><label class="f" style="flex-direction:row;align-items:center;gap:8px">Replicates<select id="q-reps" style="width:auto"><option>1</option><option>2</option><option selected>3</option><option>4</option></select></label><label class="chk"><input type="checkbox" id="q-ntc"> NTC for each gene</label></div>
+      <div class="grid3">
+        <label class="f">Reaction (µL)<input id="qr-vol" type="text" inputmode="decimal"></label>
+        <label class="f">2× master mix (µL)<input id="qr-mm" type="text" inputmode="decimal"></label>
+        <label class="f">cDNA (µL)<input id="qr-tpl" type="text" inputmode="decimal"></label>
+        <label class="f">Forward primer (µL)<input id="qr-fwd" type="text" inputmode="decimal"></label>
+        <label class="f">Reverse primer (µL)<input id="qr-rev" type="text" inputmode="decimal"></label>
+        <label class="f">Extra (%)<input id="qr-extra" type="text" inputmode="numeric"></label>
+      </div>
+      <div class="calcline" id="q-mix"></div></div>
+    <div id="qp-plate-slot"></div>
+  </section>
+
+  <!-- qPCR RESULTS -->
+  <section class="tab" id="tab-qres" hidden>
+    <div class="card"><div class="row"><h2>Ct values</h2></div>
+      <p class="note" style="margin:0">Paste three columns from the instrument export: sample, gene, Ct. "Undetermined" is fine. A header row is skipped.</p>
+      <div class="tablewrap"><table class="xl" id="qc-table"></table></div>
+      <div class="row"><span class="addn"><input class="nrows" id="qc-add-n" type="number" min="1" max="400" value="10" aria-label="How many"><button class="btn sm ghost" id="qc-add">Add rows</button></span><button class="btn sm ghost" id="qc-gen">Rows from setup</button></div></div>
+    <div class="card"><div class="row"><h2>ΔΔCt and fold change</h2></div>
+      <div class="row" style="justify-content:space-between"><label class="f" style="flex-direction:row;align-items:center;gap:8px">Control group<select id="q-ctrl" style="width:auto"></select></label><button class="btn sm" id="q-copy">Copy results</button></div>
+      <div class="flags" id="q-flags"></div>
+      <div id="q-out"></div>
+      <h2 style="margin-top:6px">By group</h2>
+      <div id="q-summ"></div>
+      <p class="note" style="margin:0">ΔCt = Ct(gene) − mean Ct(reference genes); ΔΔCt = ΔCt − mean ΔCt of the control group; fold = 2<sup>−ΔΔCt</sup> (assumes ~100% primer efficiency).</p>
+      <textarea class="copyarea" id="q-copyarea" hidden readonly></textarea></div>
   </section>
 
   <!-- WB SAMPLES -->
@@ -1066,13 +1116,17 @@ function queueSave(kind){
 
 /* ---------- tabs ---------- */
 function showTab(t){
-  const inside=["prot","assay","smp","gel","img","psol","hist"].includes(t);if(inside&&!S.prot)t="home";if(t==="lib"&&isTpl()===false){}
+  const inside=["prot","assay","smp","qset","qres","gel","img","psol","hist"].includes(t);if(inside&&!S.prot)t="home";if(t==="lib"&&isTpl()===false){}
   if(["home","lib","sol","calc","clock","notes"].includes(t)){flushProt()}if(t!=="notes")flushNotes();
   if(!["sol","psol"].includes(t))flushSol();
   S.tab=t;lsSet("bb.tab",t);
   const navKey=inside?(isTpl()?"lib":"home"):t;$$("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===navKey)));
   $("#pbar").hidden=!inside;
-  $("#tab-home").hidden=t!=="home";$("#tab-lib").hidden=t!=="lib";if(t==="lib"){$("#lib-tpl").hidden=true;renderLib()}$("#tab-gel").hidden=t!=="gel";$("#tab-prot").hidden=t!=="prot";$("#tab-calc").hidden=t!=="calc";$("#tab-clock").hidden=t!=="clock";if(t==="clock")renderClock();$("#tab-notes").hidden=t!=="notes";if(t==="notes")renderNotes();$("#tab-assay").hidden=t!=="assay";$("#tab-sol").hidden=!(t==="sol"||t==="psol");$("#tab-hist").hidden=t!=="hist";$("#tab-img").hidden=t!=="img";$("#tab-smp").hidden=t!=="smp";if(t==="smp")renderSamples();if(t==="img"){$("#img-pick").hidden=true;renderImages()}if(t==="hist"){S.rec=null;renderReport();renderHist()}
+  $("#tab-home").hidden=t!=="home";$("#tab-lib").hidden=t!=="lib";if(t==="lib"){$("#lib-tpl").hidden=true;renderLib()}$("#tab-gel").hidden=t!=="gel";$("#tab-prot").hidden=t!=="prot";$("#tab-calc").hidden=t!=="calc";$("#tab-clock").hidden=t!=="clock";if(t==="clock")renderClock();$("#tab-notes").hidden=t!=="notes";if(t==="notes")renderNotes();$("#tab-assay").hidden=t!=="assay";$("#tab-sol").hidden=!(t==="sol"||t==="psol");$("#tab-hist").hidden=t!=="hist";$("#tab-img").hidden=t!=="img";$("#tab-smp").hidden=t!=="smp";if(t==="smp")renderSamples();
+  $("#tab-qset").hidden=t!=="qset";$("#tab-qres").hidden=t!=="qres";
+  if(t==="qset"){S.plateCtx="qpcr";S.plSel=new Set();$("#qp-plate-slot").appendChild($("#plate-card"));$("#plate-card").hidden=false;$("#pl-auto").textContent="Fill from setup";renderQSetup();renderPlate()}
+  else if(S.plateCtx==="qpcr"){S.plateCtx="assay";S.plSel=new Set();$("#plate-home").after($("#plate-card"));$("#pl-auto").textContent="Fill from tables"}
+  if(t==="qres")renderQRes();if(t==="img"){$("#img-pick").hidden=true;renderImages()}if(t==="hist"){S.rec=null;renderReport();renderHist()}
   if(t==="assay"){renderAssayRows();renderAssay()}
   if(t==="sol"||t==="psol"){$("#sol-tpl").hidden=true;renderSolSelect()}
   if(t==="home")renderHome();
@@ -1136,7 +1190,7 @@ function renderGel(){
     if(i===S.lane&&!$("#sheet").hidden)cls+=" sel";
     const lane=l.type==="ladder"?ladderBands():l.type==="sample"?`<span class="b" style="top:48%;background:var(--band);opacity:.8"></span><span class="b" style="top:63%;background:var(--band);opacity:.35"></span>`:"";
     return `<button class="well ${cls}" data-i="${i}" aria-label="Well ${i+1}: ${esc(l.name||({empty:"empty",ladder:"ladder",sample:"sample"})[l.type])}">
-      <span class="no">${i+1}</span><span class="ul">${ul}</span><span class="slot"></span><span class="lane">${lane}</span><span class="nm">${esc(l.type==="empty"?"":(l.name||(l.type==="ladder"?"Ladder":"?")))}</span></button>`}).join("");
+      <span class="no">${i+1}</span><span class="ul">${ul}</span><span class="nm">${esc(l.type==="empty"?"":(l.name||(l.type==="ladder"?"Ladder":"?")))}</span><span class="slot"></span><span class="lane">${lane}</span></button>`}).join("");
   const V=num(g.finalUl),mx=num(g.wellMax);const chips=[`<span class="chip">Samples <b>${nS}</b></span>`,`<span class="chip">Target <b>${fmt(num(g.targetUg),0)} µg</b>${(g.mode||"premix")==="premix"?"":` in <b>${fmt(V,0)} µL</b>`}</span>`];
   renderLbPrep(g,lbTot,nLb);
   if((g.mode||"premix")!=="premix"&&V>mx)chips.push(`<span class="chip x">Volume exceeds well capacity (${fmt(mx,0)} µL)</span>`);
@@ -1288,12 +1342,52 @@ const TEMPLATES={
   bradford:{name:"Protein concentration: Bradford",method:"protein",assay:"bradford",label:"Protein concentration",desc:"Coomassie dye binding, 595 nm, standard curve.",tools:{protein:true,gel:false,solutions:true},steps:()=>[
     st("Plate","Samples and standards","5 µL of each sample and standard per well, in replicates"),st("Plate","Dye reagent","Add 250 µL Bradford reagent, mix"),
     st("Reaction","Incubate","Room temperature",10),st("Read","Measure absorbance","595 nm within 1 h, then paste the results into Protein concentration")]},
+  qpcr:{name:"qPCR (SYBR Green)",method:"qpcr",label:"qPCR",desc:"Genes and samples, master mix, plate layout, ΔΔCt and fold change.",tools:{protein:false,gel:false,qpcr:true,solutions:false},steps:()=>[
+    st("Setup","Thaw reagents on ice","Master mix, primers and cDNA; mix and spin down"),st("Setup","Plan the plate","Genes, samples and replicates in the Setup tab, then Fill from setup"),
+    st("Pipetting","Gene mixes","Master mix + primers + water per gene, as calculated in Setup"),st("Pipetting","Dispense mix","Into the wells per the plate layout"),st("Pipetting","Add cDNA","Samples, and water for NTC"),
+    st("Pipetting","Seal and spin","Optical seal, spin 1 min at ~1000 g, check for bubbles"),
+    st("Run","Initial denaturation","95 °C, 2–10 min (per master mix)"),st("Run","Cycling","40 cycles: 95 °C 15 s, 60 °C 60 s"),st("Run","Melt curve","65–95 °C, check for a single peak"),
+    st("Analysis","Export Ct","Paste sample, gene and Ct into the Results tab")]},
+  elisa_kit:{name:"ELISA: sandwich (pre-coated kit)",method:"elisa",assay:"elisa",elisaType:"kit",label:"ELISA",desc:"Ready-coated plate. Standards and samples, detection antibody, streptavidin-HRP, TMB, 450 nm.",tools:{protein:true,gel:false,solutions:true},sols:["ELISA wash buffer (PBS-T 0.05%)","Stop solution (1 M H₂SO₄)"],steps:()=>[
+    st("Preparation","Reagents to room temperature","All kit reagents and samples",30),st("Preparation","Standards","Prepare the standard dilution series in assay diluent"),
+    st("Samples","Add standards and samples","100 µL per well in duplicate; see the plate layout in Assay"),st("Samples","Incubate","Room temperature, plate covered",120),st("Samples","Wash","300 µL wash buffer per well",null,4),
+    st("Detection","Detection antibody","100 µL per well"),st("Detection","Incubate","Room temperature",60),st("Detection","Wash","300 µL per well",null,4),
+    st("Detection","Streptavidin-HRP","100 µL per well"),st("Detection","Incubate","Room temperature, in the dark",30),st("Detection","Wash","300 µL per well",null,4),
+    st("Develop","TMB substrate","100 µL per well, in the dark"),st("Develop","Incubate","Room temperature, in the dark; watch the colour",20),st("Develop","Stop solution","50 µL per well; blue turns yellow"),
+    st("Read","Measure absorbance","450 nm within 30 min (correct at 540 or 570 nm), then paste the results into Assay")]},
+  elisa_sw:{name:"ELISA: sandwich (coat your own plate)",method:"elisa",assay:"elisa",elisaType:"sandwich",label:"ELISA",desc:"Capture antibody coated overnight, blocking, then samples, detection antibody, SA-HRP, TMB.",tools:{protein:true,gel:false,solutions:true},sols:["ELISA coating buffer (carbonate, pH 9.6)","ELISA wash buffer (PBS-T 0.05%)","ELISA blocking buffer (1% BSA in PBS)","Stop solution (1 M H₂SO₄)"],steps:()=>[
+    st("Day 1","Coat capture antibody","100 µL per well in coating buffer (or PBS), seal the plate"),st("Day 1","Incubate","Overnight at 4 °C (or room temperature)"),
+    st("Day 2","Wash","300 µL wash buffer per well",null,3),st("Day 2","Block","300 µL blocking buffer per well"),st("Day 2","Incubate","Room temperature",60),st("Day 2","Wash","300 µL per well",null,3),
+    st("Samples","Add standards and samples","100 µL per well in duplicate; see the plate layout in Assay"),st("Samples","Incubate","Room temperature",120),st("Samples","Wash","300 µL per well",null,3),
+    st("Detection","Detection antibody","100 µL per well"),st("Detection","Incubate","Room temperature",120),st("Detection","Wash","300 µL per well",null,3),
+    st("Detection","Streptavidin-HRP","100 µL per well"),st("Detection","Incubate","Room temperature, in the dark",20),st("Detection","Wash","300 µL per well",null,3),
+    st("Develop","TMB substrate","100 µL per well, in the dark"),st("Develop","Incubate","Room temperature, in the dark",20),st("Develop","Stop solution","50 µL per well"),
+    st("Read","Measure absorbance","450 nm (correct at 540 or 570 nm), then paste the results into Assay")]},
+  elisa_direct:{name:"ELISA: direct",method:"elisa",assay:"elisa",elisaType:"direct",label:"ELISA",desc:"Antigen coated on the plate, detected with an HRP-labelled primary antibody.",tools:{protein:true,gel:false,solutions:true},sols:["ELISA coating buffer (carbonate, pH 9.6)","ELISA wash buffer (PBS-T 0.05%)","ELISA blocking buffer (1% BSA in PBS)","Stop solution (1 M H₂SO₄)"],steps:()=>[
+    st("Day 1","Coat antigen","Samples and antigen standards, 100 µL per well in coating buffer"),st("Day 1","Incubate","Overnight at 4 °C"),
+    st("Day 2","Wash","300 µL wash buffer per well",null,3),st("Day 2","Block","200–300 µL blocking buffer per well"),st("Day 2","Incubate","Room temperature",90),st("Day 2","Wash","300 µL per well",null,3),
+    st("Detection","HRP-conjugated primary antibody","100 µL per well, diluted in blocking buffer"),st("Detection","Incubate","Room temperature",90),st("Detection","Wash","300 µL per well",null,4),
+    st("Develop","TMB substrate","100 µL per well, in the dark"),st("Develop","Incubate","Room temperature, in the dark",20),st("Develop","Stop solution","50 µL per well"),
+    st("Read","Measure absorbance","450 nm, then paste the results into Assay")]},
+  elisa_indirect:{name:"ELISA: indirect",method:"elisa",assay:"elisa",elisaType:"indirect",label:"ELISA",desc:"Antigen coated on the plate, unlabelled primary antibody, HRP-labelled secondary antibody.",tools:{protein:true,gel:false,solutions:true},sols:["ELISA coating buffer (carbonate, pH 9.6)","ELISA wash buffer (PBS-T 0.05%)","ELISA blocking buffer (1% BSA in PBS)","Stop solution (1 M H₂SO₄)"],steps:()=>[
+    st("Day 1","Coat antigen","100 µL per well in coating buffer"),st("Day 1","Incubate","Overnight at 4 °C"),
+    st("Day 2","Wash","300 µL wash buffer per well",null,3),st("Day 2","Block","200–300 µL blocking buffer per well"),st("Day 2","Incubate","Room temperature",90),st("Day 2","Wash","300 µL per well",null,3),
+    st("Primary","Primary antibody or serum samples","100 µL per well; dilution series if you are titrating"),st("Primary","Incubate","Room temperature",90),st("Primary","Wash","300 µL per well",null,3),
+    st("Secondary","HRP-conjugated secondary antibody","100 µL per well, diluted in blocking buffer"),st("Secondary","Incubate","Room temperature",60),st("Secondary","Wash","300 µL per well",null,4),
+    st("Develop","TMB substrate","100 µL per well, in the dark"),st("Develop","Incubate","Room temperature, in the dark",20),st("Develop","Stop solution","50 µL per well"),
+    st("Read","Measure absorbance","450 nm, then paste the results into Assay")]},
+  elisa_comp:{name:"ELISA: competitive",method:"elisa",assay:"elisa",elisaType:"competitive",label:"ELISA",desc:"Sample competes with labelled antigen; signal falls as concentration rises. 4PL curve with a falling slope.",tools:{protein:true,gel:false,solutions:true},sols:["ELISA wash buffer (PBS-T 0.05%)","Stop solution (1 M H₂SO₄)"],steps:()=>[
+    st("Preparation","Reagents to room temperature","All kit reagents and samples",30),st("Preparation","Standards","Prepare the standard dilution series"),
+    st("Compete","Add standards and samples","50 µL per well in duplicate; see the plate layout in Assay"),st("Compete","Add conjugate","50 µL HRP- or biotin-labelled antigen (or antibody, depending on the kit) per well"),
+    st("Compete","Incubate","Room temperature, on a shaker if the kit says so",60),st("Compete","Wash","300 µL wash buffer per well",null,4),
+    st("Develop","TMB substrate","100 µL per well, in the dark"),st("Develop","Incubate","Room temperature, in the dark",15),st("Develop","Stop solution","50 µL per well"),
+    st("Read","Measure absorbance","450 nm; higher concentration gives lower signal. Paste the results into Assay")]},
   nanodrop:{name:"Protein concentration: NanoDrop A280",method:"protein",assay:"direct",label:"Protein concentration",desc:"Direct A280 reading, no standard curve.",tools:{protein:true,gel:false,solutions:false},steps:()=>[
     st("Setup","Clean pedestals","Wipe both pedestals with water and a lint-free tissue"),st("Setup","Blank","2 µL of the sample buffer"),
     st("Measure","Measure samples","2 µL per sample, wipe between samples; note mg/mL"),st("Measure","Enter readings","Type the readings into Protein concentration")]},
   custom:{name:"New protocol",method:"custom",label:"Custom",desc:"Start with no steps and choose the tools you need.",tools:{protein:false,gel:false,solutions:true},steps:()=>[]}
 };
-function newProt(key){const T=TEMPLATES[key]||TEMPLATES.custom;return{id:uid(),name:T.name,method:T.method,assayMethod:T.assay||"lowry",tools:Object.assign({},T.tools),steps:T.steps().map(x=>Object.assign({id:uid()+Math.random().toString(36).slice(2,5)},x)),notes:"",created:Date.now()}}
+function newProt(key){const T=TEMPLATES[key]||TEMPLATES.custom;return{id:uid(),name:T.name,method:T.method,elisaType:T.elisaType,assayMethod:T.assay||"lowry",tools:Object.assign({},T.tools),steps:T.steps().map(x=>Object.assign({id:uid()+Math.random().toString(36).slice(2,5)},x)),notes:"",created:Date.now()}}
 function draftProt(){const p=newProt("wb");p.draft=true;return p}
 function migrateProt(p){ // old parameter-based western blot protocol → editable steps
   if(Array.isArray(p.steps))return false;
@@ -1301,7 +1395,8 @@ function migrateProt(p){ // old parameter-based western blot protocol → editab
   ["gel","denat","membrane","v1","t1","v2","t2","transfer","tv","tt","ponceau","block","bt","abs","strip","wash","det"].forEach(k=>delete p[k]);return true;
 }
 function protList(){return Object.values(Store.data.protocols).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))}
-function methodLabel(p){return p.method==="wb"?"Western blot":p.method==="protein"?({lowry:"Protein concentration · Lowry",bca:"Protein concentration · BCA",bradford:"Protein concentration · Bradford",direct:"Protein concentration · direct reading"})[p.assayMethod]||"Protein concentration":"Custom"}
+const ELISA_T={kit:"sandwich kit",sandwich:"sandwich",direct:"direct",indirect:"indirect",competitive:"competitive"};
+function methodLabel(p){return p.method==="qpcr"?"qPCR":p.method==="elisa"?"ELISA"+(p.elisaType?" · "+ELISA_T[p.elisaType]:""):p.method==="wb"?"Western blot":p.method==="protein"?({lowry:"Protein concentration · Lowry",bca:"Protein concentration · BCA",bradford:"Protein concentration · Bradford",direct:"Protein concentration · direct reading"})[p.assayMethod]||"Protein concentration":"Custom"}
 /* ---- Experiments list (home) ---- */
 const isTpl=()=>S.protKind==="templates";
 const expDone=p=>p.status==="done";
@@ -1335,7 +1430,7 @@ function tplList(){return Object.values(Store.data.templates).sort((a,b)=>String
 function freshSteps(steps){return (steps||[]).map(x=>Object.assign({},x,{id:uid()+Math.random().toString(36).slice(2,5)}))}
 function expFromTemplate(src,builtinKey){
   const b=builtinKey?newProt(builtinKey):null;const t=src||b;
-  const p={id:uid(),name:`${builtinKey==="custom"?"New experiment":t.name} · ${new Date().toLocaleDateString("en-GB")}`,method:t.method,assayMethod:t.assayMethod||"lowry",tools:Object.assign({},t.tools),steps:src?freshSteps(src.steps):b.steps,notes:t.notes||"",done:[],status:"active",created:Date.now(),templateId:src?src.id:null,templateName:src?src.name:(builtinKey==="custom"?"":TEMPLATES[builtinKey].name)};
+  const p={id:uid(),name:`${builtinKey==="custom"?"New experiment":t.name} · ${new Date().toLocaleDateString("en-GB")}`,method:t.method,elisaType:t.elisaType,assayMethod:t.assayMethod||"lowry",tools:Object.assign({},t.tools),steps:src?freshSteps(src.steps):b.steps,notes:t.notes||"",done:[],status:"active",created:Date.now(),templateId:src?src.id:null,templateName:src?src.name:(builtinKey==="custom"?"":TEMPLATES[builtinKey].name)};
   const G=lsGet("bb.hgroup","all");if(G.startsWith("g:"))p.group=G.slice(2);return p;
 }
 $("#home-list").addEventListener("click",async e=>{const cp=e.target.closest("[data-copy]");
@@ -1360,7 +1455,9 @@ $("#home-new").addEventListener("click",()=>{renderHome();$("#tpl-card").hidden=
 $("#tpl-cancel").addEventListener("click",()=>{$("#tpl-card").hidden=true});
 $("#tpl-list").addEventListener("click",e=>{const b=e.target.closest("[data-tpl],[data-ce]");if(!b)return;
   const p=b.dataset.ce?expFromTemplate(Store.data.protocols[b.dataset.ce]):expFromTemplate(null,b.dataset.tpl);if(b.dataset.ce){const src=Store.data.protocols[b.dataset.ce];p.name=`${String(src.name).replace(/ · \d{2}\/\d{2}\/\d{4}$/,"")} · ${new Date().toLocaleDateString("en-GB")}`;p.group=src.group||p.group;p.templateName=src.name;p.templateId=null}
-  Store.save("protocols",p);$("#tpl-card").hidden=true;openProtocol(clone(p));$("#prot-params").open=true;$("#p-name").focus();$("#p-name").select()});
+  Store.save("protocols",p);
+  const T=!b.dataset.ce&&TEMPLATES[b.dataset.tpl];if(T&&T.sols)T.sols.forEach(n=>{const tp=SOL_TPL.find(x=>x.name===n);if(tp)Store.save("solutions",newSol(tp,p.id))});
+  $("#tpl-card").hidden=true;openProtocol(clone(p));$("#prot-params").open=true;$("#p-name").focus();$("#p-name").select()});
 
 /* ---- Protocol library ---- */
 function renderLib(){
@@ -1385,7 +1482,7 @@ $("#tpl-start").addEventListener("click",()=>{flushProt();const t=Store.data.tem
 $("#prot-savetpl").addEventListener("click",()=>{flushProt();const p=S.prot;const t={id:uid(),name:p.templateName&&!/\(copy\)/.test(p.name)?p.templateName:String(p.name).replace(/ · \d{2}\/\d{2}\/\d{4}$/,""),method:p.method,assayMethod:p.assayMethod,tools:Object.assign({},p.tools),steps:freshSteps(p.steps),notes:p.notes||"",created:Date.now()};
   if(Object.values(Store.data.templates).some(x=>x.name===t.name))t.name+=" (from experiment)";Store.save("templates",t);setStatus(`Saved as protocol “${t.name}”`)});
 
-function protTabs(){if(isTpl())return [["prot","Steps"]];const t=S.prot.tools||{};return [["prot","Steps"],t.protein&&(S.prot.method==="wb"?["smp","Samples"]:["assay","Protein concentration"]),t.gel&&["gel","Gel"],t.images&&["img","Images"],t.solutions&&["psol","Solutions"],["hist","Report"]].filter(Boolean)}
+function protTabs(){if(isTpl())return [["prot","Steps"]];const t=S.prot.tools||{};return [["prot","Steps"],t.protein&&(S.prot.method==="wb"?["smp","Samples"]:["assay",S.prot.method==="elisa"?"Assay":"Protein concentration"]),t.qpcr&&["qset","Setup"],t.qpcr&&["qres","Results"],t.gel&&["gel","Gel"],t.images&&["img","Images"],t.solutions&&["psol","Solutions"],["hist","Report"]].filter(Boolean)}
 function renderPbar(){
   if(!S.prot)return;$("#pbar-name").innerHTML=(isTpl()?`<span class="tag">Protocol</span>`:expDone(S.prot)?`<span class="tag done">Done</span>`:"")+esc(S.prot.name||"Untitled");$("#p-back").textContent=isTpl()?"‹ Protocols":"‹ Experiments";
   $("#pbar-tabs").innerHTML=protTabs().map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}</button>`).join("");
@@ -1406,7 +1503,7 @@ function fillProtForm(){
   const p=S.prot;$("#p-name").value=p.name||"";$("#p-group").value=p.group||"";$("#p-notes").value=p.notes||"";
   $$("#p-tools input").forEach(i=>i.checked=!!(p.tools||{})[i.dataset.tool]);
   $("#prot-del").classList.remove("armed");$("#prot-del").textContent="Delete";renderPbar();
-  $("#p-tool-prot").textContent=p.method==="wb"?"Samples (from protein concentration)":"Protein concentration";
+  $("#p-tool-prot").textContent=p.method==="wb"?"Samples (from protein concentration)":p.method==="elisa"?"Assay (plate and standard curve)":"Protein concentration";
   const T=isTpl();$("#p-sum").textContent=T?"Protocol settings":"Experiment settings";$("#p-group-w").hidden=T;$("#prot-savetpl").hidden=T;$("#tpl-start").hidden=!T;$("#prot-reset").hidden=T||!!S.editSteps;$("#p-tools").parentElement.querySelector(".note").textContent=T?"Tools in experiments started from this protocol":"Tools in this experiment";
 }
 $("#p-name").addEventListener("input",e=>{S.prot.name=e.target.value;renderPbar();queueSave("protocols")});
@@ -1428,12 +1525,12 @@ function renderSteps(){
   $("#prot-editbar").hidden=!S.editSteps;$("#prot-reset").hidden=!!S.editSteps;
   if(S.editSteps){
     $("#prot-steps").innerHTML=steps.map((x,i)=>`<div class="sedit" data-id="${esc(x.id)}">
+      <div class="ctl"><span class="row" style="gap:6px"><span class="grip" data-drag="1" title="Drag to reorder" aria-label="Drag to reorder">⋮⋮</span><span class="note">Step ${i+1}</span></span><div class="row"><button class="btn sm ghost" data-ins="1">+ Above</button><button class="btn sm ghost" data-mv="-1" ${i===0?"disabled":""} aria-label="Move up">↑</button><button class="btn sm ghost" data-mv="1" ${i===steps.length-1?"disabled":""} aria-label="Move down">↓</button><button class="btn sm ghost danger" data-del="1">Delete</button></div></div>
       <label class="f">Section<input id="se-${esc(x.id)}-p" data-k="phase" type="text" value="${esc(x.phase)}" placeholder="e.g. Transfer"></label>
       <label class="f">Step<input id="se-${esc(x.id)}-t" data-k="t" type="text" value="${esc(x.t)}" placeholder="What to do"></label>
       <label class="f full">Details<textarea id="se-${esc(x.id)}-d" data-k="d" placeholder="Volumes, temperature, notes">${esc(x.d)}</textarea></label>
       <label class="f">Timer (min)<input id="se-${esc(x.id)}-m" data-k="min" type="text" inputmode="decimal" value="${x.min?esc(x.min):""}" placeholder="none"></label>
       <label class="f">Repeat (×)<input id="se-${esc(x.id)}-r" data-k="rep" type="text" inputmode="numeric" value="${x.rep?esc(x.rep):""}" placeholder="1"></label>
-      <div class="ctl"><span class="note">Step ${i+1}</span><div class="row"><button class="btn sm ghost" data-mv="-1" ${i===0?"disabled":""} aria-label="Move up">↑</button><button class="btn sm ghost" data-mv="1" ${i===steps.length-1?"disabled":""} aria-label="Move down">↓</button><button class="btn sm ghost danger" data-del="1">Delete</button></div></div>
     </div>`).join("")||`<p class="note">No steps yet. Tap <b>+ Add step</b>.</p>`;
     return;
   }
@@ -1449,7 +1546,17 @@ function renderSteps(){
       ${T?`<span class="note" style="text-align:center;padding-top:2px">•</span>`:`<input type="checkbox" data-check="${esc(x.id)}" ${done.has(x.id)?"checked":""} aria-label="Mark step done">`}
       <div>${ph}<div class="t">${esc(x.t||"Untitled step")}</div>${x.d?`<div class="d">${esc(x.d)}</div>`:""}</div>${timer}</div>`}).join(""):`<p class="note">No steps yet. Tap <b>Edit steps</b> to add them.</p>`)+(p.notes?`<div class="note" style="padding-top:10px;white-space:pre-wrap">${esc(p.notes)}</div>`:"");
 }
+$("#prot-steps").addEventListener("pointerdown",e=>{const h=e.target.closest("[data-drag]");if(!h)return;e.preventDefault();const row=h.closest(".sedit"),box=$("#prot-steps");row.classList.add("dragging");
+  let raf=null,lastY=e.clientY;
+  const move=ev=>{lastY=ev.clientY;const sibs=[...box.querySelectorAll(".sedit")].filter(x=>x!==row);let before=null;for(const x of sibs){const rc=x.getBoundingClientRect();if(lastY<rc.top+rc.height/2){before=x;break}}
+    if(before!==row.nextElementSibling||(!before&&row!==box.lastElementChild))box.insertBefore(row,before);
+    const edge=70;if(lastY<edge)window.scrollBy(0,-12);else if(lastY>window.innerHeight-edge)window.scrollBy(0,12)};
+  const up=()=>{window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",up);row.classList.remove("dragging");
+    const order=[...box.querySelectorAll(".sedit")].map(x=>x.dataset.id);const map=new Map(S.prot.steps.map(x=>[x.id,x]));const ns=order.map(id=>map.get(id)).filter(Boolean);
+    if(ns.length===S.prot.steps.length&&ns.some((x,i)=>x!==S.prot.steps[i])){S.prot.steps=ns;queueSave("protocols")}renderSteps()};
+  window.addEventListener("pointermove",move);window.addEventListener("pointerup",up);window.addEventListener("pointercancel",up)});
 $("#prot-steps").addEventListener("click",e=>{const row=e.target.closest(".sedit");if(!row)return;const b=e.target.closest("button");if(!b)return;const i=S.prot.steps.findIndex(x=>x.id===row.dataset.id);if(i<0)return;
+  if(b.dataset.ins){const cur=S.prot.steps[i];S.prot.steps.splice(i,0,{id:uid(),phase:cur?cur.phase:"",t:"",d:"",min:null,rep:0});renderSteps();queueSave("protocols");const t=$$("#prot-steps .sedit input[data-k='t']")[i];t&&t.focus();return}
   if(b.dataset.del){S.prot.steps.splice(i,1)}else if(b.dataset.mv){const j=i+ +b.dataset.mv;if(j<0||j>=S.prot.steps.length)return;const t=S.prot.steps[i];S.prot.steps[i]=S.prot.steps[j];S.prot.steps[j]=t}
   renderSteps();queueSave("protocols")});
 $("#prot-steps").addEventListener("change",e=>{const k=e.target.dataset.check;if(k==null)return;const arr=new Set(S.prot.done||[]);e.target.checked?arr.add(k):arr.delete(k);S.prot.done=[...arr];queueSave("protocols");e.target.closest(".step").classList.toggle("done",e.target.checked)});
@@ -1510,9 +1617,14 @@ function calc(){
 
 /* ================= PROTEIN ASSAY (Lowry) ================= */
 function newAssay(){
+  const a=newAssayBase();const m=a.method;
+  if(m==="elisa"&&!assaysOf(S.prot.id).length){a.stds=["0","15.6","31.25","62.5","125","250","500","1000"].map(c=>({c,r:[]}));a.unit="pg/mL";a.runit="pg/mL";a.model="4pl";a.reps=2;a.samples.forEach(x=>x.r=[])}
+  return a;
+}
+function newAssayBase(){
   const prev=assaysOf(S.prot.id)[0];
   const stds=prev&&prev.stds&&prev.stds.length?prev.stds.map(x=>({c:x.c,r:[]})):["0","50","100","200","300","400","500"].map(c=>({c,r:[]}));
-  return{id:uid(),protoId:S.prot.id,method:prev&&prev.method?prev.method:(S.prot.assayMethod||"lowry"),name:({lowry:"Lowry",bca:"BCA",bradford:"Bradford",direct:"Protein"})[prev&&prev.method?prev.method:(S.prot.assayMethod||"lowry")]+" assay",date:today(),note:"",unit:prev?prev.unit:((S.prot.assayMethod==="direct")?"mg/mL":"ug/mL"),model:prev?prev.model:"linear",blank:prev?prev.blank:"1",dil:prev&&prev.dil?prev.dil:"1",reps:prev&&prev.reps?prev.reps:3,runit:prev&&prev.runit?prev.runit:"mg/mL",stds,samples:Array.from({length:6},()=>({name:"",dil:"",r:[]}))};
+  return{id:uid(),protoId:S.prot.id,method:prev&&prev.method?prev.method:(S.prot.assayMethod||"lowry"),name:({lowry:"Lowry",bca:"BCA",bradford:"Bradford",direct:"Protein",elisa:"ELISA"})[prev&&prev.method?prev.method:(S.prot.assayMethod||"lowry")]+" assay",date:today(),note:"",unit:prev?prev.unit:((S.prot.assayMethod==="direct")?"mg/mL":"ug/mL"),model:prev?prev.model:"linear",blank:prev?prev.blank:"1",dil:prev&&prev.dil?prev.dil:"1",reps:prev&&prev.reps?prev.reps:3,runit:prev&&prev.runit?prev.runit:"mg/mL",stds,samples:Array.from({length:6},()=>({name:"",dil:"",r:[]}))};
 }
 function draftAssay(){const a=newAssay();a.draft=true;return a}
 function shapeAssay(A){
@@ -1521,7 +1633,7 @@ function shapeAssay(A){
   A.reps=Math.max(A.reps||3,1,...A.stds.map(s=>s.r.length),...A.samples.map(s=>s.r.length));
   return A;
 }
-const RUNIT={"mg/mL":[1,"mg/mL"],"ug/mL":[1000,"µg/mL"],"ng/mL":[1e6,"ng/mL"]};
+const RUNIT={"mg/mL":[1,"mg/mL"],"ug/mL":[1000,"µg/mL"],"ng/mL":[1e6,"ng/mL"],"pg/mL":[1e9,"pg/mL"]};
 function ru(){return RUNIT[S.assay.runit]||RUNIT["mg/mL"]}
 function fmtC(v){if(!Number.isFinite(v))return "—";const a=Math.abs(v);return v.toFixed(a>=100?0:a>=10?1:a>=1?2:3)}
 const repVals=r=>(r||[]).map(num).filter(Number.isFinite);
@@ -1534,10 +1646,34 @@ function solve3(M,v){ // gaussian elimination
     if(Math.abs(A[i][i])<1e-14)return null;for(let k=i+1;k<3;k++){const f=A[k][i]/A[i][i];for(let j=i;j<4;j++)A[k][j]-=f*A[i][j]}}
   const x=[0,0,0];for(let i=2;i>=0;i--){x[i]=(A[i][3]-A[i].slice(i+1,3).reduce((s,a,j)=>s+a*x[i+1+j],0))/A[i][i]}return x;
 }
+function solveN(M,v){const n=v.length,A=M.map((r,i)=>[...r,v[i]]);
+  for(let i=0;i<n;i++){let mx=i;for(let k=i+1;k<n;k++)if(Math.abs(A[k][i])>Math.abs(A[mx][i]))mx=k;[A[i],A[mx]]=[A[mx],A[i]];if(Math.abs(A[i][i])<1e-18)return null;
+    for(let k=i+1;k<n;k++){const f=A[k][i]/A[i][i];for(let j=i;j<=n;j++)A[k][j]-=f*A[i][j]}}
+  const x=new Array(n).fill(0);for(let i=n-1;i>=0;i--){let s2=A[i][n];for(let j=i+1;j<n;j++)s2-=A[i][j]*x[j];x[i]=s2/A[i][i]}return x}
+function fit4pl(pts){
+  const ys=pts.map(p=>p.y),xs=pts.map(p=>p.x).filter(x=>x>0);if(pts.length<4||!xs.length)return null;
+  const lo=pts.reduce((a,p)=>p.x<a.x?p:a).y,hi=pts.reduce((a,p)=>p.x>a.x?p:a).y;
+  const mid=(lo+hi)/2;const near=pts.filter(p=>p.x>0).reduce((a,p)=>Math.abs(p.y-mid)<Math.abs(a.y-mid)?p:a);
+  let P=[lo,1,Math.log(near.x),hi+(hi-lo)*0.05];
+  const F=(x,q)=>q[3]+(q[0]-q[3])/(1+Math.pow(Math.max(x,0)/Math.exp(q[2]),q[1]));
+  const sse=q=>pts.reduce((s2,p)=>{const e=p.y-F(p.x,q);return s2+(Number.isFinite(e)?e*e:1e9)},0);
+  let lam=1e-2,cur=sse(P);
+  for(let it=0;it<300;it++){
+    const J=pts.map(p=>P.map((v,k)=>{const h=1e-6*Math.max(1,Math.abs(v));const q=P.slice();q[k]+=h;return (F(p.x,q)-F(p.x,P))/h}));
+    const r2=pts.map(p=>p.y-F(p.x,P));
+    const JTJ=P.map((_,i)=>P.map((_,j)=>J.reduce((s2,row)=>s2+row[i]*row[j],0))),JTr=P.map((_,i)=>J.reduce((s2,row,k)=>s2+row[i]*r2[k],0));
+    const A2=JTJ.map((row,i)=>row.map((v,j)=>i===j?v*(1+lam)+1e-12:v));const d=solveN(A2,JTr);if(!d)break;
+    const Q=P.map((v,i)=>v+d[i]);const nq=sse(Q);
+    if(nq<cur){P=Q;const imp=cur-nq;cur=nq;lam=Math.max(lam/3,1e-9);if(imp<1e-12)break}else{lam*=4;if(lam>1e9)break}
+  }
+  const [a,b,lc,dd]=P,c=Math.exp(lc);
+  return{model:"4pl",a,b,c,d:dd,y:x=>F(x,P),inv:y=>{const t=(a-dd)/(y-dd)-1;return t>0?c*Math.pow(t,1/b):NaN}};
+}
 function fitCurve(pts,model){
   const n=pts.length;if(n<2)return null;
   let f;
-  if(model==="quad"&&n>=3){
+  if(model==="4pl"&&n>=4){f=fit4pl(pts);if(!f)return fitCurve(pts,"quad")}
+  else if(model==="quad"&&n>=3){
     const S=k=>pts.reduce((s,p)=>s+p.x**k,0),T=k=>pts.reduce((s,p)=>s+p.y*p.x**k,0);
     const c=solve3([[n,S(1),S(2)],[S(1),S(2),S(3)],[S(2),S(3),S(4)]],[T(0),T(1),T(2)]);if(!c)return null;
     f={model:"quad",c0:c[0],c1:c[1],c2:c[2],y:x=>c[0]+c[1]*x+c[2]*x*x};
@@ -1549,6 +1685,7 @@ function fitCurve(pts,model){
   f.r2=sst?1-ssr/sst:NaN;f.xmin=Math.min(...pts.map(p=>p.x));f.xmax=Math.max(...pts.map(p=>p.x));
   f.ymin=Math.min(...pts.map(p=>p.y));f.ymax=Math.max(...pts.map(p=>p.y));
   f.x=y=>{
+    if(f.model==="4pl"){const v=f.inv(y);const hi2=f.xmax*1.5;return Number.isFinite(v)&&v>=0&&v<=hi2?v:NaN}
     if(f.model==="linear")return f.m?(y-f.b)/f.m:NaN;
     const a=f.c2,b=f.c1,c=f.c0-y;if(Math.abs(a)<1e-14)return b?-c/b:NaN;
     const D=b*b-4*a*c;if(D<0)return NaN;const r=[(-b+Math.sqrt(D))/(2*a),(-b-Math.sqrt(D))/(2*a)];
@@ -1558,7 +1695,7 @@ function fitCurve(pts,model){
   return f;
 }
 function assayCalc(A){
-  const toUgUl=A.unit==="mg/mL"?1:A.unit==="ng/mL"?1e-6:1/1000;
+  const toUgUl=A.unit==="mg/mL"?1:A.unit==="ng/mL"?1e-6:A.unit==="pg/mL"?1e-9:1/1000;
   const stds=A.stds.map(s=>{const v=repVals(s.r);return{c:num(s.c),v,m:mean(v),cv:cvp(v)}});
   const blanks=stds.filter(s=>s.c===0&&Number.isFinite(s.m));
   const blank=A.blank==="1"&&blanks.length?mean(blanks.map(s=>s.m)):0;
@@ -1570,8 +1707,9 @@ function assayCalc(A){
   const smp=A.samples.map(s=>{const v=repVals(s.r);const m=mean(v),cv=cvp(v);const y=m-blank;const dd=String(s.dil||"").trim()?num(s.dil):num(A.dil);const dil=Number.isFinite(dd)&&dd>0?dd:1;
     let x=NaN,flag=null,bad=false;
     if(fit&&Number.isFinite(y)){x=fit.x(y);
-      if(y>fit.ymax*1.02){flag="Above the highest standard. Dilute and re-measure.";bad=true}
-      else if(y<fit.ymin){flag="Below the lowest standard"}}
+      const inc=fit.y(fit.xmax)>=fit.y(fit.xmin);
+      if(inc?y>fit.ymax*1.02:y<fit.ymin*0.98){flag="Above the highest standard. Dilute and re-measure.";bad=true}
+      else if(inc?y<fit.ymin:y>fit.ymax){flag="Below the lowest standard"}}
     const conc=x*toUgUl*dil;
     if(Number.isFinite(cv)&&cv>10)flag=(flag?flag+" ":"")+`Replicates differ (CV ${fmt(cv,0)}%).`;
     return{name:s.name,v,m,cv,y,x,conc,dil,flag,bad};
@@ -1590,7 +1728,7 @@ function fillAssay(){
   $("#assay-del").classList.remove("armed");$("#assay-del").textContent="Delete assay";S.plSel=new Set();S.plFill=false;
   renderAssayRows();renderAssay();
 }
-function unitLabel(){return S.assay.unit==="mg/mL"?"mg/mL":S.assay.unit==="ng/mL"?"ng/mL":"µg/mL"}
+function unitLabel(){return S.assay.unit==="mg/mL"?"mg/mL":S.assay.unit==="ng/mL"?"ng/mL":S.assay.unit==="pg/mL"?"pg/mL":"µg/mL"}
 function niceMax(v){if(!(v>0))return 1;const e=Math.pow(10,Math.floor(Math.log10(v)));const f=v/e;return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*e}
 function renderChart(R){
   const box=$("#a-chart");const W=340,H=220,L=44,Rt=12,T=12,B=36;const pw=W-L-Rt,ph=H-T-B;
@@ -1610,15 +1748,15 @@ function renderChart(R){
 }
 function renderAssay(){
   const A=S.assay;if(!A)return;const R=assayCalc(A);const dir=A.method==="direct";
-  $('[data-ck="curve"]').hidden=dir;$('[data-ck="stds"]').hidden=dir;$("#plate-card").hidden=dir;if(!dir)renderPlate();$("#a-unit2-wrap").hidden=!dir;
+  $('[data-ck="curve"]').hidden=dir;$('[data-ck="stds"]').hidden=dir;if(S.plateCtx!=="qpcr"){$("#plate-card").hidden=dir;if(!dir)renderPlate()}$("#a-unit2-wrap").hidden=!dir;
   const hasGel=hasGelTool();$(".sendbar #a-send").hidden=!hasGel;$("#a-gelnote").hidden=!hasGel;$("#a-exp").closest("label").hidden=true;
   $("#a-title").textContent=A.name||"Untitled";
   $("#a-sub").textContent=[A.date?new Date(A.date+"T12:00").toLocaleDateString("en-GB"):"",A.note].filter(Boolean).join(" · ");
   renderChart(R);
   const f=R.fit;
-  if(f){const eq=f.model==="linear"?`y = ${f.m.toPrecision(4)}x ${f.b<0?"−":"+"} ${Math.abs(f.b).toPrecision(3)}`:`y = ${f.c2.toPrecision(3)}x² ${f.c1<0?"−":"+"} ${Math.abs(f.c1).toPrecision(4)}x ${f.c0<0?"−":"+"} ${Math.abs(f.c0).toPrecision(3)}`;
+  if(f){const eq=f.model==="4pl"?`4PL: A at zero ${f.a.toPrecision(3)}, plateau ${f.d.toPrecision(3)}, EC50 ${f.c.toPrecision(3)} ${unitLabel()}, slope ${f.b.toPrecision(3)}`:f.model==="linear"?`y = ${f.m.toPrecision(4)}x ${f.b<0?"−":"+"} ${Math.abs(f.b).toPrecision(3)}`:`y = ${f.c2.toPrecision(3)}x² ${f.c1<0?"−":"+"} ${Math.abs(f.c1).toPrecision(4)}x ${f.c0<0?"−":"+"} ${Math.abs(f.c0).toPrecision(3)}`;
     const cls=f.r2>=.99?"ok":f.r2>=.98?"w":"bad";
-    $("#a-fit").innerHTML=`<span>${eq}</span><span class="${cls}">R² = ${fmt(f.r2,4)}</span>${R.blank?`<span class="muted">blank ${fmt(R.blank,3)}</span>`:""}${f.model==="linear"&&R.pts.length>=5&&f.r2<.99?`<span class="w">Try the quadratic fit; Lowry curves often bend at high concentration.</span>`:""}`}
+    $("#a-fit").innerHTML=`<span>${eq}</span><span class="${cls}">R² = ${fmt(f.r2,4)}</span>${R.blank?`<span class="muted">blank ${fmt(R.blank,3)}</span>`:""}${f.model==="linear"&&R.pts.length>=5&&f.r2<.99?`<span class="w">${A.method==="elisa"?"ELISA curves are sigmoid; try the 4-parameter logistic fit.":"Try the quadratic fit; Lowry curves often bend at high concentration."}</span>`:""}`}
   else $("#a-fit").innerHTML="";
   R.stds.forEach((s,i)=>{const el=$(`#as-${i}-m`);if(el)el.innerHTML=Number.isFinite(s.m)?fmt(s.m,3):""});
   const fl=[];
@@ -1750,6 +1888,10 @@ const SOL_TPL=[
   {name:"5% BSA",vol:"50",vunit:"mL",notes:"In 1× TBST. Sprinkle on the surface and let it dissolve.",comps:[c_("BSA","wv",5)]},
   {name:"RIPA lysis buffer",vol:"50",vunit:"mL",notes:"Add protease and phosphatase inhibitors fresh before use.",comps:[c_("Tris-HCl pH 7.4 (1 M)","stock",50,"mM",1000),c_("NaCl","M",150,"mM",58.44),c_("NP-40","vv",1),c_("Sodium deoxycholate","wv",0.5),c_("SDS","wv",0.1)]},
   {name:"4× Laemmli buffer",vol:"10",vunit:"mL",notes:"Add β-mercaptoethanol to 10% (or DTT to 200 mM) before use.",comps:[c_("Tris-HCl pH 6.8 (1 M)","stock",250,"mM",1000),c_("SDS","wv",8),c_("Glycerol","vv",40),c_("Bromophenol blue","wv",0.04)]},
+  {name:"ELISA wash buffer (PBS-T 0.05%)",vol:"1",vunit:"L",notes:"1× PBS with 0.05% Tween-20.",comps:[c_("NaCl","M",137,"mM",58.44),c_("KCl","M",2.7,"mM",74.55),c_("Na₂HPO₄","M",10,"mM",141.96),c_("KH₂PO₄","M",1.8,"mM",136.09),c_("Tween-20","vv",0.05)]},
+  {name:"ELISA coating buffer (carbonate, pH 9.6)",vol:"100",vunit:"mL",notes:"0.05 M carbonate-bicarbonate. Check pH 9.6; make fresh or store at 4 °C up to a week.",comps:[c_("Na₂CO₃","M",15,"mM",105.99),c_("NaHCO₃","M",35,"mM",84.01)]},
+  {name:"ELISA blocking buffer (1% BSA in PBS)",vol:"50",vunit:"mL",notes:"In 1× PBS. Some kits use 5% non-fat milk or a commercial blocker instead.",comps:[c_("BSA","wv",1)]},
+  {name:"Stop solution (1 M H₂SO₄)",vol:"100",vunit:"mL",notes:"From concentrated H₂SO₄ (~18.4 M). Always add acid to water, slowly, in the fume hood.",comps:[c_("Conc. H₂SO₄ (18.4 M)","stock",1,"M",18.4)]},
   {name:"10% SDS",vol:"50",vunit:"mL",notes:"",comps:[c_("SDS","wv",10)]},
   {name:"10% APS",vol:"1",vunit:"mL",notes:"Make fresh or store aliquots at −20 °C.",comps:[c_("Ammonium persulfate","wv",10)]}
 ];
@@ -1851,11 +1993,12 @@ function recHTML(r){
   let h=`<div><div style="font-weight:700;font-size:18px">${esc(r.name)}</div><div class="note">${esc(r.method||"")} · saved ${new Date(r.created).toLocaleString("en-GB")}</div></div>`;
   if(r.steps){h+=`<div class="sec"><h3>Steps · ${r.steps.filter(x=>x.done).length}/${r.steps.length} done</h3><ol>${r.steps.map(x=>`<li class="${x.done?"":"no"}">${x.done?"✓ ":""}${esc(x.t||"step")}${x.d?`<div class="d">${esc(x.d)}</div>`:""}</li>`).join("")}</ol>${r.protoNotes?`<div class="note" style="white-space:pre-wrap">${esc(r.protoNotes)}</div>`:""}</div>`}
   if(r.assay){const a=r.assay;const f=a.fit;
-    h+=`<div class="sec"><h3>Protein concentration · ${esc(a.name)}</h3><div class="kv"><span>Method</span><span>${esc(({lowry:"Lowry",bca:"BCA",bradford:"Bradford",direct:"Direct reading"})[a.method]||a.method)}</span>${f?`<span>Curve</span><span>${esc(f.model)}, R² ${fmt(f.r2,4)}</span>`:""}${a.blank?`<span>Blank</span><span>${fmt(a.blank,3)}</span>`:""}</div>
+    h+=`<div class="sec"><h3>Protein concentration · ${esc(a.name)}</h3><div class="kv"><span>Method</span><span>${esc(({lowry:"Lowry",bca:"BCA",bradford:"Bradford",elisa:"ELISA",direct:"Direct reading"})[a.method]||a.method)}</span>${f?`<span>Curve</span><span>${esc(f.model)}, R² ${fmt(f.r2,4)}</span>`:""}${a.blank?`<span>Blank</span><span>${fmt(a.blank,3)}</span>`:""}</div>
     <div class="tablewrap"><table><thead><tr><th>#</th><th>Sample</th><th>Mean</th><th>Dil.</th><th>mg/mL</th></tr></thead><tbody>${a.samples.map((x,i)=>`<tr><td>${i+1}</td><td class="n">${esc(x.name||"")}${x.flag?`<span class="wmsg">${esc(x.flag)}</span>`:""}</td><td>${fmt(x.mean,3)}</td><td>${fmt(x.dil,0)}</td><td>${fmtC(x.conc)}</td></tr>`).join("")}</tbody></table></div>
     ${a.plate&&a.plate.w&&Object.keys(a.plate.w).length?`<div class="note">Plate: ${Object.keys(a.plate.w).length} wells used, ${Object.values(a.plate.w).filter(w=>w.filled).length} marked filled</div>`:""}</div>`}
   if(r.exp){h+=`<div class="sec"><h3>Gels · ${esc(r.exp.name)}</h3>${r.exp.gels.map(g=>`<div><b>${esc(g.name)}</b> <span class="note">${fmt(num(g.targetUg),0)} µg/well${g.mode==="premix"?`, Laemmli ${esc(g.mix)}`:""}</span>
     <div class="tablewrap"><table><thead><tr><th>Well</th><th>Sample</th><th>c µg/µL</th><th>Load µL</th></tr></thead><tbody>${g.lanes.filter(l=>l.type!=="empty").map(l=>`<tr><td>${l.loaded?"✓":""}${l.well}</td><td class="n">${esc(l.name||(l.type==="ladder"?"Ladder":""))}</td><td>${l.type==="sample"?fmt(num(l.conc),2):""}</td><td>${fmt(l.load)}</td></tr>`).join("")}</tbody></table></div></div>`).join("")}</div>`}
+  if(r.qpcr){const q=r.qpcr;h+=`<div class="sec"><h3>qPCR · reference ${esc(q.refs.join(", ")||"—")} · control ${esc(q.ctrl||"—")}</h3><div class="tablewrap"><table><thead><tr><th>Gene</th><th>Group</th><th>n</th><th>Fold</th><th>SEM</th></tr></thead><tbody>${q.summ.map(x=>`<tr><td class="n">${esc(x.gene)}</td><td style="text-align:left">${esc(x.group)}</td><td>${x.n}</td><td>${fmt(x.mean,2)}</td><td>${fmt(x.sem,2)}</td></tr>`).join("")}</tbody></table></div></div>`}
   if(r.images&&r.images.length){h+=`<div class="sec"><h3>Images</h3>${r.images.map(x=>`<div><b>${esc(x.title||"")}</b> <span class="note">${x.n} image${x.n===1?"":"s"}</span>${x.notes?`<div class="note">${esc(x.notes)}</div>`:""}<div class="thumbs" style="margin-top:6px">${(x.srcs||[]).map(u=>`<div class="thumb"><img src="${esc(u)}" alt=""></div>`).join("")}</div></div>`).join("")}</div>`}
   if(r.solutions&&r.solutions.length){h+=`<div class="sec"><h3>Solutions</h3>${r.solutions.map(x=>`<div><b>${esc(x.name)}</b> <span class="note">${esc(x.vol)} ${esc(x.vunit)}</span><div class="note">${x.lines.map(esc).join(" · ")}</div></div>`).join("")}</div>`}
   return h;
@@ -1876,6 +2019,7 @@ function buildLive(){
     rec.assay={name:A.name,date:A.date,method:A.method||"lowry",unit:A.unit,fit:R.fit?{model:R.fit.model,r2:R.fit.r2}:null,blank:R.blank,stds:R.stds.map((x,i)=>({c:A.stds[i].c,mean:x.m})),samples:R.smp.filter(x=>x.name||x.v.length).map(x=>({name:x.name,mean:x.m,dil:x.dil,conc:x.conc,flag:x.flag})),plate:A.plate||null}}}
   if(t.gel){const x=S.exp&&Store.data.experiments[S.exp.id]?S.exp:expList()[0];if(x){const gs=gelsOf(x.id).filter(g=>!g.draft).map(g=>g.id===(S.gel&&S.gel.id)?S.gel:g);if(gs.length)rec.exp={name:x.name,date:x.date,gels:gs.map(g=>({name:g.name,targetUg:g.targetUg,mode:g.mode||"premix",mix:g.mix||"1:1",
     lanes:g.lanes.map((l,i)=>{const c=laneCalc(g,l);return{well:i+1,type:l.type,name:l.name,conc:l.conc,load:c?(c.premix?c.load:c.s):(l.type==="ladder"?num(g.ladderUl):null),loaded:!!l.loaded}})}))}}}
+  if(t.qpcr&&p.qpcr){const R=qCalc();if(R.rows.length)rec.qpcr={tgts:R.tgts,refs:R.refs,ctrl:R.ctrl,rows:R.rows.map(r2=>({name:r2.name,group:r2.group,ref:r2.ref,dct:r2.dct,fold:r2.fold})),summ:R.summ}}
   if((p.imgs||[]).length)rec.images=p.imgs.map(sc=>({type:sc.type,title:sc.title,notes:sc.notes,n:(sc.images||[]).length,srcs:(sc.images||[]).map(imgSrc).filter(Boolean)}));
   const ss=Object.values(Store.data.solutions).filter(r=>r.protoId===p.id);if(ss.length)rec.solutions=ss.map(r=>{const V=volML(r);return{name:r.name,vol:r.vol,vunit:r.vunit,notes:r.notes,lines:r.comps.map(c=>{const a=compAmt(c,V);return `${c.name||"component"}: ${a&&!a.err?fmtAmt(a.a,a.u):"?"}`})}});
   if(expDone(p)&&p.completed)rec.method+=` · finished ${new Date(p.completed).toLocaleDateString("en-GB")}`;
@@ -1917,6 +2061,7 @@ function recModel(r){
   if(r.exp){B.push({h:`Gels: ${r.exp.name}`});r.exp.gels.forEach(g=>{B.push({p:`${g.name}: ${fmt(num(g.targetUg),0)} µg per well${g.mode==="premix"?`, premixed with Laemmli ${g.mix}`:""}`});
     T(g.name,["Well","Sample","Concentration (µg/µL)","Load (µL)","Loaded"],g.lanes.filter(l=>l.type!=="empty").map(l=>[l.well,l.name||(l.type==="ladder"?"Ladder":""),l.type==="sample"&&Number.isFinite(num(l.conc))?num(l.conc):"",Number.isFinite(l.load)?+(+l.load).toFixed(1):"",l.loaded?"yes":""]))})}
   if(r.solutions&&r.solutions.length){B.push({h:"Solutions"});r.solutions.forEach(x=>{B.push({p:`${x.name} (${x.vol} ${x.vunit})${x.notes?". "+x.notes:""}`});T(x.name,["Component","Amount"],x.lines.map(l=>{const i=l.lastIndexOf(": ");return[l.slice(0,i),l.slice(i+2)]}))})}
+  if(r.qpcr){const q=r.qpcr;B.push({h:"qPCR"});B.push({p:`Reference genes: ${q.refs.join(", ")||"—"}; control group: ${q.ctrl||"—"}. Fold = 2^-ΔΔCt.`});T("qPCR by sample",["Sample","Group","Ref Ct",...q.tgts.flatMap(g=>[g+" ΔCt",g+" fold"])],q.rows.map(x=>[x.name,x.group,+(+x.ref).toFixed(3),...q.tgts.flatMap(g=>[Number.isFinite(x.dct[g])?+x.dct[g].toFixed(3):"",Number.isFinite(x.fold[g])?+x.fold[g].toFixed(3):""])]));T("qPCR by group",["Gene","Group","n","Fold mean","SD","SEM"],q.summ.map(x=>[x.gene,x.group,x.n,Number.isFinite(x.mean)?+x.mean.toFixed(3):"",Number.isFinite(x.sd)?+x.sd.toFixed(3):"",Number.isFinite(x.sem)?+x.sem.toFixed(3):""]))}
   if(r.images&&r.images.length){B.push({h:"Images"});r.images.forEach(x=>B.push({p:`${x.title}: ${x.n} image${x.n===1?"":"s"}${x.notes?". "+x.notes:""}`}))}
   if(r.notes){B.push({h:"Results and notes"});B.push({p:r.notes})}
   return{title:r.name,blocks:B};
@@ -2004,7 +2149,7 @@ $("#hist-export").addEventListener("click",()=>{if(S.rec)exportRecord(S.rec,$("#
 /* ================= PLATE LAYOUT ================= */
 const PL_FMT={"96":[8,12],"48":[6,8],"24":[4,6],"12":[3,4]};
 const PL_COL=["#2F6FD8","#D6452F","#2E9C5A","#8A4BD1","#E08A1E","#1C9AA8","#D1498E","#6B7280"];
-function plate(){const A=S.assay;if(!A.plate||typeof A.plate!=="object")A.plate={fmt:"96",w:{}};if(!A.plate.w)A.plate.w={};return A.plate}
+function plate(){const A=S.plateCtx==="qpcr"?Q():S.assay;if(!A.plate||typeof A.plate!=="object")A.plate={fmt:"96",w:{}};if(!A.plate.w)A.plate.w={};return A.plate}
 function plIds(){const [R,C]=PL_FMT[plate().fmt]||PL_FMT["96"];const ids=[];for(let r=0;r<R;r++)for(let c=1;c<=C;c++)ids.push(String.fromCharCode(65+r)+c);return ids}
 S.plSel=new Set();S.plFill=false;
 function renderPlate(){
@@ -2026,6 +2171,7 @@ function renderPlate(){
     const labs=new Set([...S.plSel].map(id=>(P.w[id]||{}).label||""));if(document.activeElement!==$("#pl-label"))$("#pl-label").value=labs.size===1?[...labs][0]:"";
     const cols=new Set([...S.plSel].map(id=>(P.w[id]||{}).color||""));
     $("#pl-colors").innerHTML=PL_COL.map(c=>`<button data-c="${c}" style="background:${c}" aria-label="Colour" aria-pressed="${cols.size===1&&cols.has(c)}"></button>`).join("")}
+  $("#pl-legend").hidden=S.plFill;$("#pl-fmt").closest(".row").hidden=S.plFill;
   const nf=used.filter(id=>P.w[id].filled).length;
   $("#pl-count").hidden=!(S.plFill||nf);$("#pl-count").innerHTML=`Filled <b>${nf}/${used.length}</b>`;
   $("#pl-all").hidden=!S.plFill||nf===used.length;$("#pl-reset").hidden=!nf;
@@ -2033,7 +2179,7 @@ function renderPlate(){
   $("#pl-hint").innerHTML=S.plFill?(next?`Next: <b>${next}</b>${P.w[next].label?" · "+esc(P.w[next].label):""}. Tap a well when it's filled.`:used.length?"All wells filled.":"Name some wells first."):"Tap wells to select them (tap a row letter or column number to select the whole line), then give them a name and colour.";
   const card=$("#plate-card");card.classList.toggle("fs",S.plFill);card.classList.toggle("loading",S.plFill);document.body.classList.toggle("fslock",S.plFill||!!S.loadMode);
 }
-function plSave(){renderPlate();queueSave("assays")}
+function plSave(){renderPlate();queueSave(S.plateCtx==="qpcr"?"protocols":"assays")}
 $("#pl-grid").addEventListener("click",e=>{const P=plate();const b=e.target.closest("button");if(!b)return;
   if(b.dataset.w){const id=b.dataset.w;
     if(S.plFill){const w=P.w[id];if(!w||!(w.label||w.color))return;w.filled=!w.filled;try{navigator.vibrate&&navigator.vibrate(15)}catch(er){}plSave();return}
@@ -2050,7 +2196,7 @@ armDelete("#pl-clear","Clear plate",()=>{plate().w={};S.plSel.clear();plSave()})
 $("#pl-fill").addEventListener("click",()=>{S.plFill=!S.plFill;S.plSel.clear();renderPlate();if(S.plFill){collapsedSet.delete("plate");lsSet("bb.collapsed",[...collapsedSet]);$("#plate-card").classList.remove("collapsed");fsOn();wakeOn()}else{fsOff();wakeOff()}});
 $("#pl-all").addEventListener("click",()=>{const P=plate();Object.values(P.w).forEach(w=>{if(w.label||w.color)w.filled=true});plSave()});
 $("#pl-reset").addEventListener("click",()=>{Object.values(plate().w).forEach(w=>delete w.filled);plSave()});
-$("#pl-auto").addEventListener("click",()=>{
+$("#pl-auto").addEventListener("click",()=>{if(S.plateCtx==="qpcr"){qpcrLayout();return}
   const A=S.assay,P=plate();const [R,C]=PL_FMT[P.fmt]||PL_FMT["96"];const n=Math.max(1,Math.min(A.reps||1,C));const items=[];
   if(A.method!=="direct")A.stds.forEach(x=>{if(String(x.c).trim()!=="")items.push({l:num(x.c)===0?"Blank":`S ${x.c}`,c:num(x.c)===0?PL_COL[7]:PL_COL[0]})});
   A.samples.forEach((x,i)=>{if(x.name||repVals(x.r).length)items.push({l:x.name||`Smp ${i+1}`,c:PL_COL[2]})});
@@ -2104,8 +2250,92 @@ setInterval(()=>{let changed=false;
 updateNavDot();
 
 $("#alarm-stop").addEventListener("click",alarmStop);
+/* ================= qPCR ================= */
+function Q(){const p=S.prot;if(!p.qpcr||typeof p.qpcr!=="object")p.qpcr={};const q=p.qpcr;
+  q.genes=q.genes||[{name:"GAPDH",ref:true},{name:"",ref:false}];q.samples=q.samples||Array.from({length:6},()=>({name:"",group:""}));
+  if(q.reps==null)q.reps=3;if(q.ntc==null)q.ntc=true;q.rxn=Object.assign({vol:"20",mm:"10",fwd:"0.5",rev:"0.5",tpl:"4",extra:"10"},q.rxn||{});
+  q.plate=q.plate||{fmt:"96",w:{}};q.ct=q.ct||[];q.control=q.control||"";return q}
+const qSave=()=>queueSave("protocols");
+function qGenes(){return Q().genes.filter(g=>String(g.name).trim())}
+function qSamples(){return Q().samples.filter(s=>String(s.name).trim())}
+function renderQSetup(){
+  const q=Q();
+  $("#qg-table").innerHTML=`<thead><tr><th>Gene</th><th>Reference</th><th></th></tr></thead><tbody>`+q.genes.map((g,i)=>`<tr data-i="${i}"><td><input class="nm" data-f="name" type="text" value="${esc(g.name)}" placeholder="e.g. Ins2"></td><td style="text-align:center"><input type="checkbox" data-f="ref" ${g.ref?"checked":""} aria-label="Reference gene" style="width:20px;height:20px;accent-color:var(--accent)"></td><td><button class="rm" data-rm="${i}" aria-label="Remove">×</button></td></tr>`).join("")+`</tbody>`;
+  $("#qs-table").innerHTML=`<thead><tr><th>Sample</th><th>Group</th><th></th></tr></thead><tbody>`+q.samples.map((s2,i)=>`<tr data-i="${i}"><td><input class="nm" data-f="name" type="text" value="${esc(s2.name)}" placeholder="${i+1}"></td><td><input class="nm" data-f="group" type="text" value="${esc(s2.group)}" placeholder="e.g. Control" list="qs-groups"></td><td><button class="rm" data-rm="${i}" aria-label="Remove">×</button></td></tr>`).join("")+`</tbody>`;
+  $("#qs-groups").innerHTML=[...new Set(q.samples.map(s2=>s2.group).filter(Boolean))].map(g=>`<option value="${esc(g)}"></option>`).join("");
+  $("#q-reps").value=String(q.reps);$("#q-ntc").checked=!!q.ntc;
+  ["vol","mm","fwd","rev","tpl","extra"].forEach(k=>{const e=$("#qr-"+k);if(document.activeElement!==e)e.value=q.rxn[k]});
+  renderQMix();
+}
+function renderQMix(){
+  const q=Q(),r=q.rxn;const V=num(r.vol),mm=num(r.mm),f=num(r.fwd),rv=num(r.rev),t=num(r.tpl),ex=num(r.extra)||0;const w=V-mm-f-rv-t;
+  const ns=qSamples().length,per=ns*q.reps+(q.ntc?q.reps:0);const n=per*(1+ex/100);const G=qGenes();
+  if(!(V>0)||w<-0.001){$("#q-mix").innerHTML=`<span style="color:var(--bad)">The components add up to more than the reaction volume.</span>`;return}
+  $("#q-mix").innerHTML=`<div class="note" style="margin-bottom:6px">Per reaction: ${fmt(mm)} µL master mix + ${fmt(f)} µL forward + ${fmt(rv)} µL reverse primer + ${fmt(w)} µL water, then ${fmt(t)} µL cDNA. Per gene: ${ns} samples × ${q.reps}${q.ntc?` + ${q.reps} NTC`:""} = <b>${per} reactions</b> (+${fmt(ex,0)}%).</div>`+
+    (G.length?`<div class="tablewrap"><table><thead><tr><th>Gene mix</th><th>Master mix</th><th>Primer F</th><th>Primer R</th><th>Water</th><th>Dispense</th></tr></thead><tbody>${G.map(g=>`<tr><td class="n">${esc(g.name)}${g.ref?` <span class="tag">ref</span>`:""}</td><td>${fmtAmt(mm*n/1000,"mL")}</td><td>${fmtAmt(f*n/1000,"mL")}</td><td>${fmtAmt(rv*n/1000,"mL")}</td><td>${fmtAmt(Math.max(0,w)*n/1000,"mL")}</td><td>${fmt(V-t)} µL/well</td></tr>`).join("")}</tbody></table></div>`:`<span class="note">Add genes to see the mixes.</span>`);
+}
+function qTable(sel,arr,mk){$(sel).addEventListener("input",e=>{const tr=e.target.closest("tr[data-i]"),f=e.target.dataset.f;if(!tr||!f)return;const o=arr()[+tr.dataset.i];o[f]=e.target.type==="checkbox"?e.target.checked:e.target.value;qSave();renderQMix();if(sel==="#qs-table"&&f==="group")$("#qs-groups").innerHTML=[...new Set(Q().samples.map(s2=>s2.group).filter(Boolean))].map(g=>`<option value="${esc(g)}"></option>`).join("")});
+  $(sel).addEventListener("change",e=>{if(e.target.type==="checkbox"){const tr=e.target.closest("tr[data-i]");arr()[+tr.dataset.i][e.target.dataset.f]=e.target.checked;qSave();renderQSetup()}});
+  $(sel).addEventListener("click",e=>{const b=e.target.closest("[data-rm]");if(!b)return;arr().splice(+b.dataset.rm,1);qSave();renderQSetup()});
+  $(sel).addEventListener("paste",e=>{const tr=e.target.closest("tr[data-i]");if(!tr||e.target.dataset.f==="ref")return;const text=(e.clipboardData||window.clipboardData).getData("text");if(!/[\t\n]/.test(text.trim()))return;e.preventDefault();
+    const rows=text.replace(/\r/g,"").replace(/\n+$/,"").split("\n").map(l=>l.split("\t").map(c=>c.trim()));const A=arr();let i=+tr.dataset.i;const cols=sel==="#qs-table"?["name","group"]:["name","ref"];const c0=cols.indexOf(e.target.dataset.f);
+    rows.forEach(cells=>{while(A.length<=i)A.push(mk());cells.forEach((v,j)=>{const k=cols[c0+j];if(!k)return;A[i][k]=k==="ref"?/^(1|y|yes|true|x|ref)$/i.test(v):v});i++});qSave();renderQSetup();setStatus(`Pasted ${rows.length} rows`)})}
+qTable("#qg-table",()=>Q().genes,()=>({name:"",ref:false}));qTable("#qs-table",()=>Q().samples,()=>({name:"",group:""}));
+$("#qg-add").addEventListener("click",()=>{const q=Q();for(let k=0,K=Math.max(1,Math.min(200,parseInt($("#qg-add-n").value)||1));k<K;k++)q.genes.push({name:"",ref:false});qSave();renderQSetup()});
+$("#qs-add").addEventListener("click",()=>{const q=Q();for(let k=0,K=Math.max(1,Math.min(200,parseInt($("#qs-add-n").value)||1));k<K;k++)q.samples.push({name:"",group:""});qSave();renderQSetup()});
+$("#q-reps").addEventListener("input",e=>{Q().reps=parseInt(e.target.value)||1;qSave();renderQMix()});
+$("#q-ntc").addEventListener("change",e=>{Q().ntc=e.target.checked;qSave();renderQMix()});
+["vol","mm","fwd","rev","tpl","extra"].forEach(k=>$("#qr-"+k).addEventListener("input",e=>{Q().rxn[k]=e.target.value;qSave();renderQMix()}));
+function qpcrLayout(){const q=Q(),P=q.plate;const [R,C]=PL_FMT[P.fmt]||PL_FMT["96"];const G=qGenes(),SS=qSamples();if(!G.length||!SS.length){setStatus("Add genes and samples first");return}
+  const n=q.reps,w={};let r=0,c=1,over=0;
+  G.forEach((g,gi)=>{const col=PL_COL[gi%PL_COL.length];const items=SS.map(x=>x.name).concat(q.ntc?["NTC"]:[]);
+    items.forEach(it=>{if(c+n-1>C){r++;c=1}if(r>=R){over++;return}for(let k=0;k<n;k++)w[String.fromCharCode(65+r)+(c+k)]={label:it,color:col,gene:g.name};c+=n});});
+  P.w=w;S.plSel.clear();plSave();setStatus(over?`Plate is full; ${over} item${over>1?"s":""} left out`:`Laid out ${G.length} gene${G.length>1?"s":""} × ${SS.length+(q.ntc?1:0)} × ${n}`)}
+/* results */
+function qCalc(){
+  const q=Q();const G=qGenes(),refs=G.filter(g=>g.ref).map(g=>g.name),tgts=G.filter(g=>!g.ref).map(g=>g.name);
+  const by={};q.ct.forEach(x=>{const sname=String(x.sample||"").trim(),g=String(x.gene||"").trim();if(!sname||!g)return;const v=/^(und|undet|n\/?a|no ct|-)/i.test(String(x.ct))?NaN:num(x.ct);(by[sname]=by[sname]||{})[g]=(by[sname][g]||[]).concat([v])});
+  const grp={};q.samples.forEach(x=>{if(x.name)grp[String(x.name).trim()]=x.group||""});
+  const flags=[];const rows=Object.keys(by).filter(n=>!/^ntc$/i.test(n)).map(n=>{const o={name:n,group:grp[n]||"",ct:{},sd:{}};
+    Object.entries(by[n]).forEach(([g,vs])=>{const ok=vs.filter(Number.isFinite);o.ct[g]=mean(ok);o.sd[g]=ok.length>1?Math.sqrt(ok.reduce((s2,v)=>s2+(v-o.ct[g])**2,0)/(ok.length-1)):NaN;
+      if(ok.length<vs.length)flags.push(`${n} · ${g}: ${vs.length-ok.length} undetermined`);if(o.sd[g]>0.3)flags.push(`${n} · ${g}: replicates differ (SD ${fmt(o.sd[g],2)})`);if(o.ct[g]>35)flags.push(`${n} · ${g}: late Ct (${fmt(o.ct[g],1)})`)});
+    const rc=refs.map(g=>o.ct[g]).filter(Number.isFinite);o.ref=rc.length===refs.length&&rc.length?mean(rc):NaN;o.dct={};tgts.forEach(g=>{o.dct[g]=o.ct[g]-o.ref});return o});
+  const ntc=Object.keys(by).find(n=>/^ntc$/i.test(n));if(ntc)Object.entries(by[ntc]).forEach(([g,vs])=>{const ok=vs.filter(v=>Number.isFinite(v)&&v<38);if(ok.length)flags.push(`NTC · ${g}: amplification (Ct ${fmt(Math.min(...ok),1)}); check for contamination`)});
+  const groups=[...new Set(rows.map(r2=>r2.group).filter(Boolean))];const ctrl=q.control&&groups.includes(q.control)?q.control:groups[0]||"";
+  const cmean={};tgts.forEach(g=>{cmean[g]=mean(rows.filter(r2=>r2.group===ctrl).map(r2=>r2.dct[g]).filter(Number.isFinite))});
+  rows.forEach(r2=>{r2.ddct={};r2.fold={};tgts.forEach(g=>{r2.ddct[g]=r2.dct[g]-cmean[g];r2.fold[g]=Math.pow(2,-r2.ddct[g])})});
+  const summ=[];tgts.forEach(g=>groups.forEach(gr=>{const v=rows.filter(r2=>r2.group===gr).map(r2=>r2.fold[g]).filter(Number.isFinite);const m=mean(v);const sd=v.length>1?Math.sqrt(v.reduce((s2,x)=>s2+(x-m)**2,0)/(v.length-1)):NaN;summ.push({gene:g,group:gr,n:v.length,mean:m,sd,sem:v.length>1?sd/Math.sqrt(v.length):NaN})}));
+  if(!refs.length)flags.unshift("Mark at least one reference gene in Setup.");
+  return{rows,refs,tgts,groups,ctrl,summ,flags};
+}
+function renderQRes(){
+  const q=Q();
+  $("#qc-table").innerHTML=`<thead><tr><th>Sample</th><th>Gene</th><th>Ct</th><th></th></tr></thead><tbody>`+q.ct.map((x,i)=>`<tr data-i="${i}"><td><input class="nm" data-col="0" type="text" value="${esc(x.sample||"")}"></td><td><input class="nm" data-col="1" type="text" value="${esc(x.gene||"")}"></td><td><input data-col="2" type="text" inputmode="decimal" value="${esc(x.ct??"")}" style="width:4.6rem"></td><td><button class="rm" data-rm="${i}" aria-label="Remove">×</button></td></tr>`).join("")+`</tbody>`;
+  renderQCalc();
+}
+function renderQCalc(){
+  const R=qCalc(),q=Q();
+  $("#q-ctrl").innerHTML=R.groups.length?R.groups.map(g=>`<option ${g===R.ctrl?"selected":""}>${esc(g)}</option>`).join(""):`<option value="">Give samples a group in Setup</option>`;
+  $("#q-flags").innerHTML=R.flags.map(f=>`<span class="w">${esc(f)}</span>`).join("");
+  $("#q-out").innerHTML=R.rows.length&&R.tgts.length?`<div class="tablewrap"><table><thead><tr><th>Sample</th><th>Group</th><th>Ref Ct</th>${R.tgts.map(g=>`<th>${esc(g)} ΔCt</th><th>${esc(g)} fold</th>`).join("")}</tr></thead><tbody>${R.rows.map(r2=>`<tr><td class="n">${esc(r2.name)}</td><td style="font-family:var(--sans);text-align:left">${esc(r2.group||"—")}</td><td>${fmt(r2.ref,2)}</td>${R.tgts.map(g=>`<td>${fmt(r2.dct[g],2)}</td><td><b>${fmt(r2.fold[g],2)}</b></td>`).join("")}</tr>`).join("")}</tbody></table></div>`:`<span class="note">Paste Ct values above to see ΔCt and fold change.</span>`;
+  $("#q-summ").innerHTML=R.summ.length?`<div class="tablewrap"><table><thead><tr><th>Gene</th><th>Group</th><th>n</th><th>Fold (mean)</th><th>SD</th><th>SEM</th></tr></thead><tbody>${R.summ.map(x=>`<tr><td class="n">${esc(x.gene)}</td><td style="font-family:var(--sans);text-align:left">${esc(x.group)}${x.group===R.ctrl?" (control)":""}</td><td>${x.n}</td><td><b>${fmt(x.mean,2)}</b></td><td>${fmt(x.sd,2)}</td><td>${fmt(x.sem,2)}</td></tr>`).join("")}</tbody></table></div>`:"";
+}
+$("#qc-table").addEventListener("input",e=>{const tr=e.target.closest("tr[data-i]");if(!tr)return;const x=Q().ct[+tr.dataset.i];x[["sample","gene","ct"][+e.target.dataset.col]]=e.target.value;qSave();clearTimeout(renderQCalc.t);renderQCalc.t=setTimeout(renderQCalc,300)});
+$("#qc-table").addEventListener("click",e=>{const b=e.target.closest("[data-rm]");if(!b)return;Q().ct.splice(+b.dataset.rm,1);qSave();renderQRes()});
+$("#qc-table").addEventListener("paste",e=>{const tr=e.target.closest("tr[data-i]");if(!tr)return;const text=(e.clipboardData||window.clipboardData).getData("text");if(!/[\t\n]/.test(text.trim()))return;e.preventDefault();
+  let rows=text.replace(/\r/g,"").replace(/\n+$/,"").split("\n").map(l=>l.split("\t").map(c=>c.trim()));
+  if(rows.length>1&&!rows[0].some(c=>/^\d+([.,]\d+)?$/.test(c)))rows=rows.slice(1);
+  const A=Q().ct;let i=+tr.dataset.i;const c0=+e.target.dataset.col;rows.forEach(cells=>{while(A.length<=i)A.push({sample:"",gene:"",ct:""});cells.forEach((v,j)=>{const k=["sample","gene","ct"][c0+j];if(k)A[i][k]=v});i++});qSave();renderQRes();setStatus(`Pasted ${rows.length} rows`)});
+$("#qc-add").addEventListener("click",()=>{const A=Q().ct;for(let k=0,K=Math.max(1,Math.min(400,parseInt($("#qc-add-n").value)||1));k<K;k++)A.push({sample:"",gene:"",ct:""});qSave();renderQRes()});
+$("#qc-gen").addEventListener("click",()=>{const q=Q();const A=[];qGenes().forEach(g=>{qSamples().concat(q.ntc?[{name:"NTC"}]:[]).forEach(s2=>{for(let k=0;k<q.reps;k++)A.push({sample:s2.name,gene:g.name,ct:""})})});if(!A.length){setStatus("Add genes and samples in Setup first");return}
+  const had=q.ct.some(x=>String(x.ct).trim());if(had&&!$("#qc-gen").classList.contains("armed")){$("#qc-gen").classList.add("armed");$("#qc-gen").textContent="Replace your Ct values?";setTimeout(()=>{$("#qc-gen").classList.remove("armed");$("#qc-gen").textContent="Rows from setup"},4000);return}
+  $("#qc-gen").classList.remove("armed");$("#qc-gen").textContent="Rows from setup";q.ct=A;qSave();renderQRes()});
+$("#q-ctrl").addEventListener("input",e=>{Q().control=e.target.value;qSave();renderQCalc()});
+$("#q-copy").addEventListener("click",async()=>{const R=qCalc();const L=[["Sample","Group","Ref Ct",...R.tgts.flatMap(g=>[g+" dCt",g+" ddCt",g+" fold"])].join("\t"),...R.rows.map(r2=>[r2.name,r2.group,fmt(r2.ref,3),...R.tgts.flatMap(g=>[fmt(r2.dct[g],3),fmt(r2.ddct[g],3),fmt(r2.fold[g],3)])].join("\t")),"","Gene\tGroup\tn\tFold mean\tSD\tSEM",...R.summ.map(x=>[x.gene,x.group,x.n,fmt(x.mean,3),fmt(x.sd,3),fmt(x.sem,3)].join("\t"))].join("\n");
+  const ta=$("#q-copyarea");try{await navigator.clipboard.writeText(L);setStatus("Results copied");ta.hidden=true}catch(er){ta.value=L;ta.hidden=false;ta.style.minHeight="160px";ta.focus();ta.select()}});
+
 /* ================= WB SAMPLES (link to protein concentration) ================= */
-function srcAssays(){const cur=S.prot.id;return Object.values(Store.data.assays).filter(a=>{const p=Store.data.protocols[a.protoId];return p&&(p.method==="protein"||a.protoId===cur||(p.tools||{}).protein&&p.method!=="wb")}).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))}
+function srcAssays(){const cur=S.prot.id;return Object.values(Store.data.assays).filter(a=>{const p=Store.data.protocols[a.protoId];return p&&a.method!=="elisa"&&p.method!=="elisa"&&(p.method==="protein"||a.protoId===cur||(p.tools||{}).protein&&p.method!=="wb")}).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))}
 function smState(){const p=S.prot;if(!p.smp||typeof p.smp!=="object")p.smp={src:"",picks:{},manual:[]};p.smp.picks=p.smp.picks||{};p.smp.manual=p.smp.manual||[];
   if(!p.smp.src){const L=srcAssays();if(L.length)p.smp.src=L[0].id}return p.smp}
 function smRows(){const st=smState();const rows=[];const A0=Store.data.assays[st.src];

@@ -1,5 +1,5 @@
 // Lab Rat service worker: works offline after the first visit.
-const VERSION = "lab-rat-v2";
+const VERSION = "lab-rat-v4";
 const SHELL = ["./", "index.html", "config.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/favicon-64.png"];
 
 self.addEventListener("install", e => {
@@ -15,7 +15,7 @@ self.addEventListener("fetch", e => {
   if (url.hostname.endsWith("supabase.co") || url.hostname.endsWith("supabase.in")) return; // sync traffic always goes to the network
   // App pages: network first so updates arrive, cache when offline
   if (url.origin === location.origin) {
-    e.respondWith(fetch(req).then(res => { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); return res; })
+    e.respondWith(fetch(req, { cache: "no-cache" }).then(res => { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); return res; })
       .catch(() => caches.match(req).then(r => r || caches.match("index.html"))));
     return;
   }
