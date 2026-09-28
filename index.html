@@ -160,6 +160,17 @@ tr.bad .wmsg{color:var(--bad)}
 .res span:nth-child(even){font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
 .big{font:600 22px var(--mono);color:var(--accent)}
 .copyarea{font-family:var(--mono);font-size:12px}
+.gelstrip{display:flex;gap:6px;flex-wrap:wrap}
+.gelstrip button{font:600 14px var(--sans);padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.gelstrip button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.qch{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--surface-2)}
+.qch textarea{min-height:64px;font-family:var(--mono);font-size:12px}
+.qch .qst{font-size:13px;color:var(--muted)}
+.qch .qst.bad{color:var(--bad)}
+.qtab td,.qtab th{white-space:nowrap}
+.qtab input{width:110px;padding:4px 6px;font-size:13px}
+.qbar{height:10px;background:var(--accent);border-radius:3px;min-width:1px}
+.qbar-wrap{width:60px;background:var(--surface-2);border-radius:3px;position:relative}
 .chartbox svg{width:100%;height:auto;display:block}
 .chartbox .ax{stroke:var(--line);stroke-width:1}
 .chartbox .gr{stroke:var(--line);stroke-width:1;stroke-dasharray:2 4}
@@ -597,6 +608,7 @@ nav.tabs button{position:relative}
           <label class="chk"><input type="checkbox" data-tool="protein"> <span id="p-tool-prot">Protein concentration</span></label>
           <label class="chk"><input type="checkbox" data-tool="gel"> Gel</label>
           <label class="chk"><input type="checkbox" data-tool="images"> Images</label>
+          <label class="chk"><input type="checkbox" data-tool="quant"> Densitometry</label>
           <label class="chk"><input type="checkbox" data-tool="qpcr"> qPCR</label>
           <label class="chk"><input type="checkbox" data-tool="solutions"> Solutions</label>
         </div>
@@ -671,6 +683,39 @@ nav.tabs button{position:relative}
     <p class="note" style="margin:0" id="img-empty">No images yet. Tap <b>+ New</b>, choose membrane or gel, then paste or pick the picture.</p>
     <div class="imgsecs" id="img-list"></div>
     <input type="file" id="img-file" accept="image/*" multiple hidden>
+  </section>
+
+  <section class="tab" id="tab-quant" hidden>
+    <div class="card">
+      <div class="row chead" style="justify-content:space-between"><h2>Measurements</h2></div>
+      <p class="note" style="margin:0">Measure the bands in Fiji, copy the Results table and paste it under the antibody. Values go to the wells of the gel in order; the ladder is skipped.</p>
+      <div class="gelstrip" id="dq-gels"></div>
+      <div id="dq-chs"></div>
+      <div class="row"><button class="btn sm" id="dq-addch">+ Antibody</button></div>
+    </div>
+    <div class="card">
+      <div class="row chead" style="justify-content:space-between"><h2>Samples and groups</h2></div>
+      <p class="note" style="margin:0">Groups are guessed from sample names (C-1, C-2 → C). Change them here; they apply to every gel.</p>
+      <label class="f" style="max-width:260px">Control group<select id="dq-ctrl"></select></label>
+      <div class="tablewrap"><table class="qtab"><thead id="dq-lhead"></thead><tbody id="dq-lanes"></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="row chead" style="justify-content:space-between"><h2>Results</h2><button class="btn sm" id="dq-copy">Copy for GraphPad</button></div>
+      <p class="note" style="margin:0">Each sample: antibody ÷ its normalizer, then ÷ the mean of the control group on the same membrane (control = 1).</p>
+      <div id="dq-res"></div>
+      <textarea class="copyarea" id="dq-copyarea" hidden readonly></textarea>
+    </div>
+    <details class="card">
+      <summary>Fiji macro</summary>
+      <ol class="note" style="margin:0;padding-left:18px">
+        <li>Open the blot in Fiji, ideally the raw 16-bit TIFF (not a JPG).</li>
+        <li>Draw one rectangle over all lanes: left edge of the first lane to the right edge of the last, a little above and below the bands.</li>
+        <li>Plugins → Macros → Run… and pick the macro file, or paste it into Plugins → New → Macro and press Run.</li>
+        <li>Enter the number of lanes. The values are copied; paste them here under the antibody.</li>
+      </ol>
+      <div class="row"><button class="btn sm" id="dq-mcopy">Copy macro</button><button class="btn sm" id="dq-mdl">Download .ijm</button></div>
+      <textarea class="copyarea" id="dq-macro" readonly style="min-height:140px"></textarea>
+    </details>
   </section>
 
   <!-- HISTORY -->
@@ -798,6 +843,20 @@ nav.tabs button{position:relative}
         <label class="f">V₂<input id="c-v2" type="text" inputmode="decimal" value="500"></label>
       </div>
       <div class="calcline" id="c-c1out"></div>
+    </div>
+
+    <div class="card">
+      <h2>Molar mass</h2>
+      <label class="f">Formula<input id="mw-f" type="text" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="e.g. C4H11NO3 or CuSO4·5H2O" style="font-family:var(--mono)"></label>
+      <div class="row" id="mw-pre" style="gap:6px;flex-wrap:wrap"></div>
+      <p class="note" style="margin:0">Case matters (Co = cobalt, CO = carbon + oxygen). Brackets and hydrates work: Ca(OH)2, (NH4)2SO4, Na2HPO4·7H2O (· or * or .).</p>
+      <div class="calcline" id="mw-out"></div>
+      <div class="grid3">
+        <label class="f">Concentration<input id="mw-c" type="text" inputmode="decimal" placeholder="e.g. 1"></label>
+        <label class="f">Unit<select id="mw-cu"><option value="1">M</option><option value="1e-3" selected>mM</option><option value="1e-6">µM</option><option value="w">mg/mL</option></select></label>
+        <label class="f">Volume (mL)<input id="mw-v" type="text" inputmode="decimal" placeholder="e.g. 50"></label>
+      </div>
+      <div class="calcline" id="mw-mass"></div>
     </div>
 
   </section>
@@ -1130,14 +1189,14 @@ function queueSave(kind){
 
 /* ---------- tabs ---------- */
 function showTab(t){
-  const inside=["prot","assay","smp","qset","qres","gel","img","psol","hist"].includes(t);if(inside&&!S.prot)t="home";if(t==="lib"&&isTpl()===false){}
+  const inside=["prot","assay","smp","qset","qres","gel","img","quant","psol","hist"].includes(t);if(inside&&!S.prot)t="home";if(t==="lib"&&isTpl()===false){}
   if(["home","lib","sol","calc","clock","notes"].includes(t)){flushProt()}if(t!=="notes")flushNotes();
   if(!["sol","psol"].includes(t))flushSol();
   S.tab=t;lsSet("bb.tab",t);
   const navKey=inside?(isTpl()?"lib":"home"):t;$$("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===navKey)));
   $("#pbar").hidden=!inside;
   $("#tab-home").hidden=t!=="home";$("#tab-lib").hidden=t!=="lib";if(t==="lib"){$("#lib-tpl").hidden=true;renderLib()}$("#tab-gel").hidden=t!=="gel";$("#tab-prot").hidden=t!=="prot";$("#tab-calc").hidden=t!=="calc";$("#tab-clock").hidden=t!=="clock";if(t==="clock")renderClock();$("#tab-notes").hidden=t!=="notes";if(t==="notes")renderNotes();$("#tab-assay").hidden=t!=="assay";$("#tab-sol").hidden=!(t==="sol"||t==="psol");$("#tab-hist").hidden=t!=="hist";$("#tab-img").hidden=t!=="img";$("#tab-smp").hidden=t!=="smp";if(t==="smp")renderSamples();
-  $("#tab-qset").hidden=t!=="qset";$("#tab-qres").hidden=t!=="qres";
+  $("#tab-qset").hidden=t!=="qset";$("#tab-qres").hidden=t!=="qres";$("#tab-quant").hidden=t!=="quant";if(t==="quant")renderQuant();
   if(t==="qset"){S.plateCtx="qpcr";S.plSel=new Set();$("#qp-plate-slot").appendChild($("#plate-card"));$("#plate-card").hidden=false;$("#pl-auto").textContent="Fill from setup";renderQSetup();renderPlate()}
   else if(S.plateCtx==="qpcr"){S.plateCtx="assay";S.plSel=new Set();$("#plate-home").after($("#plate-card"));$("#pl-auto").textContent="Fill from tables"}
   if(t==="qres")renderQRes();if(t==="img"){$("#img-pick").hidden=true;renderImages()}if(t==="hist"){S.rec=null;renderReport();renderHist()}
@@ -1390,7 +1449,7 @@ function buildSteps(p){
 }
 const st=(phase,t,d,min,rep)=>({phase,t,d,min:min||null,rep:rep||0});
 const TEMPLATES={
-  wb:{name:"Western blot",method:"wb",label:"Western blot",desc:"Electrophoresis, transfer and immunodetection, with protein concentration and gel planner.",tools:{protein:true,gel:true,images:true,solutions:true},steps:()=>buildSteps(legacyWB())},
+  wb:{name:"Western blot",method:"wb",label:"Western blot",desc:"Electrophoresis, transfer and immunodetection, with protein concentration and gel planner.",tools:{protein:true,gel:true,images:true,quant:true,solutions:true},steps:()=>buildSteps(legacyWB())},
   lowry:{name:"Protein concentration: Lowry (microplate)",method:"protein",assay:"lowry",label:"Protein concentration",desc:"Lowry on a microplate, 750 nm, standard curve.",tools:{protein:true,gel:false,solutions:true},steps:()=>[
     st("Plate","Reagent C","Pipette 200 µL reagent C into each well"),st("Plate","Samples and standards","Add 1 µL of each sample and standard, in replicates"),
     st("Reaction","Incubate","Room temperature",10),st("Reaction","Folin–Ciocalteu","Add 20 µL diluted Folin–Ciocalteu reagent and mix"),
@@ -1542,7 +1601,8 @@ $("#tpl-start").addEventListener("click",()=>{flushProt();const t=Store.data.tem
 $("#prot-savetpl").addEventListener("click",()=>{flushProt();const p=S.prot;const t={id:uid(),name:p.templateName&&!/\(copy\)/.test(p.name)?p.templateName:String(p.name).replace(/ · \d{2}\/\d{2}\/\d{4}$/,""),method:p.method,assayMethod:p.assayMethod,tools:Object.assign({},p.tools),steps:freshSteps(p.steps),notes:p.notes||"",created:Date.now()};
   if(Object.values(Store.data.templates).some(x=>x.name===t.name))t.name+=" (from experiment)";Store.save("templates",t);setStatus(`Saved as protocol “${t.name}”`)});
 
-function protTabs(){if(isTpl())return [["prot","Steps"]];const t=S.prot.tools||{};return [["prot","Steps"],t.protein&&(S.prot.method==="wb"?["smp","Samples"]:["assay",S.prot.method==="elisa"?"Assay":"Protein concentration"]),t.qpcr&&["qset","Setup"],t.qpcr&&["qres","Results"],t.gel&&["gel","Gel"],t.images&&["img","Images"],t.solutions&&["psol","Solutions"],["hist","Report"]].filter(Boolean)}
+function hasQuant(p){const t=(p&&p.tools)||{};return t.quant===undefined?p&&p.method==="wb":!!t.quant}
+function protTabs(){if(isTpl())return [["prot","Steps"]];const t=S.prot.tools||{};return [["prot","Steps"],t.protein&&(S.prot.method==="wb"?["smp","Samples"]:["assay",S.prot.method==="elisa"?"Assay":"Protein concentration"]),t.qpcr&&["qset","Setup"],t.qpcr&&["qres","Results"],t.gel&&["gel","Gel"],t.images&&["img","Images"],hasQuant(S.prot)&&["quant","Quant"],t.solutions&&["psol","Solutions"],["hist","Report"]].filter(Boolean)}
 function renderPbar(){
   if(!S.prot)return;$("#pbar-name").innerHTML=(isTpl()?`<span class="tag">Protocol</span>`:expDone(S.prot)?`<span class="tag done">Done</span>`:"")+esc(S.prot.name||"Untitled");$("#p-back").textContent=isTpl()?"‹ Protocols":"‹ Experiments";
   $("#pbar-tabs").innerHTML=protTabs().map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}</button>`).join("");
@@ -1562,7 +1622,7 @@ function openProtocol(p,tab){
 function renderProtSelect(){renderHome();renderPbar()}
 function fillProtForm(){
   const p=S.prot;$("#p-name").value=p.name||"";$("#p-group").value=p.group||"";$("#p-notes").value=p.notes||"";
-  $$("#p-tools input").forEach(i=>i.checked=!!(p.tools||{})[i.dataset.tool]);
+  $$("#p-tools input").forEach(i=>i.checked=i.dataset.tool==="quant"?hasQuant(p):!!(p.tools||{})[i.dataset.tool]);
   $("#prot-del").classList.remove("armed");$("#prot-del").textContent="Delete";renderPbar();
   $("#p-tool-prot").textContent=p.method==="wb"?"Samples (from protein concentration)":p.method==="elisa"?"Assay (plate and standard curve)":"Protein concentration";
   const T=isTpl();$("#p-sum").textContent=T?"Protocol settings":"Experiment settings";$("#p-group-w").hidden=T;$("#prot-savetpl").hidden=T;$("#tpl-start").hidden=!T;$("#prot-reset").hidden=T||!!S.editSteps;$("#p-tools").parentElement.querySelector(".note").textContent=T?"Tools in experiments started from this protocol":"Tools in this experiment";
@@ -1674,6 +1734,36 @@ function calc(){
     const lab={c1:"C₁",v1:"V₁",c2:"C₂",v2:"V₂"}[m];out=Number.isFinite(r)?`${lab} = <span class="big">${fmt(r,r<10?2:1)}</span>${m==="v1"&&Number.isFinite(v2)?` <span class="note">(top up to ${fmt(v2,1)}; diluent ${fmt(v2-r,r<10?2:1)})</span>`:""}`:"Check the values (division by zero)."}
   $("#c-c1out").innerHTML=out;
 }
+/* molar mass */
+const AW={H:1.008,He:4.0026,Li:6.94,Be:9.0122,B:10.81,C:12.011,N:14.007,O:15.999,F:18.998,Ne:20.180,Na:22.990,Mg:24.305,Al:26.982,Si:28.085,P:30.974,S:32.06,Cl:35.45,Ar:39.95,K:39.098,Ca:40.078,Sc:44.956,Ti:47.867,V:50.942,Cr:51.996,Mn:54.938,Fe:55.845,Co:58.933,Ni:58.693,Cu:63.546,Zn:65.38,Ga:69.723,Ge:72.630,As:74.922,Se:78.971,Br:79.904,Kr:83.798,Rb:85.468,Sr:87.62,Y:88.906,Zr:91.224,Nb:92.906,Mo:95.95,Tc:98,Ru:101.07,Rh:102.91,Pd:106.42,Ag:107.87,Cd:112.41,In:114.82,Sn:118.71,Sb:121.76,Te:127.60,I:126.90,Xe:131.29,Cs:132.91,Ba:137.33,La:138.91,Ce:140.12,Pr:140.91,Nd:144.24,Pm:145,Sm:150.36,Eu:151.96,Gd:157.25,Tb:158.93,Dy:162.50,Ho:164.93,Er:167.26,Tm:168.93,Yb:173.05,Lu:174.97,Hf:178.49,Ta:180.95,W:183.84,Re:186.21,Os:190.23,Ir:192.22,Pt:195.08,Au:196.97,Hg:200.59,Tl:204.38,Pb:207.2,Bi:208.98,Po:209,At:210,Rn:222,Fr:223,Ra:226,Ac:227,Th:232.04,Pa:231.04,U:238.03,D:2.014};
+function parseFormula(str){
+  const src=String(str||"").replace(/\s+/g,"").replace(/[₀-₉]/g,d=>String(d.charCodeAt(0)-8320));if(!src)return null;
+  const raw=src.split(/[·•*.]/);const parts=[];for(let k=0;k<raw.length;k++){let x=raw[k];if(/^\d+$/.test(x)&&k+1<raw.length&&/^\d/.test(raw[k+1])){x=x+"."+raw[k+1];k++}if(x)parts.push(x)}const tot={};
+  const add=(m,k,n)=>{m[k]=(m[k]||0)+n};
+  for(const part0 of parts){let part=part0;let coef=1;const cm=part.match(/^(\d+(?:\.\d+)?)(?=[A-Z(\[])/);if(cm){coef=parseFloat(cm[1]);part=part.slice(cm[1].length)}
+    let i=0;const num_=()=>{const m=part.slice(i).match(/^\d+(?:\.\d+)?/);if(m){i+=m[0].length;return parseFloat(m[0])}return 1};
+    const group=close=>{const m={};while(i<part.length){const ch=part[i];
+        if(ch==="("||ch==="["){i++;const g=group(ch==="("?")":"]");const n=num_();for(const k in g)add(m,k,g[k]*n)}
+        else if(ch===")"||ch==="]"){if(ch!==close)throw new Error("Brackets don't match");i++;return m}
+        else if(/[A-Z]/.test(ch)){let el=ch;i++;if(i<part.length&&/[a-z]/.test(part[i])){el+=part[i];i++}if(!(el in AW))throw new Error(`Unknown element "${el}"`);add(m,el,num_())}
+        else throw new Error(`Can't read "${ch}"`)}
+      if(close)throw new Error("A bracket is not closed");return m};
+    const g=group(null);for(const k in g)add(tot,k,g[k]*coef)}
+  let mw=0;for(const k in tot)mw+=AW[k]*tot[k];return{els:tot,mw}}
+const MW_PRE=[["NaCl","NaCl"],["KCl","KCl"],["Tris","C4H11NO3"],["Tris-HCl","C4H11NO3·HCl"],["Glycine","C2H5NO2"],["SDS","C12H25NaO4S"],["EDTA·2Na·2H₂O","C10H14N2Na2O8·2H2O"],["Na₂HPO₄·7H₂O","Na2HPO4·7H2O"],["KH₂PO₄","KH2PO4"],["MgCl₂·6H₂O","MgCl2·6H2O"],["Glucose","C6H12O6"],["DTT","C4H10O2S2"]];
+$("#mw-pre").innerHTML=MW_PRE.map(([n,f])=>`<button class="btn sm ghost" data-f="${f}">${n}</button>`).join("");
+$("#mw-pre").addEventListener("click",e=>{const b=e.target.closest("button[data-f]");if(!b)return;$("#mw-f").value=b.dataset.f;mwCalc()});
+function fmtMass(g){if(!Number.isFinite(g))return"?";if(g>=1)return fmt(g,g>=100?1:3)+" g";if(g>=1e-3)return fmt(g*1e3,g>=0.1?1:2)+" mg";return fmt(g*1e6,2)+" µg"}
+function mwCalc(){const f=$("#mw-f").value,out=$("#mw-out"),mo=$("#mw-mass");let r=null;
+  try{r=parseFormula(f)}catch(e){out.innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`;mo.innerHTML="";return}
+  if(!r){out.innerHTML="Type a formula or tap one above.";mo.innerHTML="";return}
+  const order=Object.keys(r.els).sort((a,b)=>(a==="C"?-2:a==="H"?-1:0)-(b==="C"?-2:b==="H"?-1:0)||a.localeCompare(b));
+  out.innerHTML=`<span class="big">${fmt(r.mw,2)} g/mol</span><div class="res" style="margin-top:8px">${order.map(k=>`<span>${k} × ${fmt(r.els[k],r.els[k]%1?2:0)}</span><span>${fmt(AW[k]*r.els[k],2)} (${fmt(100*AW[k]*r.els[k]/r.mw,1)}%)</span>`).join("")}</div>`;
+  const c=num($("#mw-c").value),v=num($("#mw-v").value),u=$("#mw-cu").value;
+  if(!(c>0&&v>0)){mo.innerHTML="Add a concentration and volume to get how much to weigh.";return}
+  const g=u==="w"?c*v/1000:c*(+u)*(v/1000)*r.mw;const mm=u==="w"?c/r.mw*1000:null;
+  mo.innerHTML=`Weigh <span class="big">${fmtMass(g)}</span> and make up to ${fmt(v,v%1?1:0)} mL${mm!=null?` <span class="muted">(= ${fmt(mm,mm>=10?1:3)} mM)</span>`:""}`}
+["#mw-f","#mw-c","#mw-cu","#mw-v"].forEach(sel=>$(sel).addEventListener("input",mwCalc));mwCalc();
 ["#c-pct","#c-vol","#c-svol","#c-spct","#c-kitpct","#c-n","#c-dil","#c-dv","#c-c1","#c-v1","#c-c2","#c-v2"].forEach(s=>$(s).addEventListener("input",calc));
 
 /* ================= PROTEIN ASSAY (Lowry) ================= */
@@ -1931,6 +2021,107 @@ function placeOnGels(list){
   setStatus(`Sent ${placed} sample${placed===1?"":"s"}${added?`; added ${added} gel${added>1?"s":""}`:""}${skipped.length?`; ${skipped.length} moved to a free well`:""}`,!!skipped.length);
   if(skipped.length)setStatus(`Sent ${placed}; ${skipped[0]}${skipped.length>1?` (+${skipped.length-1} more)`:""}, placed in a free well`,true);
 }
+
+/* ================= DENSITOMETRY ================= */
+const Q_MACRO="// Lab Rat \u2013 lane densitometry for Fiji / ImageJ\n// 1) Open the blot image (ideally the raw 16-bit TIFF, not a JPG).\n// 2) Draw ONE rectangle over all lanes you want to measure: left edge of the\n//    first lane to right edge of the last, a little above and below the bands.\n// 3) Plugins > Macros > Run... and pick this file (or paste it into a new macro and Run).\n// Result: one value per lane (background-subtracted integrated signal),\n// copied to the clipboard. Paste it into Lab Rat > Quant under the antibody.\n\nif (nImages == 0) exit(\"Open the blot image first.\");\nif (selectionType() != 0) exit(\"Draw one rectangle that covers all lanes\\n(a little above and below the bands), then run the macro again.\");\ngetSelectionBounds(x0, y0, w, h);\n\nDialog.create(\"Lab Rat densitometry\");\nDialog.addNumber(\"Lanes inside the rectangle:\", 10);\nDialog.addChoice(\"Bands look:\", newArray(\"dark on light background\", \"light on dark background\"));\nDialog.addNumber(\"Background strip, top and bottom (px):\", 3);\nDialog.show();\nn = Dialog.getNumber();\nlook = Dialog.getChoice();\nbs = Dialog.getNumber();\nif (n < 1) exit(\"Number of lanes must be at least 1.\");\nif (2*bs >= h) exit(\"The rectangle is too low for that background strip.\");\ndark = startsWith(look, \"dark\");\n\nid = getImageID();\nlw = w / n;\nout = \"Lane\\tSignal\\n\";\nrun(\"Clear Results\");\nOverlay.remove;\nfor (i = 0; i < n; i++) {\n  lx = round(x0 + i*lw);\n  cw = round(x0 + (i+1)*lw) - lx;\n  makeRectangle(lx, y0, cw, bs);            getStatistics(a, mTop);\n  makeRectangle(lx, y0 + h - bs, cw, bs);   getStatistics(a, mBot);\n  bg = (mTop + mBot) / 2;\n  makeRectangle(lx, y0, cw, h);             getStatistics(a, mLane);\n  if (dark) sig = (bg - mLane) * cw * h;\n  else      sig = (mLane - bg) * cw * h;\n  if (sig < 0) sig = 0;\n  setResult(\"Lane\", i, i + 1);\n  setResult(\"Signal\", i, sig);\n  out = out + (i + 1) + \"\\t\" + d2s(sig, 1) + \"\\n\";\n  Overlay.addSelection(\"yellow\");\n}\nupdateResults();\nmakeRectangle(x0, y0, w, h);\nString.copy(out);\nshowMessage(\"Lab Rat\", n + \" lanes measured and copied to the clipboard.\\nPaste into Lab Rat > Quant, under the antibody.\");\n";
+function qData(){const p=S.prot;if(!p.dens)p.dens={ctrl:"",groups:{},gels:{}};const d=p.dens;d.groups=d.groups||{};d.gels=d.gels||{};return d}
+function qGels(){const gs=gelsOf(S.exp.id).filter(g=>!g.draft).map(g=>g.id===S.gel.id?S.gel:g);if(!gs.length&&S.gel)gs.push(S.gel);return gs}
+function qGuess(n){let s=String(n||"").trim();const o=s;s=s.replace(/^\d+\s*[.)\-_:]\s*/,"").replace(/[\s\-_#.]*\d+$/,"").trim();return s||o}
+function qGroup(n){const d=qData();return (d.groups[n]!=null&&d.groups[n]!=="")?d.groups[n]:qGuess(n)}
+function qParse(raw){
+  const lines=String(raw||"").split(/\r?\n/).filter(l=>l.trim());if(!lines.length)return null;
+  const split=l=>l.includes("\t")?l.split("\t").map(x=>x.trim()):l.trim().split(/\s+/);
+  let rows=lines.map(split);const isNum=x=>x!==""&&Number.isFinite(num(x))&&/^[-+]?[\d.,]+(e[-+]?\d+)?$/i.test(x);
+  let head=null;if(rows[0].some(x=>x!==""&&!isNum(x))&&rows.length>1){head=rows[0];rows=rows.slice(1)}
+  const nc=Math.max(...rows.map(r=>r.length));const cols=[];
+  for(let c=0;c<nc;c++){const v=rows.map(r=>r[c]);if(!v.every(x=>x!=null&&isNum(x)))continue;
+    const name=head?(head[c]||"").trim():"";const vals=v.map(num);
+    const idx=vals.every((x,i)=>x===i+1)&&(!name||/^(#|lane|n|row)$/i.test(name));
+    cols.push({c,name:name||(idx?"#":`Column ${c+1}`),vals,idx})}
+  const use=cols.filter(x=>!x.idx);if(!use.length)return{cols:[],err:"No numbers found"};
+  return{cols:use}}
+function qPickCol(P,want){if(!P||!P.cols.length)return null;if(want){const f=P.cols.find(x=>x.name===want);if(f)return f}
+  for(const nm of ["Signal","IntDen","RawIntDen","Area","Mean"]){const f=P.cols.find(x=>x.name.toLowerCase()===nm.toLowerCase());if(f)return f}
+  return P.cols[P.cols.length-1]}
+function qMap(g,ch){const P=qParse(ch.raw);const col=qPickCol(P,ch.col);const out={P,col,map:{},msg:"",bad:false};if(!col)return Object.assign(out,{msg:P&&P.err?P.err:"",bad:!!(P&&P.err)});
+  const v=col.vals,L=g.lanes;let wells;
+  const st=parseInt(ch.start)||0;
+  if(st>0)wells=v.map((_,i)=>st-1+i);
+  else{const smp=L.map((l,i)=>l.type==="sample"?i:-1).filter(i=>i>=0),ne=L.map((l,i)=>l.type!=="empty"?i:-1).filter(i=>i>=0);
+    wells=v.length===L.length?L.map((_,i)=>i):v.length===ne.length?ne:smp}
+  let used=0,extra=0;v.forEach((x,i)=>{const w=wells[i];if(w==null||w>=L.length){extra++;return}if(L[w].type==="sample"){out.map[w]=x;used++}});
+  const ws=Object.keys(out.map).map(Number);
+  out.msg=`${v.length} value${v.length===1?"":"s"} → ${used} sample${used===1?"":"s"}${ws.length?` (wells ${Math.min(...ws)+1}–${Math.max(...ws)+1})`:""}`;
+  if(extra){out.msg+=`; ${extra} extra skipped`;out.bad=true}
+  const nS=L.filter(l=>l.type==="sample").length;if(!st&&v.length!==nS&&v.length!==L.length&&v.length!==L.filter(l=>l.type!=="empty").length){out.msg+=`. The gel has ${nS} samples; check the order or set the first well`;out.bad=true}
+  return out}
+function qCompute(){const d=qData(),gs=qGels();const res={};const order=[];const seenG=new Set();
+  gs.forEach(g=>g.lanes.forEach(l=>{if(l.type==="sample"&&l.name){const gr=qGroup(l.name);if(!seenG.has(gr)){seenG.add(gr);order.push(gr)}}}));
+  gs.forEach(g=>{const gd=d.gels[g.id];if(!gd||!gd.ch)return;const maps={};gd.ch.forEach(c=>maps[c.id]=qMap(g,c));
+    const usedAsNorm=new Set(gd.ch.map(c=>c.norm).filter(Boolean));
+    gd.ch.forEach(c=>{if(!c.name&&!Object.keys(maps[c.id].map).length)return;if(usedAsNorm.has(c.id)&&!c.norm)return;
+      const nc=c.norm&&gd.ch.find(x=>x.id===c.norm);const label=(c.name||"Antibody").trim()+(nc?` / ${(nc.name||"normalizer").trim()}`:"");const key=label.toLowerCase();
+      if(!res[key])res[key]={label,rows:[]};
+      const rows=[];g.lanes.forEach((l,i)=>{if(l.type!=="sample")return;const a=maps[c.id].map[i];if(a==null)return;let v=a;if(nc){const b=maps[nc.id].map[i];if(!(b>0))return;v=a/b}rows.push({gel:g.name||"Gel",gid:g.id,well:i+1,name:l.name||"?",group:qGroup(l.name),raw:a,norm:v})});
+      const cm=rows.filter(r=>r.group===d.ctrl);const cmean=cm.length?cm.reduce((s,r)=>s+r.norm,0)/cm.length:NaN;
+      rows.forEach(r=>{r.rel=Number.isFinite(cmean)&&cmean>0?r.norm/cmean:NaN;r.noCtrl=!cm.length});res[key].rows.push(...rows)})});
+  Object.values(res).forEach(R=>{const pooledNoCtrl=R.rows.filter(r=>r.noCtrl);if(pooledNoCtrl.length){const cm=R.rows.filter(r=>r.group===d.ctrl&&!r.noCtrl);const m=cm.length?cm.reduce((s,r)=>s+r.norm,0)/cm.length:NaN;pooledNoCtrl.forEach(r=>r.rel=Number.isFinite(m)&&m>0?r.norm/m:NaN)}
+    R.groups=order.map(gr=>{const v=R.rows.filter(r=>r.group===gr).map(r=>r.rel).filter(Number.isFinite);const n=v.length;const m=n?v.reduce((a,b)=>a+b,0)/n:NaN;const sd=n>1?Math.sqrt(v.reduce((a,b)=>a+(b-m)**2,0)/(n-1)):NaN;return{gr,n,m,sd,sem:n>1?sd/Math.sqrt(n):NaN,v}}).filter(x=>x.n||R.rows.some(r=>r.group===x.gr))});
+  return{res:Object.values(res),order}}
+const fmtQ=v=>!Number.isFinite(v)?"—":Math.abs(v)>=1e7?v.toExponential(2):Math.abs(v)>=100?v.toFixed(0):Math.abs(v)>=1?v.toFixed(2):v.toPrecision(3);
+function renderQuant(){if(!S.prot||!$("#tab-quant"))return;const d=qData(),gs=qGels();
+  if(!S.qGel||!gs.some(g=>g.id===S.qGel))S.qGel=(gs.find(g=>g.id===S.gel.id)||gs[0]||{}).id;
+  const g=gs.find(x=>x.id===S.qGel);
+  $("#dq-gels").innerHTML=gs.length>1?gs.map(x=>`<button data-g="${esc(x.id)}" aria-pressed="${x.id===S.qGel}">${esc(x.name||"Gel")}</button>`).join(""):"";
+  if(!g){$("#dq-chs").innerHTML=`<p class="note">Plan a gel first; the measurements follow its wells.</p>`;$("#dq-lanes").innerHTML="";$("#dq-res").innerHTML="";return}
+  const gd=d.gels[g.id]||(d.gels[g.id]={ch:[]});
+  if(!gd.ch.length)gd.ch.push({id:uid(),name:"",norm:"",raw:"",col:"",start:""});
+  const maps={};gd.ch.forEach(c=>maps[c.id]=qMap(g,c));
+  $("#dq-chs").innerHTML=gd.ch.map(c=>{const m=maps[c.id];const others=gd.ch.filter(x=>x.id!==c.id);
+    return `<div class="qch" data-c="${c.id}">
+      <div class="row" style="gap:8px;align-items:flex-end;flex-wrap:wrap">
+        <label class="f" style="flex:1;min-width:140px;margin:0">Antibody<input data-k="name" type="text" value="${esc(c.name)}" placeholder="e.g. pIRS1, β-actin"></label>
+        <label class="f" style="flex:1;min-width:140px;margin:0">Normalize to<select data-k="norm"><option value="">nothing (raw)</option>${others.map(x=>`<option value="${x.id}"${x.id===c.norm?" selected":""}>${esc(x.name||"(unnamed)")}</option>`).join("")}</select></label>
+        <button class="btn sm ghost danger" data-del="1">Remove</button>
+      </div>
+      <textarea data-k="raw" placeholder="Paste the Fiji Results table here">${esc(c.raw)}</textarea>
+      <div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">
+        <span class="qst${m.bad?" bad":""}" style="flex:1;min-width:160px">${m.msg?esc(m.msg):"Nothing pasted yet"}</span>
+        ${m.P&&m.P.cols.length>1?`<label class="row" style="gap:4px;font-size:13px">Column<select data-k="col">${m.P.cols.map(x=>`<option${x===m.col?" selected":""}>${esc(x.name)}</option>`).join("")}</select></label>`:""}
+        <label class="row" style="gap:4px;font-size:13px">First well<select data-k="start"><option value="">auto</option>${g.lanes.map((_,i)=>`<option value="${i+1}"${String(i+1)===String(c.start)?" selected":""}>${i+1}</option>`).join("")}</select></label>
+      </div></div>`}).join("");
+  // groups + control
+  const C0=qCompute();if((!d.ctrl||!C0.order.includes(d.ctrl))&&C0.order.length){d.ctrl=C0.order[0];queueSave("protocols")}const C=qCompute();
+  $("#dq-ctrl").innerHTML=C.order.map(x=>`<option>${esc(x)}</option>`).join("");$("#dq-ctrl").value=d.ctrl;
+  const resHere=C.res.map(R=>({R,by:new Map(R.rows.filter(r=>r.gid===g.id).map(r=>[r.well,r]))}));
+  $("#dq-lhead").innerHTML=`<tr><th>#</th><th>Sample</th><th>Group</th>${gd.ch.map(c=>`<th>${esc(c.name||"?")}</th>`).join("")}${resHere.map(x=>`<th>${esc(x.R.label)} rel.</th>`).join("")}</tr>`;
+  $("#dq-lanes").innerHTML=g.lanes.map((l,i)=>{if(l.type!=="sample")return"";
+    return `<tr><td>${i+1}</td><td class="n">${esc(l.name||"?")}</td><td><input data-grp="${esc(l.name||"")}" value="${esc(qGroup(l.name))}"></td>${gd.ch.map(c=>`<td>${fmtQ(maps[c.id].map[i])}</td>`).join("")}${resHere.map(x=>{const r=x.by.get(i+1);return `<td><b>${r?fmtQ(r.rel):"—"}</b></td>`}).join("")}</tr>`}).join("")||`<tr><td colspan="3" class="muted" style="text-align:left">No samples on this gel.</td></tr>`;
+  // results
+  $("#dq-res").innerHTML=C.res.length?C.res.map(R=>{const mx=Math.max(...R.groups.map(x=>(x.m||0)+(x.sem||0)),1e-9);
+    const noC=R.rows.some(r=>!Number.isFinite(r.rel));
+    return `<div style="margin-top:10px"><div style="font-weight:700;margin-bottom:6px">${esc(R.label)}</div><div class="tablewrap"><table class="qtab"><thead><tr><th>Group</th><th>n</th><th>Mean</th><th>SD</th><th>SEM</th><th></th></tr></thead><tbody>${R.groups.map(x=>`<tr><td class="n">${esc(x.gr)}${x.gr===d.ctrl?' <span class="note">(control)</span>':""}</td><td>${x.n}</td><td><b>${fmtQ(x.m)}</b></td><td>${fmtQ(x.sd)}</td><td>${fmtQ(x.sem)}</td><td><div class="qbar-wrap"><div class="qbar" style="width:${Number.isFinite(x.m)?Math.max(1,100*x.m/mx):0}%"></div></div></td></tr>`).join("")}</tbody></table></div>${noC?`<div class="note" style="color:var(--warn)">Some samples have no control-group values to compare with.</div>`:""}</div>`}).join(""):`<p class="note">Results appear once you paste measurements.</p>`;
+}
+function qText(){const C=qCompute();const L=[];C.res.forEach(R=>{L.push(R.label);const gr=R.groups.map(x=>x.gr);L.push(gr.join("\t"));const mx=Math.max(0,...R.groups.map(x=>x.v.length));for(let i=0;i<mx;i++)L.push(R.groups.map(x=>x.v[i]!=null?x.v[i].toFixed(4):"").join("\t"));L.push("")});return L.join("\n")}
+$("#dq-gels").addEventListener("click",e=>{const b=e.target.closest("button[data-g]");if(!b)return;S.qGel=b.dataset.g;renderQuant()});
+$("#dq-addch").addEventListener("click",()=>{const d=qData();const gd=d.gels[S.qGel]||(d.gels[S.qGel]={ch:[]});const first=gd.ch[0];gd.ch.push({id:uid(),name:"",norm:"",raw:"",col:"",start:""});
+  queueSave("protocols");renderQuant();const t=$$("#dq-chs .qch input[data-k='name']");t.length&&t[t.length-1].focus()});
+let qT=null;
+$("#dq-chs").addEventListener("input",e=>{const box=e.target.closest(".qch");if(!box)return;const k=e.target.dataset.k;if(!k)return;const gd=qData().gels[S.qGel];const c=gd.ch.find(x=>x.id===box.dataset.c);if(!c)return;
+  c[k]=e.target.value;if(k==="raw")c.col="";queueSave("protocols");
+  if(k==="name"||k==="raw"){clearTimeout(qT);qT=setTimeout(()=>{const a=document.activeElement,sel=a&&a.dataset&&a.dataset.k,cid=a&&a.closest&&a.closest(".qch")&&a.closest(".qch").dataset.c,pos=a&&a.selectionStart;renderQuant();
+    if(sel&&cid){const n=document.querySelector(`#dq-chs .qch[data-c="${cid}"] [data-k="${sel}"]`);if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}}},k==="raw"?150:600)}
+  else renderQuant()});
+$("#dq-chs").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;const box=b.closest(".qch");
+  if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Tap again";setTimeout(()=>{b.classList.remove("armed");b.textContent="Remove"},4000);return}
+  const gd=qData().gels[S.qGel];gd.ch=gd.ch.filter(x=>x.id!==box.dataset.c);gd.ch.forEach(x=>{if(x.norm===box.dataset.c)x.norm=""});queueSave("protocols");renderQuant()});
+$("#dq-ctrl").addEventListener("input",e=>{qData().ctrl=e.target.value;queueSave("protocols");renderQuant()});
+$("#dq-lanes").addEventListener("change",e=>{const i=e.target.closest("[data-grp]");if(!i)return;const d=qData();const n=i.dataset.grp;const v=i.value.trim();if(!v||v===qGuess(n))delete d.groups[n];else d.groups[n]=v;queueSave("protocols");renderQuant()});
+$("#dq-copy").addEventListener("click",async()=>{const t=qText();const ta=$("#dq-copyarea");if(!t.trim()){setStatus("Nothing to copy yet");return}
+  try{await navigator.clipboard.writeText(t);setStatus("Copied: one column per group");ta.hidden=true}catch(e){ta.value=t;ta.hidden=false;ta.style.minHeight=(t.split("\n").length*17+20)+"px";ta.focus();ta.select();setStatus("Selected, copy manually")}});
+$("#dq-macro").value=Q_MACRO;
+$("#dq-mcopy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(Q_MACRO);setStatus("Macro copied")}catch(e){const t=$("#dq-macro");t.focus();t.select();setStatus("Selected, copy manually")}});
+$("#dq-mdl").addEventListener("click",()=>saveFile("labrat-densitometry.ijm",new Blob([Q_MACRO],{type:"text/plain"})));
 
 
 /* ================= SOLUTIONS ================= */
@@ -2520,7 +2711,7 @@ $("#note-list").addEventListener("click",async e=>{const b=e.target.closest("but
     if(f.tagName==="H2"){const w=document.createElement("div");w.className="chead";f.replaceWith(w);w.appendChild(f)}else f.classList.add("chead");
     card.classList.add("collapsible");card.dataset.ck=sec.id+"-"+(card.id||i)})})})();
 const collapsedSet=new Set(lsGet("bb.collapsed",[]));const ckUpd=new Map();
-function collapseInside(){["gel","assay","prot","qset","qres","smp","img","hist"].forEach(t=>{const sec=$("#tab-"+t);if(!sec)return;
+function collapseInside(){["gel","assay","prot","qset","qres","smp","img","quant","hist"].forEach(t=>{const sec=$("#tab-"+t);if(!sec)return;
     const cards=[...sec.querySelectorAll(".card.collapsible")];const dets=[...sec.querySelectorAll("details.card")];
     if(cards.length+dets.length<2)return;
     cards.forEach(c=>{collapsedSet.add(c.dataset.ck);const u=ckUpd.get(c.dataset.ck);u&&u()});dets.forEach(d=>d.open=false)});
