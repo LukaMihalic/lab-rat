@@ -90,6 +90,10 @@ details.card[open]>summary::after{content:"–"}
 .gelbox{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px 4px}
 .gel{--n:15;display:grid;grid-template-columns:repeat(var(--n),minmax(38px,1fr));gap:4px;background:var(--gel);border:1px solid var(--gel-edge);border-radius:6px 6px 10px 10px;padding:8px 6px 10px;min-width:calc(var(--n) * 42px)}
 .well{background:none;border:0;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--ink);font:inherit}
+.well{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.well.dragsrc{opacity:.35}
+.well.droptgt .slot,.well.droptgt .lane{outline:2px dashed var(--accent);outline-offset:2px}
+.gel.dragging{cursor:grabbing}
 .well .no{font:600 11px var(--mono);color:var(--muted)}
 .well .slot{width:100%;height:14px;border-radius:0 0 4px 4px;border:1.5px solid var(--gel-edge);border-top:0;background:var(--bg)}
 .well .lane{width:78%;height:70px;position:relative;border-radius:2px}
@@ -465,7 +469,7 @@ nav.tabs button{position:relative}
       <div class="gelbox"><div class="gel" id="gel-vis"></div></div>
       <div class="chips" id="gel-chips"></div>
       <div class="row" style="justify-content:space-between">
-        <p class="note" style="margin:0;flex:1" id="gel-hint">Tap a well to enter a sample.</p>
+        <p class="note" style="margin:0;flex:1" id="gel-hint">Tap a well to edit it. Hold and drag a well to move it.</p>
         <div class="row"><button class="btn sm ghost" id="gel-loadall" hidden>Check all</button><button class="btn sm ghost" id="gel-loadreset" hidden>Reset</button><button class="btn sm" id="gel-loadmode">Start loading</button></div>
       </div>
     </div>
@@ -832,6 +836,11 @@ nav.tabs button{position:relative}
   </div>
   <div class="calcline" id="le-calc"></div>
   <label class="f">Note<input id="le-note" type="text"></label>
+  <div class="row" id="le-moverow" style="gap:8px;align-items:flex-end;flex-wrap:wrap">
+    <label class="f" style="flex:1;min-width:150px;margin:0">Move to<select id="le-move"></select></label>
+    <button class="btn sm" id="le-movego">Move</button>
+    <button class="btn sm danger" id="le-remove">Remove from gel</button>
+  </div>
   <div class="row" style="justify-content:space-between">
     <button class="btn sm" id="le-prev">← Previous</button>
     <button class="btn sm primary" id="le-next">Next →</button>
@@ -1184,7 +1193,7 @@ function renderGel(){
   $("#gel-loadmode").textContent=S.loadMode?"Done loading":"Start loading";$("#gel-loadmode").classList.toggle("primary",!!S.loadMode);
   $("#gel-loadreset").hidden=!nLoaded;$("#gel-loadall").hidden=!S.loadMode||nLoaded===fillable.length;$("#gel-vis").closest(".card").classList.toggle("loading",!!S.loadMode);$("#gel-vis").closest(".card").classList.toggle("fs",!!S.loadMode);document.body.classList.toggle("fslock",!!S.loadMode||!!S.plFill);
   let nextVol="";if(S.loadMode&&nextIdx>=0){const nl=g.lanes[nextIdx];if(nl.type==="ladder")nextVol=fmt(num(g.ladderUl));else{const nc=laneCalc(g,nl);if(nc&&Number.isFinite(nc.s))nextVol=fmt(nc.premix?nc.load:nc.s)}}
-  $("#gel-hint").innerHTML=S.loadMode?(nextIdx<0?"All wells loaded.":`Next: well <b>${nextIdx+1}</b>${g.lanes[nextIdx].name?" · "+esc(g.lanes[nextIdx].name):""}${nextVol?` · <b>${nextVol} µL</b>`:""}<div class="note" style="font-weight:400">Tap a well when it's loaded.</div>`):"Tap a well to enter a sample.";
+  $("#gel-hint").innerHTML=S.loadMode?(nextIdx<0?"All wells loaded.":`Next: well <b>${nextIdx+1}</b>${g.lanes[nextIdx].name?" · "+esc(g.lanes[nextIdx].name):""}${nextVol?` · <b>${nextVol} µL</b>`:""}<div class="note" style="font-weight:400">Tap a well when it's loaded.</div>`):"Tap a well to edit it. Hold and drag a well to move it.";
   const vis=$("#gel-vis");vis.style.setProperty("--n",g.wells);
   let nLb=0,nS=0,nW=0,nB=0,lbTot=0,ugMin=Infinity;
   vis.innerHTML=g.lanes.map((l,i)=>{
@@ -1241,7 +1250,28 @@ function gelText(){
   return L.join("\n");
 }
 function wellTap(i){if(S.loadMode){const l=S.gel.lanes[i];if(l.type==="empty")return;l.loaded=!l.loaded;renderGel();queueSave("gels");try{navigator.vibrate&&navigator.vibrate(15)}catch(e){}}else openLane(i)}
-$("#gel-vis").addEventListener("click",e=>{const b=e.target.closest(".well");if(b)wellTap(+b.dataset.i)});
+let suppressClick=false;
+$("#gel-vis").addEventListener("click",e=>{if(suppressClick){suppressClick=false;return}const b=e.target.closest(".well");if(b)wellTap(+b.dataset.i)});
+$("#gel-vis").addEventListener("contextmenu",e=>{if(e.target.closest(".well"))e.preventDefault()});
+(function gelDrag(){const vis=$("#gel-vis");let st=null;
+  const tgtAt=(x,y)=>{const el=document.elementFromPoint(x,y);const w=el&&el.closest("#gel-vis .well");return w?+w.dataset.i:-1};
+  const clearT=()=>$$("#gel-vis .droptgt").forEach(x=>x.classList.remove("droptgt"));
+  const begin=()=>{if(!st)return;st.on=true;const w=vis.querySelector(`.well[data-i="${st.i}"]`);w&&w.classList.add("dragsrc");vis.classList.add("dragging");try{navigator.vibrate&&navigator.vibrate(20)}catch(e){}};
+  const end=commit=>{if(!st)return;clearTimeout(st.t);const s0=st;st=null;window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",cc);
+    vis.classList.remove("dragging");clearT();$$("#gel-vis .dragsrc").forEach(x=>x.classList.remove("dragsrc"));
+    if(s0.on){suppressClick=true;setTimeout(()=>suppressClick=false,120);const j=commit?tgtAt(s0.x,s0.y):-1;
+      if(j>=0&&j!==s0.i){swapLanes(s0.i,j);renderGel();setStatus(`Well ${s0.i+1} → well ${j+1}`)}}};
+  const mv=e=>{if(!st)return;const dx=e.clientX-st.x0,dy=e.clientY-st.y0;st.x=e.clientX;st.y=e.clientY;
+    if(!st.on){if(Math.hypot(dx,dy)>8){if(st.mouse)begin();else{end(false);return}}else return}
+    clearT();const j=tgtAt(e.clientX,e.clientY);if(j>=0&&j!==st.i){const w=vis.querySelector(`.well[data-i="${j}"]`);w&&w.classList.add("droptgt")}
+    const box=vis.parentElement.getBoundingClientRect();if(e.clientX<box.left+30)vis.parentElement.scrollLeft-=10;else if(e.clientX>box.right-30)vis.parentElement.scrollLeft+=10};
+  const up=()=>end(true),cc=()=>end(false);
+  vis.addEventListener("pointerdown",e=>{if(S.loadMode||e.button>0)return;const w=e.target.closest(".well");if(!w)return;const i=+w.dataset.i;if(S.gel.lanes[i].type==="empty")return;
+    st={i,x0:e.clientX,y0:e.clientY,x:e.clientX,y:e.clientY,on:false,mouse:e.pointerType==="mouse"};
+    if(!st.mouse)st.t=setTimeout(begin,350);
+    window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);window.addEventListener("pointercancel",cc)});
+  vis.addEventListener("touchmove",e=>{if(st&&st.on)e.preventDefault()},{passive:false});
+})();
 async function fsOn(){try{const el=document.documentElement;if(!document.fullscreenElement&&el.requestFullscreen)await el.requestFullscreen()}catch(e){}try{screen.orientation&&screen.orientation.lock&&await screen.orientation.lock("landscape")}catch(e){}}
 function fsOff(){try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}catch(e){}try{document.fullscreenElement&&document.exitFullscreen&&document.exitFullscreen()}catch(e){}}
 $("#gel-loadmode").addEventListener("click",()=>{S.loadMode=!S.loadMode;if(S.loadMode&&collapsedSet.has("vis")){collapsedSet.delete("vis");lsSet("bb.collapsed",[...collapsedSet]);$('[data-ck="vis"]').classList.remove("collapsed")}renderGel();if(S.loadMode){fsOn();wakeOn()}else{fsOff();wakeOff()}});
@@ -1291,9 +1321,21 @@ function fillLane(){
   $("#le-name").value=l.name||"";$("#le-conc").value=l.conc||"";$("#le-ug").value=l.ug||"";$("#le-note").value=l.note||"";
   $("#le-ug").placeholder=`${S.gel.targetUg} (gel default)`;
   $("#le-samplefields").hidden=l.type!=="sample";$("#le-name").disabled=l.type==="empty";
+  fillMove();
   $("#le-prev").disabled=S.lane===0;$("#le-next").textContent=S.lane===S.gel.lanes.length-1?"Done":"Next →";
   renderLaneCalc();
 }
+function fillMove(){const l=S.gel.lanes[S.lane];const row=$("#le-moverow");row.hidden=l.type==="empty";if(row.hidden)return;
+  const gs=gelsOf(S.exp.id).filter(g=>!g.draft).map(g=>g.id===S.gel.id?S.gel:g);if(!gs.some(g=>g.id===S.gel.id))gs.unshift(S.gel);
+  const lab=x=>x.type==="empty"?"empty":x.type==="ladder"?"ladder":(x.name||"sample");
+  $("#le-move").innerHTML=gs.map(g=>`<optgroup label="${esc(g.name||"Gel")}">${g.lanes.map((x,i)=>g.id===S.gel.id&&i===S.lane?"":`<option value="${g.id}|${i}">${gs.length>1?esc(g.name||"Gel")+" · ":""}well ${i+1} (${esc(lab(x))}${x.type!=="empty"?", swap":""})</option>`).join("")}</optgroup>`).join("");
+  const firstFree=S.gel.lanes.findIndex((x,i)=>i!==S.lane&&x.type==="empty");if(firstFree>=0)$("#le-move").value=S.gel.id+"|"+firstFree}
+function swapLanes(i,j){const L=S.gel.lanes;[L[i],L[j]]=[L[j],L[i]];queueSave("gels")}
+$("#le-movego").addEventListener("click",()=>{const v=$("#le-move").value;if(!v)return;const [gid,js]=v.split("|"),j=+js,i=S.lane;
+  if(gid===S.gel.id){swapLanes(i,j);S.lane=j;fillLane();renderGel();setStatus(`Moved to well ${j+1}`);return}
+  const og=clone(Store.data.gels[gid]);if(!og)return;const a=S.gel.lanes[i];S.gel.lanes[i]=og.lanes[j];og.lanes[j]=a;
+  Store.save("gels",og);queueSave("gels");flushGel();closeLane();setStatus(`Moved to ${og.name||"gel"}, well ${j+1}`)});
+$("#le-remove").addEventListener("click",()=>{S.gel.lanes[S.lane]=blankLane();fillLane();renderGel();queueSave("gels");setStatus(`Well ${S.lane+1} cleared`)});
 function renderLaneCalc(){
   const g=S.gel,l=g.lanes[S.lane];const el=$("#le-calc");
   if(l.type==="ladder"){el.hidden=false;el.innerHTML=`Load <b class="num">${fmt(num(g.ladderUl))} µL</b> ladder.`;return}
