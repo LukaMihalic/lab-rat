@@ -837,8 +837,9 @@ nav.tabs button{position:relative}
   <div class="calcline" id="le-calc"></div>
   <label class="f">Note<input id="le-note" type="text"></label>
   <div class="row" id="le-moverow" style="gap:8px;align-items:flex-end;flex-wrap:wrap">
-    <label class="f" style="flex:1;min-width:150px;margin:0">Move to<select id="le-move"></select></label>
+    <label class="f" style="flex:1;min-width:150px;margin:0">Target well<select id="le-move"></select></label>
     <button class="btn sm" id="le-movego">Move</button>
+    <button class="btn sm" id="le-dup">Duplicate</button>
     <button class="btn sm danger" id="le-remove">Remove from gel</button>
   </div>
   <div class="row" style="justify-content:space-between">
@@ -1335,6 +1336,13 @@ $("#le-movego").addEventListener("click",()=>{const v=$("#le-move").value;if(!v)
   if(gid===S.gel.id){swapLanes(i,j);S.lane=j;fillLane();renderGel();setStatus(`Moved to well ${j+1}`);return}
   const og=clone(Store.data.gels[gid]);if(!og)return;const a=S.gel.lanes[i];S.gel.lanes[i]=og.lanes[j];og.lanes[j]=a;
   Store.save("gels",og);queueSave("gels");flushGel();closeLane();setStatus(`Moved to ${og.name||"gel"}, well ${j+1}`)});
+$("#le-dup").addEventListener("click",()=>{const v=$("#le-move").value;if(!v)return;const [gid,js]=v.split("|"),j=+js,i=S.lane;
+  const src=S.gel.lanes[i];const cp=Object.assign(clone(src),{loaded:false,note:[src.note,`repeat of well ${i+1}`].filter(Boolean).join("; ")});
+  const tg=gid===S.gel.id?S.gel:clone(Store.data.gels[gid]);if(!tg)return;
+  if(tg.lanes[j].type!=="empty"){setStatus(`Well ${j+1} is taken, pick an empty well`,false);return}
+  tg.lanes[j]=cp;
+  if(tg===S.gel){queueSave("gels");renderGel();fillMove();setStatus(`Duplicated to well ${j+1}`)}
+  else{Store.save("gels",tg);fillMove();setStatus(`Duplicated to ${tg.name||"gel"}, well ${j+1}`)}});
 $("#le-remove").addEventListener("click",()=>{S.gel.lanes[S.lane]=blankLane();fillLane();renderGel();queueSave("gels");setStatus(`Well ${S.lane+1} cleared`)});
 function renderLaneCalc(){
   const g=S.gel,l=g.lanes[S.lane];const el=$("#le-calc");
