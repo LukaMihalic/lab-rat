@@ -317,7 +317,9 @@ table.xl td.o.amt{color:var(--accent);font-size:14px}
 .plate .hd{font:600 11px var(--mono);color:var(--muted);display:grid;place-items:center;background:none;border:0;cursor:pointer;padding:0}
 .plate .hd:hover{color:var(--accent)}
 .pw{aspect-ratio:1;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;padding:0;display:grid;place-items:center;font:600 8.5px var(--sans);color:#fff;overflow:hidden;position:relative;min-width:0}
-.pw span{max-width:92%;overflow:hidden;white-space:nowrap;text-overflow:clip;text-shadow:0 0 2px rgba(0,0,0,.45)}
+.pw{container-type:inline-size}
+.pw span{max-width:84%;max-height:84%;overflow:hidden;white-space:normal;overflow-wrap:anywhere;line-height:1.05;text-align:center;text-shadow:0 0 2px rgba(0,0,0,.5);font-size:8px;font-size:var(--fs,20cqw);letter-spacing:-.02em}
+.plate.big{grid-template-columns:22px repeat(var(--c),minmax(60px,1fr));min-width:calc(var(--c) * 66px + 34px)}
 .pw.set{border-color:transparent}
 .pw.sel{outline:2.5px solid var(--ink);outline-offset:1px}
 .plate{position:relative;-webkit-touch-callout:none}
@@ -561,7 +563,7 @@ nav.tabs button{position:relative}
       <div class="row chead" style="justify-content:space-between"><h2>Plate layout</h2></div>
       <div class="row" style="justify-content:space-between">
         <label class="f" style="flex-direction:row;align-items:center;gap:8px">Plate<select id="pl-fmt" style="width:auto"><option value="96">96 wells</option><option value="48">48 wells</option><option value="24">24 wells</option><option value="12">12 wells</option></select></label>
-        <div class="row"><button class="btn sm ghost" id="pl-auto">Fill from tables</button><button class="btn sm ghost danger" id="pl-clear">Clear plate</button></div>
+        <div class="row"><button class="btn sm ghost" id="pl-big">Bigger wells</button><button class="btn sm ghost" id="pl-auto">Fill from tables</button><button class="btn sm ghost danger" id="pl-clear">Clear plate</button></div>
       </div>
       <p class="note" style="margin:0" id="pl-hint">Tap wells to select them (tap a row letter or column number to select the whole line), then give them a name and colour.</p>
       <div class="platebox"><div class="plate" id="pl-grid"></div></div>
@@ -2570,15 +2572,19 @@ const PL_COL=["#2F6FD8","#D6452F","#2E9C5A","#8A4BD1","#E08A1E","#1C9AA8","#D149
 function plate(){const A=S.plateCtx==="qpcr"?Q():S.assay;if(!A.plate||typeof A.plate!=="object")A.plate={fmt:"96",w:{}};if(!A.plate.w)A.plate.w={};return A.plate}
 function plIds(){const [R,C]=PL_FMT[plate().fmt]||PL_FMT["96"];const ids=[];for(let r=0;r<R;r++)for(let c=1;c<=C;c++)ids.push(String.fromCharCode(65+r)+c);return ids}
 S.plSel=new Set();S.plFill=false;
+function plToks(l){return String(l||"").split(/(?<=[-+_/ ])/).filter(Boolean)}
+function plBreak(l){return plToks(l).map(esc).join("<wbr>")}
+function plFs(l){const t=plToks(l);if(!t.length)return 20;const mx=Math.max(...t.map(x=>x.trim().length));let lines=0,cur=0;const cap=Math.max(mx,6);t.forEach(x=>{if(cur&&cur+x.length>cap){lines++;cur=0}cur+=x.length});lines++;
+  return Math.max(11,Math.min(26,76/(cap*0.62),74/(lines*1.12))).toFixed(1)}
 function renderPlate(){
   if(!S.assay)return;const P=plate();const [R,C]=PL_FMT[P.fmt]||PL_FMT["96"];$("#pl-fmt").value=P.fmt;
   const ids=plIds();const used=ids.filter(id=>P.w[id]&&(P.w[id].label||P.w[id].color));
   const next=S.plFill?used.find(id=>!P.w[id].filled):null;
-  const g=$("#pl-grid");g.style.setProperty("--c",C);
+  const g=$("#pl-grid");g.style.setProperty("--c",C);g.classList.toggle("big",!!lsGet("bb.plbig",false)&&!S.plFill);$("#pl-big").textContent=lsGet("bb.plbig",false)?"Smaller wells":"Bigger wells";
   let h=`<span></span>`;for(let c=1;c<=C;c++)h+=`<button class="hd" data-col="${c}">${c}</button>`;
   for(let r=0;r<R;r++){const L=String.fromCharCode(65+r);h+=`<button class="hd" data-row="${L}">${L}</button>`;
     for(let c=1;c<=C;c++){const id=L+c,w=P.w[id]||{};const set=!!(w.label||w.color);
-      h+=`<button class="pw${set?" set":""}${S.plSel.has(id)?" sel":""}${w.filled&&set?" filled":""}${id===next?" next":""}" data-w="${id}" title="${id}${w.label?": "+esc(w.label):""}" style="${w.color?`background:${w.color}`:set?"background:var(--muted)":""}"><span>${esc((w.label||"").slice(0,5))}</span></button>`}}
+      h+=`<button class="pw${set?" set":""}${S.plSel.has(id)?" sel":""}${w.filled&&set?" filled":""}${id===next?" next":""}" data-w="${id}" title="${id}${w.label?": "+esc(w.label):""}" style="${w.color?`background:${w.color}`:set?"background:var(--muted)":""}"><span style="--fs:${plFs(w.label)}cqw">${plBreak(w.label)}</span></button>`}}
   g.innerHTML=h;
   // legend
   const groups={};used.forEach(id=>{const w=P.w[id];const k=(w.color||"")+"|"+(w.label||"");(groups[k]=groups[k]||{c:w.color,l:w.label,n:0}).n++});
@@ -2597,6 +2603,7 @@ function renderPlate(){
   $("#pl-hint").innerHTML=S.plFill?(next?`Next: <b>${next}</b>${P.w[next].label?" · "+esc(P.w[next].label):""}. Tap a well when it's filled.`:used.length?"All wells filled.":"Name some wells first."):"Tap wells to select them, or drag a box over several (on a phone: hold, then drag). A row letter or column number selects the whole line. Then give them a name and colour.";
   const card=$("#plate-card");card.classList.toggle("fs",S.plFill);card.classList.toggle("loading",S.plFill);document.body.classList.toggle("fslock",S.plFill||!!S.loadMode);
 }
+$("#pl-big").addEventListener("click",()=>{lsSet("bb.plbig",!lsGet("bb.plbig",false));renderPlate()});
 function plSave(){renderPlate();queueSave(S.plateCtx==="qpcr"?"protocols":"assays")}
 let plSuppress=false;
 function plRect(a,b){const r1=a.charCodeAt(0),r2=b.charCodeAt(0),c1=+a.slice(1),c2=+b.slice(1);return plIds().filter(id=>{const r=id.charCodeAt(0),c=+id.slice(1);return r>=Math.min(r1,r2)&&r<=Math.max(r1,r2)&&c>=Math.min(c1,c2)&&c<=Math.max(c1,c2)})}
