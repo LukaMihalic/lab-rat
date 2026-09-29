@@ -1597,26 +1597,29 @@ function catOfExp(p){if(p.cat)return p.cat;if(p.method==="custom"&&/lysate|homog
 const pj=p=>(p.group||"").trim(),pf=p=>(p.folder||"").trim();
 function hNav(){const n=lsGet("bb.hnav",null);return n&&typeof n==="object"?n:{p:null,f:null}}
 function setNav(n){lsSet("bb.hnav",n);$("#home-mk").hidden=true;renderHome();window.scrollTo(0,0)}
-function inNav(p,n){if(n.p==null)return true;if(n.p==="__none")return !pj(p);if(pj(p)!==n.p)return false;return n.f==null?!pf(p):pf(p)===n.f}
+function inNav(p,n){if(n.p==null)return true;if(n.p==="__none")return !pj(p);if(pj(p)!==n.p)return false;return pf(p)===(n.f||"")}
+const under=(path,f)=>!f||path===f||path.startsWith(f+"/");
+const showPath=x=>String(x||"").split("/").join(" › ");
+function childFolders(every,proj,f){const out=new Set();every.forEach(p=>{if(pj(p)!==proj)return;const path=pf(p);if(!path||!under(path,f)||path===f)return;const rest=f?path.slice(f.length+1):path;out.add(rest.split("/")[0])});return [...out].filter(Boolean).sort((a,b)=>a.localeCompare(b))}
 function renderHome(){
   const every=protList();let n=hNav();const q=($("#home-q").value||"").trim().toLowerCase();
   const projects=[...new Set(every.map(pj).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   if(n.p&&n.p!=="__none"&&!projects.includes(n.p))n={p:null,f:null};
   if(n.p==="__none"&&!every.some(p=>!pj(p)))n={p:null,f:null};
-  const folders=n.p&&n.p!=="__none"?[...new Set(every.filter(p=>pj(p)===n.p).map(pf).filter(Boolean))].sort((a,b)=>a.localeCompare(b)):[];
-  if(n.f!=null&&!folders.includes(n.f))n={p:n.p,f:null};
+  if(n.f!=null&&!every.some(p=>pj(p)===n.p&&under(pf(p),n.f)))n={p:n.p,f:null};
+  const folders=n.p&&n.p!=="__none"?childFolders(every,n.p,n.f):[];
   $("#p-groups").innerHTML=projects.map(g=>`<option value="${esc(g)}"></option>`).join("");
   // crumbs
   const cr=[];if(q)cr.push(`<b>Search</b>`);
   else{cr.push(n.p==null?`<b>Projects</b>`:`<button data-nav="root">Projects</button>`);
     if(n.p!=null){cr.push("›");const pn=n.p==="__none"?"No project":n.p;cr.push(n.f==null?`<b>${esc(pn)}</b>`:`<button data-nav="proj">${esc(pn)}</button>`)}
-    if(n.f!=null){cr.push("›");cr.push(`<b>${esc(n.f)}</b>`)}}
+    if(n.f!=null){const segs=n.f.split("/");segs.forEach((sg,i)=>{cr.push("›");cr.push(i===segs.length-1?`<b>${esc(sg)}</b>`:`<button data-nav="f" data-path="${esc(segs.slice(0,i+1).join("/"))}">${esc(sg)}</button>`)})}}
   $("#home-crumbs").innerHTML=cr.join(" ");
   const cnt=L=>{const a=L.filter(p=>!expDone(p)).length;return `${L.length} experiment${L.length===1?"":"s"}${a?` · ${a} in progress`:""}`};
   const tile=(label,nav,L,none)=>`<button class="ftile${none?" none":""}" data-go='${esc(JSON.stringify(nav))}'><span class="ic"></span><span class="tx"><b lang="en">${esc(label)}</b><span>${cnt(L)}</span></span></button>`;
   let tiles="";
   if(!q&&n.p==null){tiles=projects.map(g=>tile(g,{p:g,f:null},every.filter(p=>pj(p)===g))).join("");const nn=every.filter(p=>!pj(p));if(nn.length)tiles+=tile("No project",{p:"__none",f:null},nn,true)}
-  else if(!q&&n.p!=null&&n.f==null&&n.p!=="__none")tiles=folders.map(f=>tile(f,{p:n.p,f},every.filter(p=>pj(p)===n.p&&pf(p)===f))).join("");
+  else if(!q&&n.p!=null&&n.p!=="__none")tiles=folders.map(f=>{const path=(n.f?n.f+"/":"")+f;return tile(f,{p:n.p,f:path},every.filter(p=>pj(p)===n.p&&under(pf(p),path)))}).join("");
   $("#home-folders").innerHTML=tiles;
   // list
   let base=q?every.filter(p=>[p.name,p.group,p.folder,methodLabel(p),p.notes].join(" ").toLowerCase().includes(q)):n.p==null?every:every.filter(p=>inNav(p,n));
@@ -1630,21 +1633,21 @@ function renderHome(){
   if(root)L=L.slice(0,5);
   $("#home-filter").hidden=root;$("#home-sort").hidden=root;
   const card=p=>{const nG=Object.values(Store.data.experiments).filter(x=>x.protoId===p.id).reduce((n,x)=>n+gelsOf(x.id).filter(g=>!g.draft).length,0),nA=Object.values(Store.data.assays).filter(x=>x.protoId===p.id).length;
-    const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const where=[pj(p),pf(p)].filter(Boolean).join(" › ");
+    const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const where=[pj(p),showPath(pf(p))].filter(Boolean).join(" › ");
     return `<div class="pcard"><button class="pmain" data-p="${esc(p.id)}"><span class="t">${esc(p.name||"Untitled")}</span><span class="m"><span class="tag ${expDone(p)?"done":"act"}">${expDone(p)?"Done":"In progress"}</span><span class="tag">${esc(methodLabel(p))}</span>${(q||root)&&where?`<span class="tag" style="background:var(--surface-2);color:var(--ink)">${esc(where)}</span>`:""}Started ${p.created?new Date(p.created).toLocaleDateString("en-GB"):"—"}${expDone(p)&&p.completed?` · finished ${new Date(p.completed).toLocaleDateString("en-GB")}`:""}</span><span class="m">${steps.length?`${dn}/${steps.length} steps`:"no steps"}${nA?` · ${nA} protein assay${nA>1?"s":""}`:""}${nG?` · ${nG} gel${nG>1?"s":""}`:""}</span></button><button class="pcopy" data-copy="${esc(p.id)}">Copy</button><button class="pdel" data-del="${esc(p.id)}">Delete</button></div>`};
-  const lh=$("#home-lhead");lh.hidden=!(root&&L.length)&&!(n.f==null&&n.p!=null&&n.p!=="__none"&&folders.length&&L.length&&!q);
-  lh.innerHTML=root?`<span>Recently used</span><span></span>`:`<span>Not in a folder</span><span>${L.length}</span>`;
+  const lh=$("#home-lhead");lh.hidden=!(root&&L.length)&&!(n.p!=null&&n.p!=="__none"&&folders.length&&L.length&&!q);
+  lh.innerHTML=root?`<span>Recently used</span><span></span>`:`<span>${n.f?"In this folder":"Not in a folder"}</span><span>${L.length}</span>`;
   $("#home-list").innerHTML=L.length?L.map(card).join(""):(tiles&&!q?"":`<div class="card"><p class="note" style="margin:0">${q?"No experiments match your search.":every.length?(base.length?"No experiments match this filter.":"Nothing here yet."):"No experiments yet. Tap <b>+ New experiment</b> and pick a method."}</p></div>`);
   // actions
   let acts="";
   if(!q){if(n.p==null)acts=`<button class="btn sm" data-act="newproj">+ Project</button>`;
     else if(n.f==null&&n.p!=="__none")acts=`<button class="btn sm" data-act="newfolder">+ Folder</button><button class="btn sm ghost" data-act="add">Add experiments</button><button class="btn sm ghost" data-act="renproj">Rename</button>`;
-    else if(n.f!=null)acts=`<button class="btn sm ghost" data-act="add">Add experiments</button><button class="btn sm ghost" data-act="renfolder">Rename</button><button class="btn sm ghost danger" data-act="rmfolder">Remove folder</button>`}
+    else if(n.f!=null)acts=`<button class="btn sm" data-act="newfolder">+ Folder</button><button class="btn sm ghost" data-act="add">Add experiments</button><button class="btn sm ghost" data-act="renfolder">Rename</button><button class="btn sm ghost danger" data-act="rmfolder">Remove folder</button>`}
   $("#home-acts").innerHTML=acts;
   renderTplList();
 }
 function renderTplList(){
-  const n=hNav();$("#tpl-where").textContent=n.p&&n.p!=="__none"?`It will go into ${n.p}${n.f?" › "+n.f:""}.`:"";
+  const n=hNav();$("#tpl-where").textContent=n.p&&n.p!=="__none"?`It will go into ${n.p}${n.f?" › "+showPath(n.f):""}.`:"";
   const q=($("#tpl-q").value||"").trim().toLowerCase();const mine=protList();
   const tb=([k,T])=>`<button class="tpl" data-tpl="${k}"><b>${esc(k==="custom"?"Blank experiment":T.name)}</b><span>${esc(T.desc)}</span></button>`;
   const eb=t=>`<button class="tpl" data-ce="${esc(t.id)}"><b>${esc(t.name)}</b><span>${esc(methodLabel(t))} · ${(t.steps||[]).length} steps${t.group?" · "+esc([pj(t),pf(t)].filter(Boolean).join(" › ")):""}</span></button>`;
@@ -1661,19 +1664,19 @@ function renderTplList(){
 $("#tpl-list").addEventListener("toggle",e=>{const d=e.target;if(!d.classList||!d.classList.contains("tcat"))return;if(d.open){S.tplOpen=d.dataset.cat;$$("#tpl-list .tcat").forEach(x=>{if(x!==d)x.open=false})}else if(S.tplOpen===d.dataset.cat)S.tplOpen=""},true);
 $("#tpl-q").addEventListener("input",renderTplList);
 $("#home-q").addEventListener("input",()=>{renderHome()});
-$("#home-crumbs").addEventListener("click",e=>{const b=e.target.closest("[data-nav]");if(!b)return;$("#home-q").value="";const n=hNav();setNav(b.dataset.nav==="root"?{p:null,f:null}:{p:n.p,f:null})});
+$("#home-crumbs").addEventListener("click",e=>{const b=e.target.closest("[data-nav]");if(!b)return;$("#home-q").value="";const n=hNav();setNav(b.dataset.nav==="root"?{p:null,f:null}:b.dataset.nav==="f"?{p:n.p,f:b.dataset.path}:{p:n.p,f:null})});
 $("#home-folders").addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(!b)return;try{setNav(JSON.parse(b.dataset.go))}catch(_){}});
 // drag experiments into folders
 (function expDrag(){const list=$("#home-list");let st=null,sup=false;const ghost=document.createElement("div");ghost.className="dragghost";
   const target=(x,y)=>{const el=document.elementFromPoint(x,y);return el&&(el.closest("#home-folders .ftile[data-go]")||el.closest("#home-crumbs button[data-nav]"))};
-  const navOf=t=>{if(t.dataset.go){try{return JSON.parse(t.dataset.go)}catch(_){return null}}const n=hNav();return t.dataset.nav==="root"?{p:"__none",f:null}:{p:n.p,f:null}};
+  const navOf=t=>{if(t.dataset.go){try{return JSON.parse(t.dataset.go)}catch(_){return null}}const n=hNav();return t.dataset.nav==="root"?{p:"__none",f:null}:t.dataset.nav==="f"?{p:n.p,f:t.dataset.path}:{p:n.p,f:null}};
   const clearT=()=>$$("#home-folders .drop,#home-crumbs .drop").forEach(x=>x.classList.remove("drop"));
   const begin=()=>{if(!st)return;st.on=true;const p=Store.data.protocols[st.id];ghost.textContent=p?p.name||"Untitled":"";document.body.appendChild(ghost);st.card.classList.add("dragsrc");document.body.classList.add("dragging-exp");Object.assign(ghost.style,{left:st.x+"px",top:st.y+"px"});try{navigator.vibrate&&navigator.vibrate(20)}catch(_){}};
   const end=commit=>{if(!st)return;clearTimeout(st.t);const s0=st;st=null;window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",cc);
     ghost.remove();clearT();s0.card.classList.remove("dragsrc");document.body.classList.remove("dragging-exp");
     if(!s0.on)return;sup=true;setTimeout(()=>sup=false,150);if(!commit)return;const t=target(s0.x,s0.y);if(!t)return;const nv=navOf(t);const p=Store.data.protocols[s0.id];if(!nv||!p)return;
     const c=clone(p);if(nv.p==="__none"){c.group="";c.folder=""}else{c.group=nv.p;c.folder=nv.f||""}
-    if(pj(c)===pj(p)&&pf(c)===pf(p))return;Store.save("protocols",c);renderHome();setStatus(`Moved to ${nv.p==="__none"?"No project":nv.p+(nv.f?" › "+nv.f:"")}`)};
+    if(pj(c)===pj(p)&&pf(c)===pf(p))return;Store.save("protocols",c);renderHome();setStatus(`Moved to ${nv.p==="__none"?"No project":nv.p+(nv.f?" › "+showPath(nv.f):"")}`)};
   const mv=e=>{if(!st)return;st.x=e.clientX;st.y=e.clientY;const d=Math.hypot(e.clientX-st.x0,e.clientY-st.y0);
     if(!st.on){if(d>8){if(st.mouse)begin();else{end(false);return}}else return}
     Object.assign(ghost.style,{left:e.clientX+"px",top:e.clientY+"px"});clearT();const t=target(e.clientX,e.clientY);if(t)t.classList.add("drop");
@@ -1690,32 +1693,32 @@ $("#home-folders").addEventListener("click",e=>{const b=e.target.closest("[data-
 // make / rename / add panel
 let MK=null;
 function openMk(mode){const n=hNav();const every=protList();MK={mode,n};const pnl=$("#home-mk");
-  const T={newproj:"New project",newfolder:`New folder in ${n.p}`,add:`Add experiments to ${n.f!=null?n.f:n.p}`,renproj:`Rename project ${n.p}`,renfolder:`Rename folder ${n.f}`}[mode];
+  const T={newproj:"New project",newfolder:`New folder in ${n.f?showPath(n.f):n.p}`,add:`Add experiments to ${n.f!=null?showPath(n.f):n.p}`,renproj:`Rename project ${n.p}`,renfolder:`Rename folder ${n.f?n.f.split("/").pop():""}`}[mode];
   $("#mk-title").textContent=T;$("#mk-msg").textContent="";
-  const naming=mode!=="add";$("#mk-name-w").hidden=!naming;$("#mk-name").value=mode==="renproj"?n.p:mode==="renfolder"?n.f:"";
+  const naming=mode!=="add";$("#mk-name-w").hidden=!naming;$("#mk-name").value=mode==="renproj"?n.p:mode==="renfolder"?n.f.split("/").pop():"";
   const picking=mode==="newproj"||mode==="newfolder"||mode==="add";$("#mk-pick-w").hidden=!picking;
   $("#mk-ok").textContent=mode==="add"?"Move here":mode.startsWith("ren")?"Rename":"Create";
   if(picking){let cand=every;if(mode==="newfolder"||(mode==="add"&&n.f!=null))cand=every.filter(p=>pj(p)===n.p&&!(mode==="add"&&pf(p)===n.f));
     else if(mode==="add")cand=every.filter(p=>pj(p)!==n.p);
     $("#mk-pick-note").textContent=mode==="newfolder"?"Pick experiments from this project to put in it (empty folders aren't kept):":mode==="newproj"?"Pick the experiments for this project (empty projects aren't kept):":"Pick the experiments to move here:";
     cand.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
-    $("#mk-list").innerHTML=cand.length?cand.map(p=>`<label><input type="checkbox" value="${esc(p.id)}"><span>${esc(p.name||"Untitled")}</span><span class="w">${esc([pj(p),pf(p)].filter(Boolean).join(" › ")||"no project")}</span></label>`).join(""):`<p class="note" style="margin:4px">No other experiments to move.</p>`}
+    $("#mk-list").innerHTML=cand.length?cand.map(p=>`<label><input type="checkbox" value="${esc(p.id)}"><span>${esc(p.name||"Untitled")}</span><span class="w">${esc([pj(p),showPath(pf(p))].filter(Boolean).join(" › ")||"no project")}</span></label>`).join(""):`<p class="note" style="margin:4px">No other experiments to move.</p>`}
   pnl.hidden=false;pnl.scrollIntoView({block:"nearest"});if(naming){$("#mk-name").focus();$("#mk-name").select()}}
 $("#home-acts").addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b)return;const a=b.dataset.act,n=hNav();
-  if(a==="rmfolder"){if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Tap again: experiments go up to the project";setTimeout(()=>{b.classList.remove("armed");b.textContent="Remove folder"},4000);return}
-    protList().filter(p=>pj(p)===n.p&&pf(p)===n.f).forEach(p=>{const c=clone(p);c.folder="";Store.save("protocols",c)});setNav({p:n.p,f:null});setStatus("Folder removed");return}
+  if(a==="rmfolder"){if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Tap again: contents move up one level";setTimeout(()=>{b.classList.remove("armed");b.textContent="Remove folder"},4000);return}
+    const par=n.f.split("/").slice(0,-1).join("/");protList().filter(p=>pj(p)===n.p&&under(pf(p),n.f)).forEach(p=>{const c=clone(p);c.folder=(par+pf(p).slice(n.f.length)).replace(/^\//,"");Store.save("protocols",c)});setNav({p:n.p,f:par||null});setStatus("Folder removed");return}
   openMk(a)});
 $("#mk-cancel").addEventListener("click",()=>{$("#home-mk").hidden=true;MK=null});
 $("#mk-name").addEventListener("keydown",e=>{if(e.key==="Enter")$("#mk-ok").click()});
-$("#mk-ok").addEventListener("click",()=>{if(!MK)return;const {mode,n}=MK;const name=$("#mk-name").value.trim();const ids=$$("#mk-list input:checked").map(i=>i.value);const msg=t=>{$("#mk-msg").textContent=t};
+$("#mk-ok").addEventListener("click",()=>{if(!MK)return;const {mode,n}=MK;const name=$("#mk-name").value.trim().replace(/\//g,"-");const ids=$$("#mk-list input:checked").map(i=>i.value);const msg=t=>{$("#mk-msg").textContent=t};
   if(mode!=="add"&&!name){msg("Type a name");return}
   if((mode==="newproj"||mode==="newfolder"||mode==="add")&&!ids.length){msg("Pick at least one experiment");return}
   const upd=(p,f)=>{const c=clone(p);f(c);Store.save("protocols",c)};const every=protList();
   if(mode==="newproj"){every.filter(p=>ids.includes(p.id)).forEach(p=>upd(p,c=>{c.group=name;c.folder=""}));setNav({p:name,f:null})}
-  else if(mode==="newfolder"){every.filter(p=>ids.includes(p.id)).forEach(p=>upd(p,c=>{c.folder=name}));setNav({p:n.p,f:name})}
+  else if(mode==="newfolder"){const path=(n.f?n.f+"/":"")+name;every.filter(p=>ids.includes(p.id)).forEach(p=>upd(p,c=>{c.folder=path}));setNav({p:n.p,f:path})}
   else if(mode==="add"){every.filter(p=>ids.includes(p.id)).forEach(p=>upd(p,c=>{if(n.p==="__none"){c.group="";c.folder=""}else{c.group=n.p;c.folder=n.f||""}}));setNav(n)}
   else if(mode==="renproj"){every.filter(p=>pj(p)===n.p).forEach(p=>upd(p,c=>{c.group=name}));setNav({p:name,f:null})}
-  else if(mode==="renfolder"){every.filter(p=>pj(p)===n.p&&pf(p)===n.f).forEach(p=>upd(p,c=>{c.folder=name}));setNav({p:n.p,f:name})}
+  else if(mode==="renfolder"){const par=n.f.split("/").slice(0,-1).join("/");const np=(par?par+"/":"")+name;every.filter(p=>pj(p)===n.p&&under(pf(p),n.f)).forEach(p=>upd(p,c=>{c.folder=np+pf(p).slice(n.f.length)}));setNav({p:n.p,f:np})}
   MK=null;setStatus("Saved")});
 function tplList(){return Object.values(Store.data.templates).sort((a,b)=>String(a.name).localeCompare(String(b.name)))}
 function freshSteps(steps){return (steps||[]).map(x=>Object.assign({},x,{id:uid()+Math.random().toString(36).slice(2,5)}))}
