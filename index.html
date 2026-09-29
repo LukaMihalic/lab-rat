@@ -262,6 +262,36 @@ table.xl tr.dup input.wl,table.xl tr.dup select.gs{border-color:var(--bad)}
 .ptabs button{flex:1;background:none;border:0;border-radius:8px;padding:8px 10px;font:600 13.5px var(--sans);color:var(--muted);cursor:pointer;white-space:nowrap}
 .ptabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
 .plist{display:flex;flex-direction:column;gap:10px}
+.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:14px;color:var(--muted)}
+.crumbs button{background:none;border:0;padding:4px 2px;font:600 14px var(--sans);color:var(--accent);cursor:pointer}
+.crumbs b{color:var(--ink);font-size:17px}
+.ftiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.ftiles:empty{display:none}
+.ftile{display:flex;align-items:center;gap:10px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;font:inherit;color:var(--ink)}
+.ftile:hover{border-color:var(--accent)}
+.ftile.drop,.crumbs button.drop{outline:2.5px dashed var(--accent);outline-offset:2px;background:var(--accent-soft)}
+.pcard.dragsrc{opacity:.4}
+.dragghost{position:fixed;z-index:50;pointer-events:none;background:var(--surface);border:1.5px solid var(--accent);border-radius:10px;padding:8px 12px;font:600 14px var(--sans);color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transform:translate(-50%,-120%)}
+body.dragging-exp{cursor:grabbing;user-select:none}
+.pcard{-webkit-touch-callout:none}
+.ftile .ic{width:34px;height:28px;flex:none;position:relative;border-radius:4px 6px 6px 6px;background:var(--accent-soft);border:1.5px solid var(--accent)}
+.ftile .ic::before{content:"";position:absolute;left:-1.5px;top:-7px;width:15px;height:7px;border-radius:4px 4px 0 0;background:var(--accent-soft);border:1.5px solid var(--accent);border-bottom:0}
+.ftile.none .ic{background:var(--surface-2);border-color:var(--line)}.ftile.none .ic::before{background:var(--surface-2);border-color:var(--line)}
+.ftile .tx{display:flex;flex-direction:column;min-width:0}
+.ftile .tx b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ftile .tx span{font-size:12.5px;color:var(--muted)}
+.mklist{display:flex;flex-direction:column;gap:2px;max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px}
+.mklist label{display:flex;gap:8px;align-items:center;padding:6px;border-radius:8px;cursor:pointer;font-size:14px}
+.mklist label:hover{background:var(--surface-2)}
+.mklist input{width:18px;height:18px;margin:0;flex:none}
+.mklist .w{color:var(--muted);font-size:12px;margin-left:auto;white-space:nowrap;padding-left:8px}
+.tcat{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-top:8px}
+.tcat>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.tcat>summary::-webkit-details-marker{display:none}
+.tcat>summary span{font-weight:500;font-size:13px;color:var(--muted)}
+.tcat[open]>summary{border-bottom:1px solid var(--line)}
+.tcat>.tpls{padding:10px}
+#tpl-list>.tpls{margin-top:8px}
 .pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit;color:var(--ink);width:100%}
 .pcard:hover{border-color:var(--accent)}
 .pcard .t{font-weight:700;font-size:16px}
@@ -290,6 +320,10 @@ table.xl td.o.amt{color:var(--accent);font-size:14px}
 .pw span{max-width:92%;overflow:hidden;white-space:nowrap;text-overflow:clip;text-shadow:0 0 2px rgba(0,0,0,.45)}
 .pw.set{border-color:transparent}
 .pw.sel{outline:2.5px solid var(--ink);outline-offset:1px}
+.plate{position:relative;-webkit-touch-callout:none}
+.plbox{position:absolute;border:1.5px solid var(--accent);background:rgba(9,110,146,.14);pointer-events:none;border-radius:4px;z-index:3}
+.pw.rsel{outline:2.5px solid var(--accent);outline-offset:1px}
+.pw.rdes{opacity:.4}
 .pw.filled::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;font:800 13px var(--sans);color:#fff;background:rgba(0,0,0,.28);border-radius:50%}
 .pw.filled span{opacity:0}
 .pw.next{outline:2.5px dashed var(--accent);outline-offset:2px}
@@ -405,13 +439,25 @@ nav.tabs button{position:relative}
   <section class="tab" id="tab-home">
     <div class="row" style="justify-content:space-between"><h2>Experiments</h2><button class="btn primary" id="home-new">+ New experiment</button></div>
     <div class="card" id="tpl-card" hidden>
-      <div class="row" style="justify-content:space-between"><b>Choose a protocol</b><button class="btn sm ghost" id="tpl-cancel">Cancel</button></div>
-      <div class="tpls" id="tpl-list"></div>
+      <div class="row" style="justify-content:space-between"><b>Choose a method</b><button class="btn sm ghost" id="tpl-cancel">Cancel</button></div>
+      <p class="note" style="margin:0" id="tpl-where"></p>
+      <input id="tpl-q" type="search" placeholder="Search methods and earlier experiments" autocomplete="off">
+      <div id="tpl-list"></div>
     </div>
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <div class="row"><select id="home-group" style="width:auto" aria-label="Project"></select><select id="home-filter" style="width:auto" aria-label="Status"></select></div>
-      <select id="home-sort" style="width:auto" aria-label="Sort experiments"><option value="used">Recently used</option><option value="new">Newest first</option><option value="old">Oldest first</option><option value="name">Name A–Z</option><option value="project">Project A–Z</option></select>
+    <input id="home-q" type="search" placeholder="Search all experiments" autocomplete="off">
+    <div class="crumbs" id="home-crumbs"></div>
+    <div class="ftiles" id="home-folders"></div>
+    <div class="card" id="home-mk" hidden>
+      <div class="row" style="justify-content:space-between"><b id="mk-title">New folder</b><button class="btn sm ghost" id="mk-cancel">Cancel</button></div>
+      <label class="f" id="mk-name-w">Name<input id="mk-name" type="text" autocomplete="off"></label>
+      <div id="mk-pick-w"><div class="note" style="margin-bottom:6px" id="mk-pick-note">Pick the experiments to put in it:</div><div class="mklist" id="mk-list"></div></div>
+      <div class="row" style="justify-content:space-between;align-items:center"><span class="note" id="mk-msg"></span><button class="btn primary sm" id="mk-ok">Create</button></div>
     </div>
+    <div class="row" id="home-bar" style="justify-content:space-between;align-items:center">
+      <div class="row"><select id="home-filter" style="width:auto" aria-label="Status"></select><select id="home-sort" style="width:auto" aria-label="Sort experiments"><option value="used">Recently used</option><option value="new">Newest first</option><option value="old">Oldest first</option><option value="name">Name A–Z</option></select></div>
+      <div class="row" id="home-acts"></div>
+    </div>
+    <div class="ghead" id="home-lhead" hidden></div>
     <div class="plist" id="home-list"></div>
   </section>
 
@@ -600,8 +646,9 @@ nav.tabs button{position:relative}
       <div class="grid2">
         <label class="f">Name<input id="p-name" type="text"></label>
         <label class="f" id="p-group-w">Project<input id="p-group" type="text" list="p-groups" placeholder="e.g. HRZZ insulin"></label>
+        <label class="f" id="p-folder-w">Folder in project<input id="p-folder" type="text" list="p-folders" placeholder="none"></label>
       </div>
-      <datalist id="p-groups"></datalist>
+      <datalist id="p-groups"></datalist><datalist id="p-folders"></datalist>
       <div>
         <div class="note" style="margin-bottom:6px;font-weight:600">Tools in this protocol</div>
         <div class="row" id="p-tools">
@@ -1531,38 +1578,138 @@ function methodLabel(p){return p.method==="qpcr"?"qPCR":p.method==="elisa"?"ELIS
 /* ---- Experiments list (home) ---- */
 const isTpl=()=>S.protKind==="templates";
 const expDone=p=>p.status==="done";
+const CATS=[["prep","Sample preparation"],["protein","Protein concentration"],["wb","Western blot"],["elisa","ELISA"],["qpcr","qPCR"],["other","Other"]];
+function catOfTpl(k,T){return k==="homog"?"prep":T.method==="protein"?"protein":T.method==="wb"?"wb":T.method==="elisa"?"elisa":T.method==="qpcr"?"qpcr":"other"}
+function catOfExp(p){if(p.cat)return p.cat;if(p.method==="custom"&&/lysate|homogen/i.test((p.templateName||"")+" "+(p.name||"")))return "prep";return ({protein:"protein",wb:"wb",elisa:"elisa",qpcr:"qpcr"})[p.method]||"other"}
+const pj=p=>(p.group||"").trim(),pf=p=>(p.folder||"").trim();
+function hNav(){const n=lsGet("bb.hnav",null);return n&&typeof n==="object"?n:{p:null,f:null}}
+function setNav(n){lsSet("bb.hnav",n);$("#home-mk").hidden=true;renderHome();window.scrollTo(0,0)}
+function inNav(p,n){if(n.p==null)return true;if(n.p==="__none")return !pj(p);if(pj(p)!==n.p)return false;return n.f==null?!pf(p):pf(p)===n.f}
 function renderHome(){
-  const every=protList();const gsel=lsGet("bb.hgroup","all");
-  const groups=[...new Set(every.map(p=>(p.group||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-  const gc=g=>every.filter(p=>(p.group||"").trim()===g).length,ng=every.filter(p=>!(p.group||"").trim()).length;
-  $("#home-group").innerHTML=`<option value="all">All projects (${every.length})</option>`+groups.map(g=>`<option value="g:${esc(g)}">${esc(g)} (${gc(g)})</option>`).join("")+(groups.length&&ng?`<option value="none">No project (${ng})</option>`:"");
-  $("#home-group").value=[...$("#home-group").options].some(o=>o.value===gsel)?gsel:"all";const G=$("#home-group").value;
-  $("#p-groups").innerHTML=groups.map(g=>`<option value="${esc(g)}"></option>`).join("");
-  const all=every.filter(p=>G==="all"||(G==="none"?!(p.group||"").trim():(p.group||"").trim()===G.slice(2)));
-  let f=lsGet("bb.hstatus","all");const so=lsGet("bb.hsort","used");$("#home-sort").value=so;
-  const na=all.filter(p=>!expDone(p)).length,nd=all.length-na;
-  $("#home-filter").innerHTML=`<option value="all">Any status (${all.length})</option><option value="active">In progress (${na})</option><option value="done">Done (${nd})</option>`;$("#home-filter").value=f;
-  let L=all.filter(p=>f==="all"||(f==="done"?expDone(p):!expDone(p)));
-  const cr=p=>p.created||p.updatedAt||0;
-  L.sort(so==="new"?(a,b)=>cr(b)-cr(a):so==="old"?(a,b)=>cr(a)-cr(b):so==="name"?(a,b)=>String(a.name).localeCompare(String(b.name)):so==="project"?(a,b)=>String(a.group||"￿").localeCompare(String(b.group||"￿"))||String(a.name).localeCompare(String(b.name)):(a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const every=protList();let n=hNav();const q=($("#home-q").value||"").trim().toLowerCase();
+  const projects=[...new Set(every.map(pj).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  if(n.p&&n.p!=="__none"&&!projects.includes(n.p))n={p:null,f:null};
+  if(n.p==="__none"&&!every.some(p=>!pj(p)))n={p:null,f:null};
+  const folders=n.p&&n.p!=="__none"?[...new Set(every.filter(p=>pj(p)===n.p).map(pf).filter(Boolean))].sort((a,b)=>a.localeCompare(b)):[];
+  if(n.f!=null&&!folders.includes(n.f))n={p:n.p,f:null};
+  $("#p-groups").innerHTML=projects.map(g=>`<option value="${esc(g)}"></option>`).join("");
+  // crumbs
+  const cr=[];if(q)cr.push(`<b>Search</b>`);
+  else{cr.push(n.p==null?`<b>Projects</b>`:`<button data-nav="root">Projects</button>`);
+    if(n.p!=null){cr.push("›");const pn=n.p==="__none"?"No project":n.p;cr.push(n.f==null?`<b>${esc(pn)}</b>`:`<button data-nav="proj">${esc(pn)}</button>`)}
+    if(n.f!=null){cr.push("›");cr.push(`<b>${esc(n.f)}</b>`)}}
+  $("#home-crumbs").innerHTML=cr.join(" ");
+  const cnt=L=>{const a=L.filter(p=>!expDone(p)).length;return `${L.length} experiment${L.length===1?"":"s"}${a?` · ${a} in progress`:""}`};
+  const tile=(label,nav,L,none)=>`<button class="ftile${none?" none":""}" data-go='${esc(JSON.stringify(nav))}'><span class="ic"></span><span class="tx"><b>${esc(label)}</b><span>${cnt(L)}</span></span></button>`;
+  let tiles="";
+  if(!q&&n.p==null){tiles=projects.map(g=>tile(g,{p:g,f:null},every.filter(p=>pj(p)===g))).join("");const nn=every.filter(p=>!pj(p));if(nn.length)tiles+=tile("No project",{p:"__none",f:null},nn,true)}
+  else if(!q&&n.p!=null&&n.f==null&&n.p!=="__none")tiles=folders.map(f=>tile(f,{p:n.p,f},every.filter(p=>pj(p)===n.p&&pf(p)===f))).join("");
+  $("#home-folders").innerHTML=tiles;
+  // list
+  let base=q?every.filter(p=>[p.name,p.group,p.folder,methodLabel(p),p.notes].join(" ").toLowerCase().includes(q)):n.p==null?every:every.filter(p=>inNav(p,n));
+  const root=!q&&n.p==null;
+  let f=lsGet("bb.hstatus","all");let so=lsGet("bb.hsort","used");if(so==="project")so="used";$("#home-sort").value=so;
+  const na=base.filter(p=>!expDone(p)).length,nd=base.length-na;
+  $("#home-filter").innerHTML=`<option value="all">Any status (${base.length})</option><option value="active">In progress (${na})</option><option value="done">Done (${nd})</option>`;$("#home-filter").value=f;
+  let L=root?base.slice():base.filter(p=>f==="all"||(f==="done"?expDone(p):!expDone(p)));
+  const crd=p=>p.created||p.updatedAt||0;
+  L.sort(root?(a,b)=>(b.updatedAt||0)-(a.updatedAt||0):so==="new"?(a,b)=>crd(b)-crd(a):so==="old"?(a,b)=>crd(a)-crd(b):so==="name"?(a,b)=>String(a.name).localeCompare(String(b.name)):(a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  if(root)L=L.slice(0,5);
+  $("#home-filter").hidden=root;$("#home-sort").hidden=root;
   const card=p=>{const nG=Object.values(Store.data.experiments).filter(x=>x.protoId===p.id).reduce((n,x)=>n+gelsOf(x.id).filter(g=>!g.draft).length,0),nA=Object.values(Store.data.assays).filter(x=>x.protoId===p.id).length;
-    const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;
-    return `<div class="pcard"><button class="pmain" data-p="${esc(p.id)}"><span class="t">${esc(p.name||"Untitled")}</span><span class="m"><span class="tag ${expDone(p)?"done":"act"}">${expDone(p)?"Done":"In progress"}</span><span class="tag">${esc(methodLabel(p))}</span>${p.group?`<span class="tag" style="background:var(--surface-2);color:var(--ink)">${esc(p.group)}</span>`:""}Started ${p.created?new Date(p.created).toLocaleDateString("en-GB"):"—"}${expDone(p)&&p.completed?` · finished ${new Date(p.completed).toLocaleDateString("en-GB")}`:""}</span><span class="m">${steps.length?`${dn}/${steps.length} steps`:"no steps"}${nA?` · ${nA} protein assay${nA>1?"s":""}`:""}${nG?` · ${nG} gel${nG>1?"s":""}`:""}</span></button><button class="pcopy" data-copy="${esc(p.id)}">Copy</button><button class="pdel" data-del="${esc(p.id)}">Delete</button></div>`};
-  let listHTML="";
-  if(G==="all"&&groups.length&&so==="project"){const by={};L.forEach(p=>{const g=(p.group||"").trim()||"￿";(by[g]=by[g]||[]).push(p)});
-    Object.keys(by).sort((a,b)=>a.localeCompare(b)).forEach(g=>{listHTML+=`<div class="ghead"><span>${g==="￿"?"No project":esc(g)}</span><span>${by[g].length}</span></div>`+by[g].map(card).join("")})}
-  else listHTML=L.map(card).join("");
-  $("#home-list").innerHTML=L.length?listHTML:`<div class="card"><p class="note" style="margin:0">${all.length?"No experiments match these filters.":"No experiments yet. Tap <b>+ New experiment</b> and pick a protocol."}</p></div>`;
-  const mine=protList().slice(0,6);
-  $("#tpl-list").innerHTML=`<div class="tplh">New from a method</div>`+Object.entries(TEMPLATES).map(([k,T])=>`<button class="tpl" data-tpl="${k}"><b>${esc(k==="custom"?"Blank experiment":T.name)}</b><span>${esc(T.desc)}</span></button>`).join("")+
-    (mine.length?`<div class="tplh">Or copy the steps of an earlier experiment</div>`+mine.map(t=>`<button class="tpl" data-ce="${esc(t.id)}"><b>${esc(t.name)}</b><span>${esc(methodLabel(t))} · ${(t.steps||[]).length} steps${t.group?" · "+esc(t.group):""}</span></button>`).join(""):"");
+    const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const where=[pj(p),pf(p)].filter(Boolean).join(" › ");
+    return `<div class="pcard"><button class="pmain" data-p="${esc(p.id)}"><span class="t">${esc(p.name||"Untitled")}</span><span class="m"><span class="tag ${expDone(p)?"done":"act"}">${expDone(p)?"Done":"In progress"}</span><span class="tag">${esc(methodLabel(p))}</span>${(q||root)&&where?`<span class="tag" style="background:var(--surface-2);color:var(--ink)">${esc(where)}</span>`:""}Started ${p.created?new Date(p.created).toLocaleDateString("en-GB"):"—"}${expDone(p)&&p.completed?` · finished ${new Date(p.completed).toLocaleDateString("en-GB")}`:""}</span><span class="m">${steps.length?`${dn}/${steps.length} steps`:"no steps"}${nA?` · ${nA} protein assay${nA>1?"s":""}`:""}${nG?` · ${nG} gel${nG>1?"s":""}`:""}</span></button><button class="pcopy" data-copy="${esc(p.id)}">Copy</button><button class="pdel" data-del="${esc(p.id)}">Delete</button></div>`};
+  const lh=$("#home-lhead");lh.hidden=!(root&&L.length)&&!(n.f==null&&n.p!=null&&n.p!=="__none"&&folders.length&&L.length&&!q);
+  lh.innerHTML=root?`<span>Recently used</span><span></span>`:`<span>Not in a folder</span><span>${L.length}</span>`;
+  $("#home-list").innerHTML=L.length?L.map(card).join(""):(tiles&&!q?"":`<div class="card"><p class="note" style="margin:0">${q?"No experiments match your search.":every.length?(base.length?"No experiments match this filter.":"Nothing here yet."):"No experiments yet. Tap <b>+ New experiment</b> and pick a method."}</p></div>`);
+  // actions
+  let acts="";
+  if(!q){if(n.p==null)acts=`<button class="btn sm" data-act="newproj">+ Project</button>`;
+    else if(n.f==null&&n.p!=="__none")acts=`<button class="btn sm" data-act="newfolder">+ Folder</button><button class="btn sm ghost" data-act="add">Add experiments</button><button class="btn sm ghost" data-act="renproj">Rename</button>`;
+    else if(n.f!=null)acts=`<button class="btn sm ghost" data-act="add">Add experiments</button><button class="btn sm ghost" data-act="renfolder">Rename</button><button class="btn sm ghost danger" data-act="rmfolder">Remove folder</button>`}
+  $("#home-acts").innerHTML=acts;
+  renderTplList();
 }
+function renderTplList(){
+  const n=hNav();$("#tpl-where").textContent=n.p&&n.p!=="__none"?`It will go into ${n.p}${n.f?" › "+n.f:""}.`:"";
+  const q=($("#tpl-q").value||"").trim().toLowerCase();const mine=protList();
+  const tb=([k,T])=>`<button class="tpl" data-tpl="${k}"><b>${esc(k==="custom"?"Blank experiment":T.name)}</b><span>${esc(T.desc)}</span></button>`;
+  const eb=t=>`<button class="tpl" data-ce="${esc(t.id)}"><b>${esc(t.name)}</b><span>${esc(methodLabel(t))} · ${(t.steps||[]).length} steps${t.group?" · "+esc([pj(t),pf(t)].filter(Boolean).join(" › ")):""}</span></button>`;
+  const ents=Object.entries(TEMPLATES).filter(([k])=>k!=="custom");
+  if(q){const m=ents.filter(([k,T])=>(T.name+" "+T.desc+" "+(T.label||"")).toLowerCase().includes(q)),e=mine.filter(t=>[t.name,t.group,t.folder,methodLabel(t)].join(" ").toLowerCase().includes(q));
+    $("#tpl-list").innerHTML=(m.length?`<div class="tpls">${m.map(tb).join("")}</div>`:"")+(e.length?`<div class="tplh" style="margin-top:10px">Copy the steps of an earlier experiment</div><div class="tpls">${e.map(eb).join("")}</div>`:"")||`<p class="note">Nothing found.</p>`;return}
+  const open=S.tplOpen||"";
+  let h=`<div class="tpls">${tb(["custom",TEMPLATES.custom])}</div>`;
+  CATS.forEach(([c,label])=>{const items=ents.filter(([k,T])=>catOfTpl(k,T)===c);if(!items.length)return;
+    h+=`<details class="tcat" data-cat="${c}"${open===c?" open":""}><summary>${label}<span>${items.length}</span></summary><div class="tpls">${items.map(tb).join("")}</div></details>`});
+  if(mine.length){let inner="";CATS.forEach(([c,label])=>{const it=mine.filter(t=>catOfExp(t)===c);if(it.length)inner+=`<div class="tplh">${label}</div>`+it.map(eb).join("")});
+    h+=`<details class="tcat" data-cat="__mine"${open==="__mine"?" open":""}><summary>Copy an earlier experiment<span>${mine.length}</span></summary><div class="tpls">${inner}</div></details>`}
+  $("#tpl-list").innerHTML=h}
+$("#tpl-list").addEventListener("toggle",e=>{const d=e.target;if(!d.classList||!d.classList.contains("tcat"))return;if(d.open){S.tplOpen=d.dataset.cat;$$("#tpl-list .tcat").forEach(x=>{if(x!==d)x.open=false})}else if(S.tplOpen===d.dataset.cat)S.tplOpen=""},true);
+$("#tpl-q").addEventListener("input",renderTplList);
+$("#home-q").addEventListener("input",()=>{renderHome()});
+$("#home-crumbs").addEventListener("click",e=>{const b=e.target.closest("[data-nav]");if(!b)return;$("#home-q").value="";const n=hNav();setNav(b.dataset.nav==="root"?{p:null,f:null}:{p:n.p,f:null})});
+$("#home-folders").addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(!b)return;try{setNav(JSON.parse(b.dataset.go))}catch(_){}});
+// drag experiments into folders
+(function expDrag(){const list=$("#home-list");let st=null,sup=false;const ghost=document.createElement("div");ghost.className="dragghost";
+  const target=(x,y)=>{const el=document.elementFromPoint(x,y);return el&&(el.closest("#home-folders .ftile[data-go]")||el.closest("#home-crumbs button[data-nav]"))};
+  const navOf=t=>{if(t.dataset.go){try{return JSON.parse(t.dataset.go)}catch(_){return null}}const n=hNav();return t.dataset.nav==="root"?{p:"__none",f:null}:{p:n.p,f:null}};
+  const clearT=()=>$$("#home-folders .drop,#home-crumbs .drop").forEach(x=>x.classList.remove("drop"));
+  const begin=()=>{if(!st)return;st.on=true;const p=Store.data.protocols[st.id];ghost.textContent=p?p.name||"Untitled":"";document.body.appendChild(ghost);st.card.classList.add("dragsrc");document.body.classList.add("dragging-exp");Object.assign(ghost.style,{left:st.x+"px",top:st.y+"px"});try{navigator.vibrate&&navigator.vibrate(20)}catch(_){}};
+  const end=commit=>{if(!st)return;clearTimeout(st.t);const s0=st;st=null;window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",cc);
+    ghost.remove();clearT();s0.card.classList.remove("dragsrc");document.body.classList.remove("dragging-exp");
+    if(!s0.on)return;sup=true;setTimeout(()=>sup=false,150);if(!commit)return;const t=target(s0.x,s0.y);if(!t)return;const nv=navOf(t);const p=Store.data.protocols[s0.id];if(!nv||!p)return;
+    const c=clone(p);if(nv.p==="__none"){c.group="";c.folder=""}else{c.group=nv.p;c.folder=nv.f||""}
+    if(pj(c)===pj(p)&&pf(c)===pf(p))return;Store.save("protocols",c);renderHome();setStatus(`Moved to ${nv.p==="__none"?"No project":nv.p+(nv.f?" › "+nv.f:"")}`)};
+  const mv=e=>{if(!st)return;st.x=e.clientX;st.y=e.clientY;const d=Math.hypot(e.clientX-st.x0,e.clientY-st.y0);
+    if(!st.on){if(d>8){if(st.mouse)begin();else{end(false);return}}else return}
+    Object.assign(ghost.style,{left:e.clientX+"px",top:e.clientY+"px"});clearT();const t=target(e.clientX,e.clientY);if(t)t.classList.add("drop");
+    if(e.clientY<70)window.scrollBy(0,-12);else if(e.clientY>window.innerHeight-90)window.scrollBy(0,12)};
+  const up=()=>end(true),cc=()=>end(false);
+  list.addEventListener("pointerdown",e=>{if(e.button>0)return;const b=e.target.closest(".pmain[data-p]");if(!b)return;
+    st={id:b.dataset.p,card:b.closest(".pcard"),x0:e.clientX,y0:e.clientY,x:e.clientX,y:e.clientY,on:false,mouse:e.pointerType==="mouse"};
+    if(!st.mouse)st.t=setTimeout(begin,350);
+    window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);window.addEventListener("pointercancel",cc)});
+  list.addEventListener("touchmove",e=>{if(st&&st.on)e.preventDefault()},{passive:false});
+  list.addEventListener("contextmenu",e=>{if(e.target.closest(".pmain"))e.preventDefault()});
+  list.addEventListener("click",e=>{if(sup){sup=false;e.stopImmediatePropagation();e.preventDefault()}},true);
+})();
+// make / rename / add panel
+let MK=null;
+function openMk(mode){const n=hNav();const every=protList();MK={mode,n};const pnl=$("#home-mk");
+  const T={newproj:"New project",newfolder:`New folder in ${n.p}`,add:`Add experiments to ${n.f!=null?n.f:n.p}`,renproj:`Rename project ${n.p}`,renfolder:`Rename folder ${n.f}`}[mode];
+  $("#mk-title").textContent=T;$("#mk-msg").textContent="";
+  const naming=mode!=="add";$("#mk-name-w").hidden=!naming;$("#mk-name").value=mode==="renproj"?n.p:mode==="renfolder"?n.f:"";
+  const picking=mode==="newproj"||mode==="newfolder"||mode==="add";$("#mk-pick-w").hidden=!picking;
+  $("#mk-ok").textContent=mode==="add"?"Move here":mode.startsWith("ren")?"Rename":"Create";
+  if(picking){let cand=every;if(mode==="newfolder"||(mode==="add"&&n.f!=null))cand=every.filter(p=>pj(p)===n.p&&!(mode==="add"&&pf(p)===n.f));
+    else if(mode==="add")cand=every.filter(p=>pj(p)!==n.p);
+    $("#mk-pick-note").textContent=mode==="newfolder"?"Pick experiments from this project to put in it (empty folders aren't kept):":mode==="newproj"?"Pick the experiments for this project (empty projects aren't kept):":"Pick the experiments to move here:";
+    cand.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    $("#mk-list").innerHTML=cand.length?cand.map(p=>`<label><input type="checkbox" value="${esc(p.id)}"><span>${esc(p.name||"Untitled")}</span><span class="w">${esc([pj(p),pf(p)].filter(Boolean).join(" › ")||"no project")}</span></label>`).join(""):`<p class="note" style="margin:4px">No other experiments to move.</p>`}
+  pnl.hidden=false;pnl.scrollIntoView({block:"nearest"});if(naming){$("#mk-name").focus();$("#mk-name").select()}}
+$("#home-acts").addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b)return;const a=b.dataset.act,n=hNav();
+  if(a==="rmfolder"){if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Tap again: experiments go up to the project";setTimeout(()=>{b.classList.remove("armed");b.textContent="Remove folder"},4000);return}
+    protList().filter(p=>pj(p)===n.p&&pf(p)===n.f).forEach(p=>{const c=clone(p);c.folder="";Store.save("protocols",c)});setNav({p:n.p,f:null});setStatus("Folder removed");return}
+  openMk(a)});
+$("#mk-cancel").addEventListener("click",()=>{$("#home-mk").hidden=true;MK=null});
+$("#mk-name").addEventListener("keydown",e=>{if(e.key==="Enter")$("#mk-ok").click()});
+$("#mk-ok").addEventListener("click",()=>{if(!MK)return;const {mode,n}=MK;const name=$("#mk-name").value.trim();const ids=$$("#mk-list input:checked").map(i=>i.value);const msg=t=>{$("#mk-msg").textContent=t};
+  if(mode!=="add"&&!name){msg("Type a name");return}
+  if((mode==="newproj"||mode==="newfolder"||mode==="add")&&!ids.length){msg("Pick at least one experiment");return}
+  const upd=(p,f)=>{const c=clone(p);f(c);Store.save("protocols",c)};const every=protList();
+  if(mode==="newproj"){every.filter(p=>ids.includes(p.id)).forEach(p=>upd(p,c=>{c.group=name;c.folder=""}));setNav({p:name,f:null})}
+  else if(mode==="newfolder"){every.filter(p=>ids.includes(p.id)).forEach(p=>upd(p,c=>{c.folder=name}));setNav({p:n.p,f:name})}
+  else if(mode==="add"){every.filter(p=>ids.includes(p.id)).forEach(p=>upd(p,c=>{if(n.p==="__none"){c.group="";c.folder=""}else{c.group=n.p;c.folder=n.f||""}}));setNav(n)}
+  else if(mode==="renproj"){every.filter(p=>pj(p)===n.p).forEach(p=>upd(p,c=>{c.group=name}));setNav({p:name,f:null})}
+  else if(mode==="renfolder"){every.filter(p=>pj(p)===n.p&&pf(p)===n.f).forEach(p=>upd(p,c=>{c.folder=name}));setNav({p:n.p,f:name})}
+  MK=null;setStatus("Saved")});
 function tplList(){return Object.values(Store.data.templates).sort((a,b)=>String(a.name).localeCompare(String(b.name)))}
 function freshSteps(steps){return (steps||[]).map(x=>Object.assign({},x,{id:uid()+Math.random().toString(36).slice(2,5)}))}
 function expFromTemplate(src,builtinKey){
   const b=builtinKey?newProt(builtinKey):null;const t=src||b;
   const p={id:uid(),name:`${builtinKey==="custom"?"New experiment":t.name} · ${new Date().toLocaleDateString("en-GB")}`,method:t.method,elisaType:t.elisaType,assayMethod:t.assayMethod||"lowry",tools:Object.assign({},t.tools),steps:src?freshSteps(src.steps):b.steps,notes:t.notes||"",done:[],status:"active",created:Date.now(),templateId:src?src.id:null,templateName:src?src.name:(builtinKey==="custom"?"":TEMPLATES[builtinKey].name)};
-  const G=lsGet("bb.hgroup","all");if(G.startsWith("g:"))p.group=G.slice(2);return p;
+  const n=hNav();if(n.p&&n.p!=="__none"){p.group=n.p;if(n.f)p.folder=n.f}if(builtinKey)p.cat=catOfTpl(builtinKey,TEMPLATES[builtinKey]||{});else if(src)p.cat=catOfExp(src);return p;
 }
 $("#home-list").addEventListener("click",async e=>{const cp=e.target.closest("[data-copy]");
   if(cp){const src=Store.data.protocols[cp.dataset.copy];if(!src)return;const c=copyProtocol(src);openProtocol(clone(c));$("#prot-params").open=true;$("#p-name").focus();$("#p-name").select();setStatus("Copy created with the same steps; rename it");return}
@@ -1572,7 +1719,6 @@ $("#home-list").addEventListener("click",async e=>{const cp=e.target.closest("[d
     d.classList.add("armed");d.textContent="Tap again to delete";d._t=setTimeout(()=>{d.classList.remove("armed");d.textContent="Delete"},4000);return}
   const b=e.target.closest("[data-p]");if(!b)return;const p=Store.data.protocols[b.dataset.p];if(p)openProtocol(clone(p))});
 $("#home-filter").addEventListener("input",e=>{lsSet("bb.hstatus",e.target.value);renderHome()});
-$("#home-group").addEventListener("input",e=>{lsSet("bb.hgroup",e.target.value);renderHome()});
 function copyProtocol(src){const c=clone(src);c.id=uid();c.name=(src.name||"Experiment")+" (copy)";c.created=Date.now();c.steps=freshSteps(c.steps);c.done=[];c.status="active";delete c.completed;delete c.results;delete c.updatedAt;delete c.draft;Store.save("protocols",c);return c}
 $("#home-sort").addEventListener("input",e=>{lsSet("bb.hsort",e.target.value);renderHome()});
 async function deleteProtocol(id){
@@ -1582,10 +1728,10 @@ async function deleteProtocol(id){
   for(const so of Object.values(Store.data.solutions).filter(r=>r.protoId===id)){const c=clone(so);c.protoId=null;Store.save("solutions",c)}
   await Store.remove("protocols",id);if(lsGet("bb.proto",null)===id)lsSet("bb.proto",null);
 }
-$("#home-new").addEventListener("click",()=>{renderHome();$("#tpl-card").hidden=false;$("#tpl-card").scrollIntoView({block:"nearest"})});
+$("#home-new").addEventListener("click",()=>{$("#tpl-q").value="";renderHome();$("#tpl-card").hidden=false;$("#tpl-card").scrollIntoView({block:"nearest"})});
 $("#tpl-cancel").addEventListener("click",()=>{$("#tpl-card").hidden=true});
 $("#tpl-list").addEventListener("click",e=>{const b=e.target.closest("[data-tpl],[data-ce]");if(!b)return;
-  const p=b.dataset.ce?expFromTemplate(Store.data.protocols[b.dataset.ce]):expFromTemplate(null,b.dataset.tpl);if(b.dataset.ce){const src=Store.data.protocols[b.dataset.ce];p.name=`${String(src.name).replace(/ · \d{2}\/\d{2}\/\d{4}$/,"")} · ${new Date().toLocaleDateString("en-GB")}`;p.group=src.group||p.group;p.templateName=src.name;p.templateId=null}
+  const p=b.dataset.ce?expFromTemplate(Store.data.protocols[b.dataset.ce]):expFromTemplate(null,b.dataset.tpl);if(b.dataset.ce){const src=Store.data.protocols[b.dataset.ce];p.name=`${String(src.name).replace(/ · \d{2}\/\d{2}\/\d{4}$/,"")} · ${new Date().toLocaleDateString("en-GB")}`;if(!p.group){p.group=src.group||"";p.folder=src.folder||""}p.templateName=src.name;p.templateId=null}
   Store.save("protocols",p);
   const T=!b.dataset.ce&&TEMPLATES[b.dataset.tpl];if(T&&T.sols)T.sols.forEach(n=>{const tp=SOL_TPL.find(x=>x.name===n);if(tp)Store.save("solutions",newSol(tp,p.id))});
   $("#tpl-card").hidden=true;openProtocol(clone(p));$("#prot-params").open=true;$("#p-name").focus();$("#p-name").select()});
@@ -1633,14 +1779,16 @@ function openProtocol(p,tab){
 }
 function renderProtSelect(){renderHome();renderPbar()}
 function fillProtForm(){
-  const p=S.prot;$("#p-name").value=p.name||"";$("#p-group").value=p.group||"";$("#p-notes").value=p.notes||"";
+  const p=S.prot;$("#p-name").value=p.name||"";$("#p-group").value=p.group||"";$("#p-folder").value=p.folder||"";pFolders();$("#p-notes").value=p.notes||"";
   $$("#p-tools input").forEach(i=>i.checked=i.dataset.tool==="quant"?hasQuant(p):!!(p.tools||{})[i.dataset.tool]);
   $("#prot-del").classList.remove("armed");$("#prot-del").textContent="Delete";renderPbar();
   $("#p-tool-prot").textContent=p.method==="wb"?"Samples (from protein concentration)":p.method==="elisa"?"Assay (plate and standard curve)":"Protein concentration";
   const T=isTpl();$("#p-sum").textContent=T?"Protocol settings":"Experiment settings";$("#p-group-w").hidden=T;$("#prot-savetpl").hidden=T;$("#tpl-start").hidden=!T;$("#prot-reset").hidden=T||!!S.editSteps;$("#p-tools").parentElement.querySelector(".note").textContent=T?"Tools in experiments started from this protocol":"Tools in this experiment";
 }
 $("#p-name").addEventListener("input",e=>{S.prot.name=e.target.value;renderPbar();queueSave("protocols")});
-$("#p-group").addEventListener("input",e=>{S.prot.group=e.target.value;queueSave("protocols")});
+function pFolders(){const g=(S.prot&&S.prot.group||"").trim();$("#p-folders").innerHTML=[...new Set(protList().filter(p=>pj(p)===g).map(pf).filter(Boolean))].map(f=>`<option value="${esc(f)}"></option>`).join("")}
+$("#p-group").addEventListener("input",e=>{S.prot.group=e.target.value;pFolders();queueSave("protocols")});
+$("#p-folder").addEventListener("input",e=>{S.prot.folder=e.target.value;queueSave("protocols")});
 $("#p-notes").addEventListener("input",e=>{S.prot.notes=e.target.value;renderSteps();queueSave("protocols")});
 $("#p-tools").addEventListener("change",e=>{const k=e.target.dataset.tool;if(!k)return;S.prot.tools=Object.assign({},S.prot.tools,{[k]:e.target.checked});renderPbar();queueSave("protocols")});
 $("#prot-dup").addEventListener("click",()=>{flushProt();if(isTpl()){const t=clone(S.prot);t.id=uid();t.name+=" (copy)";t.created=Date.now();t.steps=freshSteps(t.steps);delete t.updatedAt;Store.save("templates",t);openTemplate(clone(t));setStatus("Protocol copied");return}const c=copyProtocol(S.prot);openProtocol(clone(c));$("#prot-params").open=true;$("#p-name").focus();$("#p-name").select();setStatus("Copy created; rename and adjust it")});
@@ -2446,17 +2594,42 @@ function renderPlate(){
   $("#pl-count").hidden=!(S.plFill||nf);$("#pl-count").innerHTML=`Filled <b>${nf}/${used.length}</b>`;
   $("#pl-all").hidden=!S.plFill||nf===used.length;$("#pl-reset").hidden=!nf;
   $("#pl-fill").textContent=S.plFill?"Done filling":"Start filling";$("#pl-fill").classList.toggle("primary",S.plFill);
-  $("#pl-hint").innerHTML=S.plFill?(next?`Next: <b>${next}</b>${P.w[next].label?" · "+esc(P.w[next].label):""}. Tap a well when it's filled.`:used.length?"All wells filled.":"Name some wells first."):"Tap wells to select them (tap a row letter or column number to select the whole line), then give them a name and colour.";
+  $("#pl-hint").innerHTML=S.plFill?(next?`Next: <b>${next}</b>${P.w[next].label?" · "+esc(P.w[next].label):""}. Tap a well when it's filled.`:used.length?"All wells filled.":"Name some wells first."):"Tap wells to select them, or drag a box over several (on a phone: hold, then drag). A row letter or column number selects the whole line. Then give them a name and colour.";
   const card=$("#plate-card");card.classList.toggle("fs",S.plFill);card.classList.toggle("loading",S.plFill);document.body.classList.toggle("fslock",S.plFill||!!S.loadMode);
 }
 function plSave(){renderPlate();queueSave(S.plateCtx==="qpcr"?"protocols":"assays")}
-$("#pl-grid").addEventListener("click",e=>{const P=plate();const b=e.target.closest("button");if(!b)return;
+let plSuppress=false;
+function plRect(a,b){const r1=a.charCodeAt(0),r2=b.charCodeAt(0),c1=+a.slice(1),c2=+b.slice(1);return plIds().filter(id=>{const r=id.charCodeAt(0),c=+id.slice(1);return r>=Math.min(r1,r2)&&r<=Math.max(r1,r2)&&c>=Math.min(c1,c2)&&c<=Math.max(c1,c2)})}
+$("#pl-grid").addEventListener("click",e=>{if(plSuppress){plSuppress=false;return}const P=plate();const b=e.target.closest("button");if(!b)return;
   if(b.dataset.w){const id=b.dataset.w;
     if(S.plFill){const w=P.w[id];if(!w||!(w.label||w.color))return;w.filled=!w.filled;try{navigator.vibrate&&navigator.vibrate(15)}catch(er){}plSave();return}
-    S.plSel.has(id)?S.plSel.delete(id):S.plSel.add(id);renderPlate();return}
+    if(e.shiftKey&&S.plLast){plRect(S.plLast,id).forEach(x=>S.plSel.add(x));S.plLast=id;renderPlate();return}
+    S.plSel.has(id)?S.plSel.delete(id):S.plSel.add(id);S.plLast=id;renderPlate();return}
   if(S.plFill)return;
   const line=plIds().filter(id=>b.dataset.row?id[0]===b.dataset.row:id.slice(1)===b.dataset.col);
   const all=line.every(id=>S.plSel.has(id));line.forEach(id=>all?S.plSel.delete(id):S.plSel.add(id));renderPlate()});
+(function plateMarquee(){const g=$("#pl-grid");let st=null;const box=document.createElement("div");box.className="plbox";
+  const rel=(x,y)=>{const r=g.getBoundingClientRect();return{x:x-r.left,y:y-r.top}};
+  const hits=()=>{const r=g.getBoundingClientRect();const L=Math.min(st.a.x,st.b.x),Rr=Math.max(st.a.x,st.b.x),T=Math.min(st.a.y,st.b.y),B=Math.max(st.a.y,st.b.y);
+    return $$("#pl-grid .pw").filter(w=>{const q=w.getBoundingClientRect();const l=q.left-r.left,t=q.top-r.top;return l+q.width>L&&l<Rr&&t+q.height>T&&t<B}).map(w=>w.dataset.w)};
+  const draw=()=>{const L=Math.min(st.a.x,st.b.x),T=Math.min(st.a.y,st.b.y);Object.assign(box.style,{left:L+"px",top:T+"px",width:Math.abs(st.a.x-st.b.x)+"px",height:Math.abs(st.a.y-st.b.y)+"px"});
+    const H=new Set(hits());$$("#pl-grid .pw").forEach(w=>{const on=H.has(w.dataset.w);w.classList.toggle(st.rm?"rdes":"rsel",on)});st.h=H};
+  const begin=()=>{if(!st)return;st.on=true;g.appendChild(box);draw();try{navigator.vibrate&&navigator.vibrate(15)}catch(_){}};
+  const end=commit=>{if(!st)return;clearTimeout(st.t);const s0=st;st=null;window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",cc);
+    box.remove();$$("#pl-grid .rsel,#pl-grid .rdes").forEach(w=>w.classList.remove("rsel","rdes"));
+    if(s0.on){plSuppress=true;setTimeout(()=>plSuppress=false,120);if(commit&&s0.h){s0.h.forEach(id=>s0.rm?S.plSel.delete(id):S.plSel.add(id));renderPlate()}}};
+  const mv=e=>{if(!st)return;const d=Math.hypot(e.clientX-st.x0,e.clientY-st.y0);
+    if(!st.on){if(d>6){if(st.mouse)begin();else{end(false);return}}else return}
+    const pb=g.parentElement,r=pb.getBoundingClientRect();if(e.clientX>r.right-24)pb.scrollLeft+=10;else if(e.clientX<r.left+24)pb.scrollLeft-=10;
+    st.b=rel(e.clientX,e.clientY);draw()};
+  const up=()=>end(true),cc=()=>end(false);
+  g.addEventListener("pointerdown",e=>{if(S.plFill||e.button>0||e.target.closest(".hd"))return;const w=e.target.closest(".pw");
+    st={x0:e.clientX,y0:e.clientY,a:rel(e.clientX,e.clientY),b:rel(e.clientX,e.clientY),on:false,mouse:e.pointerType==="mouse",rm:!!(w&&S.plSel.has(w.dataset.w))};
+    if(!st.mouse)st.t=setTimeout(begin,300);
+    window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);window.addEventListener("pointercancel",cc)});
+  g.addEventListener("touchmove",e=>{if(st&&st.on)e.preventDefault()},{passive:false});
+  g.addEventListener("contextmenu",e=>{if(e.target.closest(".pw"))e.preventDefault()});
+})();
 $("#pl-label").addEventListener("input",e=>{const P=plate();S.plSel.forEach(id=>{P.w[id]=Object.assign({},P.w[id],{label:e.target.value})});plSave()});
 $("#pl-colors").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(!b)return;const P=plate();S.plSel.forEach(id=>{P.w[id]=Object.assign({},P.w[id],{color:b.dataset.c})});plSave()});
 $("#pl-empty").addEventListener("click",()=>{const P=plate();S.plSel.forEach(id=>delete P.w[id]);S.plSel.clear();plSave()});
