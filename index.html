@@ -267,18 +267,18 @@ table.xl tr.dup input.wl,table.xl tr.dup select.gs{border-color:var(--bad)}
 .crumbs b{color:var(--ink);font-size:17px}
 .ftiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .ftiles:empty{display:none}
-.ftile{display:flex;align-items:center;gap:10px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;font:inherit;color:var(--ink)}
+.ftile{display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;font:inherit;color:var(--ink)}
 .ftile:hover{border-color:var(--accent)}
 .ftile.drop,.crumbs button.drop{outline:2.5px dashed var(--accent);outline-offset:2px;background:var(--accent-soft)}
 .pcard.dragsrc{opacity:.4}
 .dragghost{position:fixed;z-index:50;pointer-events:none;background:var(--surface);border:1.5px solid var(--accent);border-radius:10px;padding:8px 12px;font:600 14px var(--sans);color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transform:translate(-50%,-120%)}
 body.dragging-exp{cursor:grabbing;user-select:none}
 .pcard{-webkit-touch-callout:none}
-.ftile .ic{width:34px;height:28px;flex:none;position:relative;border-radius:4px 6px 6px 6px;background:var(--accent-soft);border:1.5px solid var(--accent)}
+.ftile .ic{width:30px;height:24px;flex:none;margin-top:6px;position:relative;border-radius:4px 6px 6px 6px;background:var(--accent-soft);border:1.5px solid var(--accent)}
 .ftile .ic::before{content:"";position:absolute;left:-1.5px;top:-7px;width:15px;height:7px;border-radius:4px 4px 0 0;background:var(--accent-soft);border:1.5px solid var(--accent);border-bottom:0}
 .ftile.none .ic{background:var(--surface-2);border-color:var(--line)}.ftile.none .ic::before{background:var(--surface-2);border-color:var(--line)}
 .ftile .tx{display:flex;flex-direction:column;min-width:0}
-.ftile .tx b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ftile .tx b{font-size:14.5px;line-height:1.25;white-space:normal;overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto}
 .ftile .tx span{font-size:12.5px;color:var(--muted)}
 .mklist{display:flex;flex-direction:column;gap:2px;max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px}
 .mklist label{display:flex;gap:8px;align-items:center;padding:6px;border-radius:8px;cursor:pointer;font-size:14px}
@@ -337,10 +337,21 @@ table.xl td.o.amt{color:var(--accent);font-size:14px}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
 .platebox{flex-shrink:0}
-.card.fs .platebox{flex:none;overflow:visible}
-.card.fs .plate{min-width:0;width:min(100%,calc((100dvh - 150px) * 1.45));margin:0 auto;gap:5px;grid-template-columns:22px repeat(var(--c),minmax(0,1fr))}
-.card.fs .pw{font-size:10.5px}
-.card.fs .plate .hd{font-size:13px}
+#plate-card.fs{display:flex;flex-direction:column;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px calc(6px + env(safe-area-inset-bottom,0px));overflow:hidden}
+#plate-card.fs>.chead{display:none}
+#plate-card.fs #pl-hint{font-size:14px;font-weight:600;color:var(--ink);flex:none}
+#plate-card.fs .platebox{flex:1 1 auto;min-height:0;overflow:hidden;container-type:size;display:flex;align-items:center;justify-content:center}
+#plate-card.fs .plate{min-width:0;width:min(100cqw,calc(100cqh * (var(--c) + .7) / (var(--r,8) + .7)));margin:0 auto;gap:3px;padding:6px;grid-template-columns:18px repeat(var(--c),minmax(0,1fr))}
+#plate-card.fs .plate .hd{font-size:12px}
+#plate-card.fs>.row:last-child{flex:none}
+@media (orientation:landscape){
+  #plate-card.fs{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,200px);grid-template-rows:auto minmax(0,1fr) auto;column-gap:12px;row-gap:8px}
+  #plate-card.fs #pl-hint{grid-column:2;grid-row:1}
+  #plate-card.fs .platebox{grid-column:1;grid-row:1 / 4}
+  #plate-card.fs>.row:last-child{grid-column:2;grid-row:3;flex-direction:column;align-items:stretch;gap:8px}
+  #plate-card.fs>.row:last-child>.row{flex-direction:column;align-items:stretch}
+  #plate-card.fs>.row:last-child .chip{text-align:center}
+}
 .report{display:flex;flex-direction:column;gap:14px}
 .report h3{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
 .report .sec{display:flex;flex-direction:column;gap:6px}
@@ -1602,7 +1613,7 @@ function renderHome(){
     if(n.f!=null){cr.push("›");cr.push(`<b>${esc(n.f)}</b>`)}}
   $("#home-crumbs").innerHTML=cr.join(" ");
   const cnt=L=>{const a=L.filter(p=>!expDone(p)).length;return `${L.length} experiment${L.length===1?"":"s"}${a?` · ${a} in progress`:""}`};
-  const tile=(label,nav,L,none)=>`<button class="ftile${none?" none":""}" data-go='${esc(JSON.stringify(nav))}'><span class="ic"></span><span class="tx"><b>${esc(label)}</b><span>${cnt(L)}</span></span></button>`;
+  const tile=(label,nav,L,none)=>`<button class="ftile${none?" none":""}" data-go='${esc(JSON.stringify(nav))}'><span class="ic"></span><span class="tx"><b lang="en">${esc(label)}</b><span>${cnt(L)}</span></span></button>`;
   let tiles="";
   if(!q&&n.p==null){tiles=projects.map(g=>tile(g,{p:g,f:null},every.filter(p=>pj(p)===g))).join("");const nn=every.filter(p=>!pj(p));if(nn.length)tiles+=tile("No project",{p:"__none",f:null},nn,true)}
   else if(!q&&n.p!=null&&n.f==null&&n.p!=="__none")tiles=folders.map(f=>tile(f,{p:n.p,f},every.filter(p=>pj(p)===n.p&&pf(p)===f))).join("");
@@ -2580,11 +2591,15 @@ function renderPlate(){
   if(!S.assay)return;const P=plate();const [R,C]=PL_FMT[P.fmt]||PL_FMT["96"];$("#pl-fmt").value=P.fmt;
   const ids=plIds();const used=ids.filter(id=>P.w[id]&&(P.w[id].label||P.w[id].color));
   const next=S.plFill?used.find(id=>!P.w[id].filled):null;
-  const g=$("#pl-grid");g.style.setProperty("--c",C);g.classList.toggle("big",!!lsGet("bb.plbig",false)&&!S.plFill);$("#pl-big").textContent=lsGet("bb.plbig",false)?"Smaller wells":"Bigger wells";
-  let h=`<span></span>`;for(let c=1;c<=C;c++)h+=`<button class="hd" data-col="${c}">${c}</button>`;
+  const g=$("#pl-grid");g.style.setProperty("--c",C);g.style.setProperty("--r",R);g.classList.toggle("big",!!lsGet("bb.plbig",false)&&!S.plFill);$("#pl-big").textContent=lsGet("bb.plbig",false)?"Smaller wells":"Bigger wells";
+  const tr=S.plFill&&window.matchMedia("(orientation:portrait)").matches;if(tr){g.style.setProperty("--c",R);g.style.setProperty("--r",C)}
+  const cell=(L,c)=>{const id=L+c,w=P.w[id]||{};const set=!!(w.label||w.color);return `<button class="pw${set?" set":""}${S.plSel.has(id)?" sel":""}${w.filled&&set?" filled":""}${id===next?" next":""}" data-w="${id}" title="${id}${w.label?": "+esc(w.label):""}" style="${w.color?`background:${w.color}`:set?"background:var(--muted)":""}"><span style="--fs:${plFs(w.label)}cqw">${plBreak(w.label)}</span></button>`};
+  let h=`<span></span>`;
+  if(tr){for(let r=0;r<R;r++)h+=`<button class="hd">${String.fromCharCode(65+r)}</button>`;
+    for(let c=1;c<=C;c++){h+=`<button class="hd">${c}</button>`;for(let r=0;r<R;r++)h+=cell(String.fromCharCode(65+r),c)}}
+  else{for(let c=1;c<=C;c++)h+=`<button class="hd" data-col="${c}">${c}</button>`;
   for(let r=0;r<R;r++){const L=String.fromCharCode(65+r);h+=`<button class="hd" data-row="${L}">${L}</button>`;
-    for(let c=1;c<=C;c++){const id=L+c,w=P.w[id]||{};const set=!!(w.label||w.color);
-      h+=`<button class="pw${set?" set":""}${S.plSel.has(id)?" sel":""}${w.filled&&set?" filled":""}${id===next?" next":""}" data-w="${id}" title="${id}${w.label?": "+esc(w.label):""}" style="${w.color?`background:${w.color}`:set?"background:var(--muted)":""}"><span style="--fs:${plFs(w.label)}cqw">${plBreak(w.label)}</span></button>`}}
+    for(let c=1;c<=C;c++){h+=cell(L,c)}}}
   g.innerHTML=h;
   // legend
   const groups={};used.forEach(id=>{const w=P.w[id];const k=(w.color||"")+"|"+(w.label||"");(groups[k]=groups[k]||{c:w.color,l:w.label,n:0}).n++});
@@ -2604,6 +2619,7 @@ function renderPlate(){
   const card=$("#plate-card");card.classList.toggle("fs",S.plFill);card.classList.toggle("loading",S.plFill);document.body.classList.toggle("fslock",S.plFill||!!S.loadMode);
 }
 $("#pl-big").addEventListener("click",()=>{lsSet("bb.plbig",!lsGet("bb.plbig",false));renderPlate()});
+window.addEventListener("resize",()=>{if(S.plFill)renderPlate()});
 function plSave(){renderPlate();queueSave(S.plateCtx==="qpcr"?"protocols":"assays")}
 let plSuppress=false;
 function plRect(a,b){const r1=a.charCodeAt(0),r2=b.charCodeAt(0),c1=+a.slice(1),c2=+b.slice(1);return plIds().filter(id=>{const r=id.charCodeAt(0),c=+id.slice(1);return r>=Math.min(r1,r2)&&r<=Math.max(r1,r2)&&c>=Math.min(c1,c2)&&c<=Math.max(c1,c2)})}
