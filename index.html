@@ -763,6 +763,7 @@ nav.tabs button{position:relative}
       <div class="row">
         <label class="f" style="flex-direction:row;align-items:center;gap:8px">Make<input id="r-vol" type="text" inputmode="decimal" style="width:90px"></label>
         <select id="r-vunit" style="width:auto"><option>mL</option><option>L</option><option>µL</option></select>
+        <label class="f" style="flex-direction:row;align-items:center;gap:8px">Top up with<input id="r-dil" type="text" placeholder="water" style="width:170px"></label>
       </div>
       <div class="tablewrap"><table class="xl" id="r-table"></table></div>
       <div class="row"><span class="addn"><input class="nrows" id="r-add-n" type="number" min="1" max="200" value="1" aria-label="How many"><button class="btn sm ghost" id="r-add">Add components</button></span></div>
@@ -1504,6 +1505,17 @@ const TEMPLATES={
   nanodrop:{name:"Protein concentration: NanoDrop A280",method:"protein",assay:"direct",label:"Protein concentration",desc:"Direct A280 reading, no standard curve.",tools:{protein:true,gel:false,solutions:false},steps:()=>[
     st("Setup","Clean pedestals","Wipe both pedestals with water and a lint-free tissue"),st("Setup","Blank","2 µL of the sample buffer"),
     st("Measure","Measure samples","2 µL per sample, wipe between samples; note mg/mL"),st("Measure","Enter readings","Type the readings into Protein concentration")]},
+  homog:{name:"Tissue homogenization (RIPA)",method:"custom",label:"Homogenization",desc:"Tissue lysis in RIPA with protease and phosphatase inhibitors, e.g. pancreas. Buffers and stocks included.",tools:{protein:false,gel:false,solutions:true},sols:["RIPA base buffer (tissue lysis)","RIPA working buffer + inhibitors","PMSF 100 mM (in isopropanol)","NaF 0.5 M","Sodium vanadate 200 mM, activated"],steps:()=>[
+    st("Before","Stocks ready","PMSF 100 mM, NaF 0.5 M and activated vanadate 200 mM (see Solutions). Base RIPA made and at 4 °C"),
+    st("Before","Cool down","Centrifuge to 4 °C, ice bucket, pre-chilled labelled tubes"),
+    st("Buffer","Working buffer","On ice: base RIPA + cOmplete + NaF + vanadate, PMSF last (see Solutions). Use within ~1 h; with many samples make two batches"),
+    st("Homogenize","Weigh tissue","Keep the tissue frozen or on ice; note the mass of each piece"),
+    st("Homogenize","Add buffer","500 µL ice-cold working buffer per sample"),
+    st("Homogenize","Homogenize","On ice, short bursts; rinse the probe between samples (70% ethanol or isopropanol, then ddH₂O). Pancreas is full of proteases: work fast and cold"),
+    st("Homogenize","Incubate on ice","Mix now and then",30),
+    st("Clarify","Centrifuge","4 °C; set the speed from your protocol",20),
+    st("Clarify","Collect supernatant","Into fresh pre-chilled tubes; avoid the pellet and the fat layer"),
+    st("Store","Aliquot","Keep one aliquot for protein concentration (Lowry); store the rest at −80 °C")]},
   custom:{name:"New protocol",method:"custom",label:"Custom",desc:"Start with no steps and choose the tools you need.",tools:{protein:false,gel:false,solutions:true},steps:()=>[]}
 };
 function newProt(key){const T=TEMPLATES[key]||TEMPLATES.custom;return{id:uid(),name:T.name,method:T.method,elisaType:T.elisaType,assayMethod:T.assay||"lowry",tools:Object.assign({},T.tools),steps:T.steps().map(x=>Object.assign({id:uid()+Math.random().toString(36).slice(2,5)},x)),notes:"",created:Date.now()}}
@@ -1709,7 +1721,7 @@ const BUFFERS={
   bsa:{n:"5% BSA in TBST",r:[["BSA",50,"g"]],note:"Sprinkle on the surface and let it dissolve without vigorous mixing. For antibody solutions you can add 0.02% NaN₃."},
   lae:{n:"4× Laemmli buffer",r:[["1 M Tris-HCl pH 6.8",250,"mL"],["SDS",80,"g"],["Glycerol",400,"mL"],["Bromophenol blue",0.4,"g"]],note:"Before use add β-mercaptoethanol to 10% (or DTT to 200 mM) in the 4× buffer."}
 };
-function fmtAmt(v,u){if(u==="g"&&v<1)return fmt(v*1000,0)+" mg";if(u==="mL"&&v<1)return fmt(v*1000,0)+" µL";return fmt(v,v<10?2:1)+" "+u}
+function fmtAmt(v,u){if(u==="tab"){const r=Math.abs(v-Math.round(v))<0.05;return fmt(v,r?0:1)+(v>0.95&&v<1.05?" tablet":" tablets")}if(u==="g"&&v<1){const m=v*1000;return fmt(m,m<100?1:0)+" mg"}if(u==="mL"&&v<1)return fmt(v*1000,0)+" µL";return fmt(v,v<10?2:1)+" "+u}
 function calc(){
   const mode=$("#c-mode button[aria-pressed=true]").dataset.v,n=Math.max(1,parseInt($("#c-n").value)||1),th=$("#c-th").value;
   $("#c-hand").hidden=mode!=="hand";$("#c-kitpct-w").hidden=mode!=="kit";
@@ -2125,7 +2137,7 @@ $("#dq-mdl").addEventListener("click",()=>saveFile("labrat-densitometry.ijm",new
 
 
 /* ================= SOLUTIONS ================= */
-const CT={M:"Molarity",wv:"% w/v",vv:"% v/v",stock:"From stock",gl:"g per L",mll:"mL per L",mgml:"mg per mL"};
+const CT={M:"Molarity",wv:"% w/v",vv:"% v/v",stock:"From stock",gl:"g per L",mll:"mL per L",mgml:"mg per mL",tab:"Tablets"};
 const MUN={M:1,mM:1e-3,"µM":1e-6,nM:1e-9};
 const SUN=["×","M","mM","µM","mg/mL","µg/mL","%"];
 const c_=(name,type,val,unit,extra)=>({name,type,val:String(val),unit:unit||"",extra:extra==null?"":String(extra)});
@@ -2145,7 +2157,12 @@ const SOL_TPL=[
   {name:"ELISA blocking buffer (1% BSA in PBS)",vol:"50",vunit:"mL",notes:"In 1× PBS. Some kits use 5% non-fat milk or a commercial blocker instead.",comps:[c_("BSA","wv",1)]},
   {name:"Stop solution (1 M H₂SO₄)",vol:"100",vunit:"mL",notes:"From concentrated H₂SO₄ (~18.4 M). Always add acid to water, slowly, in the fume hood.",comps:[c_("Conc. H₂SO₄ (18.4 M)","stock",1,"M",18.4)]},
   {name:"10% SDS",vol:"50",vunit:"mL",notes:"",comps:[c_("SDS","wv",10)]},
-  {name:"10% APS",vol:"1",vunit:"mL",notes:"Make fresh or store aliquots at −20 °C.",comps:[c_("Ammonium persulfate","wv",10)]}
+  {name:"10% APS",vol:"1",vunit:"mL",notes:"Make fresh or store aliquots at −20 °C.",comps:[c_("Ammonium persulfate","wv",10)]},
+  {name:"RIPA base buffer (tissue lysis)",vol:"50",vunit:"mL",notes:"Dissolve Tris, NaCl and EDTA in ~40 mL ddH₂O. Adjust pH to 7.4 with HCl (about 2 mL 1 M HCl for Tris base) BEFORE the detergents: deoxycholate precipitates below pH ~7.2. Then add deoxycholate, Triton X-100 (pipette slowly) and SDS, mix gently without foaming and top up. Store at 4 °C for a few weeks. EDTA: with a 50 mM stock add 1 mL instead of weighing powder.",comps:[c_("Tris base","M",50,"mM",121.14),c_("NaCl","M",150,"mM",58.44),c_("Na₂EDTA·2H₂O","M",1,"mM",372.24),c_("Sodium deoxycholate","wv",1),c_("Triton X-100","vv",1),c_("SDS (10%)","stock",0.1,"%",10)]},
+  {name:"RIPA working buffer + inhibitors",vol:"30",vunit:"mL",diluent:"RIPA base buffer",notes:"Make on the day, on ice, in this order: cOmplete (vortex until dissolved), NaF, vanadate (only if colourless), PMSF last (stock fully dissolved, mix right away). Use within about 1 h: PMSF breaks down in water. For many samples make two half batches, each just before use. 500 µL per sample → samples × 0.5 mL plus ~40% extra. Regular (non-mini) cOmplete: 1 tablet in 2 mL water = 25×, add 1/25 of the volume.",comps:[c_("cOmplete mini","tab",10),c_("NaF (0.5 M)","stock",10,"mM",500),c_("Sodium vanadate, activated (200 mM)","stock",1,"mM",200),c_("PMSF (100 mM in isopropanol)","stock",1,"mM",100)]},
+  {name:"PMSF 100 mM (in isopropanol)",vol:"2",vunit:"mL",diluent:"anhydrous isopropanol",notes:"Not in water: PMSF hydrolyses. Store at −20 °C in 250 µL aliquots; it crystallises in the cold, so warm and vortex until fully dissolved before use. Toxic: gloves, weigh in the fume hood.",comps:[c_("PMSF","M",100,"mM",174.19)]},
+  {name:"NaF 0.5 M",vol:"5",vunit:"mL",notes:"In a plastic tube, not glass (NaF etches glass). Stable at room temperature or −20 °C. Toxic: gloves.",comps:[c_("NaF","M",500,"mM",41.99)]},
+  {name:"Sodium vanadate 200 mM, activated",vol:"5",vunit:"mL",notes:"From sodium metavanadate (NaVO₃, 121.93 g/mol); for orthovanadate Na₃VO₄ use 183.91 g/mol. Dissolve in ~3.5 mL ddH₂O, bring to pH 10.0 (NaOH for metavanadate, HCl for orthovanadate; it turns yellow). Boil ~10 min in a loosely capped 15 mL tube until colourless, cool, reset pH to 10.0. Repeat until it stays colourless and pH is stable at ~10. Top up, aliquot, store at −20 °C. Do not use if it turns yellow.",comps:[c_("NaVO₃ (sodium metavanadate)","M",200,"mM",121.93)]}
 ];
 function newSol(t,protoId){const b=t?clone(t):{name:"New solution",vol:"100",vunit:"mL",notes:"",comps:[c_("","M","","mM","")]};return Object.assign({id:uid(),protoId:protoId||null},b)}
 function volML(r){const v=num(r.vol);return v*(r.vunit==="L"?1000:r.vunit==="µL"?0.001:1)}
@@ -2158,6 +2175,7 @@ function compAmt(c,V){const v=num(c.val),x=num(c.extra);if(!(V>0)||!Number.isFin
     case "gl":return{a:v*V/1000,u:"g"};
     case "mll":return{a:v*V/1000,u:"mL"};
     case "mgml":return{a:v*V/1000,u:"g"};
+    case "tab":return Number.isFinite(v)&&v>0?{a:V/v,u:"tab"}:{err:"mL per tablet?"};
   }return null}
 function solScope(){return S.tab==="psol"&&S.prot?S.prot.id:null}
 function solsInScope(){const sc=solScope();return Object.values(Store.data.solutions).filter(r=>!sc||r.protoId===sc).sort((a,b)=>String(a.name).localeCompare(String(b.name)))}
@@ -2172,7 +2190,7 @@ function renderSolSelect(){
   $("#sol-tpl-list").innerHTML=`<button class="tpl" data-st="-1"><b>Blank recipe</b><span>Add your own components</span></button>`+SOL_TPL.map((t,i)=>`<button class="tpl" data-st="${i}"><b>${esc(t.name)}</b><span>${t.comps.map(c=>esc(c.name)).join(", ")}</span></button>`).join("");
 }
 function fillSol(){
-  const r=S.sol;$("#r-name").value=r.name||"";$("#r-vol").value=r.vol||"";$("#r-vunit").value=r.vunit||"mL";$("#r-notes").value=r.notes||"";
+  const r=S.sol;$("#r-name").value=r.name||"";$("#r-vol").value=r.vol||"";$("#r-vunit").value=r.vunit||"mL";$("#r-notes").value=r.notes||"";$("#r-dil").value=r.diluent||"";
   $("#r-proto").innerHTML=`<option value="">None</option>`+protList().map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");$("#r-proto").value=r.protoId||"";
   $("#sol-del").classList.remove("armed");$("#sol-del").textContent="Delete";
   renderSolRows();renderSolOut();
@@ -2181,7 +2199,7 @@ function renderSolRows(){
   const r=S.sol;
   $("#r-table").innerHTML=`<thead><tr><th>Component</th><th>Type</th><th>Target</th><th>Unit</th><th>MW / stock</th><th style="text-align:right">Amount</th><th></th></tr></thead><tbody>`+
     r.comps.map((c,i)=>{const un=c.type==="M"?Object.keys(MUN):c.type==="stock"?SUN:null;
-      const unitCell=un?`<select class="un" id="rc-${i}-u" data-k="unit">${un.map(u=>`<option ${u===c.unit?"selected":""}>${u}</option>`).join("")}</select>`:`<span class="note">${({wv:"%",vv:"%",gl:"g/L",mll:"mL/L",mgml:"mg/mL"})[c.type]||""}</span>`;
+      const unitCell=un?`<select class="un" id="rc-${i}-u" data-k="unit">${un.map(u=>`<option ${u===c.unit?"selected":""}>${u}</option>`).join("")}</select>`:`<span class="note">${({wv:"%",vv:"%",gl:"g/L",mll:"mL/L",mgml:"mg/mL",tab:"mL per tablet"})[c.type]||""}</span>`;
       const ex=c.type==="M"?`<input id="rc-${i}-x" data-k="extra" type="text" inputmode="decimal" value="${esc(c.extra)}" placeholder="g/mol">`:c.type==="stock"?`<input id="rc-${i}-x" data-k="extra" type="text" inputmode="decimal" value="${esc(c.extra)}" placeholder="stock">`:"";
       return `<tr data-i="${i}"><td><input class="nm" id="rc-${i}-n" data-k="name" type="text" value="${esc(c.name)}" placeholder="e.g. NaCl"></td>
         <td><select class="ty" id="rc-${i}-t" data-k="type">${Object.entries(CT).map(([k,l])=>`<option value="${k}" ${k===c.type?"selected":""}>${l}</option>`).join("")}</select></td>
@@ -2194,14 +2212,14 @@ function renderSolOut(){
     if(res&&res.err)t=`<span style="color:var(--warn);font-size:12px">${res.err}</span>`;else if(res){t=fmtAmt(res.a,res.u);if(res.u==="mL")liq+=res.a;lines.push(`${c.name||"Component "+(i+1)}: ${fmtAmt(res.a,res.u)}`)}
     if(el)el.innerHTML=t});
   const vl=V>=1000?fmt(V/1000,V%1000?2:0)+" L":V>=1?fmt(V,V%1?1:0)+" mL":fmt(V*1000,0)+" µL";
-  $("#r-out").innerHTML=V>0?`Dissolve in about 80% of the volume, then top up with water to <b>${vl}</b>.${liq>0?` <span class="muted">Liquids above add up to ${fmtAmt(liq,"mL")}.</span>`:""}${liq>V?`<div style="color:var(--bad);margin-top:4px">The liquid components exceed the final volume. Check the values.</div>`:""}`:"Enter the volume to make.";
-  S._solText=[`${r.name} (${vl})`,...lines,`Water to ${vl}`,r.notes?`Note: ${r.notes}`:""].filter(Boolean).join("\n");
+  $("#r-out").innerHTML=V>0?`Dissolve in about 80% of the volume, then top up with ${esc(r.diluent||"water")} to <b>${vl}</b>.${liq>0?` <span class="muted">Liquids above add up to ${fmtAmt(liq,"mL")}.</span>`:""}${liq>V?`<div style="color:var(--bad);margin-top:4px">The liquid components exceed the final volume. Check the values.</div>`:""}`:"Enter the volume to make.";
+  S._solText=[`${r.name} (${vl})`,...lines,`${r.diluent?r.diluent[0].toUpperCase()+r.diluent.slice(1):"Water"} to ${vl}`,r.notes?`Note: ${r.notes}`:""].filter(Boolean).join("\n");
 }
 $("#r-table").addEventListener("input",e=>{const tr=e.target.closest("tr[data-i]"),k=e.target.dataset.k;if(!tr||!k)return;const c=S.sol.comps[+tr.dataset.i];c[k]=e.target.value;
   if(k==="type"){c.unit=c.type==="M"?"mM":c.type==="stock"?"×":"";c.extra="";renderSolRows()}renderSolOut();queueSave("solutions")});
 $("#r-table").addEventListener("click",e=>{const b=e.target.closest("[data-rm]");if(!b)return;S.sol.comps.splice(+b.dataset.rm,1);renderSolRows();renderSolOut();queueSave("solutions")});
 $("#r-add").addEventListener("click",()=>{const n0=S.sol.comps.length;for(let k=0,K=Math.max(1,Math.min(200,parseInt($("#r-add-n").value)||1));k<K;k++)S.sol.comps.push(c_("","M","","mM",""));renderSolRows();renderSolOut();queueSave("solutions");const e=$(`#rc-${n0}-n`);e&&e.focus()});
-[["#r-name","name"],["#r-vol","vol"],["#r-vunit","vunit"],["#r-notes","notes"],["#r-proto","protoId"]].forEach(([sel,k])=>$(sel).addEventListener("input",e=>{S.sol[k]=k==="protoId"?(e.target.value||null):e.target.value;renderSolOut();queueSave("solutions");if(k==="name"||k==="protoId")setTimeout(renderSolSelect,760)}));
+[["#r-name","name"],["#r-vol","vol"],["#r-vunit","vunit"],["#r-notes","notes"],["#r-dil","diluent"],["#r-proto","protoId"]].forEach(([sel,k])=>$(sel).addEventListener("input",e=>{S.sol[k]=k==="protoId"?(e.target.value||null):e.target.value;renderSolOut();queueSave("solutions");if(k==="name"||k==="protoId")setTimeout(renderSolSelect,760)}));
 $("#sol-select").addEventListener("change",e=>{const r=Store.data.solutions[e.target.value];if(r){flushSol();S.sol=clone(r);fillSol()}});
 $("#sol-new").addEventListener("click",()=>{$("#sol-tpl").hidden=false});
 $("#sol-tpl-cancel").addEventListener("click",()=>{$("#sol-tpl").hidden=true});
