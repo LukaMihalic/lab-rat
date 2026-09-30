@@ -66,6 +66,17 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 .ficons svg{width:40px;height:33px}
 .setchk{font-size:14.5px;gap:10px;align-items:center}
 .seg.off{opacity:.45;pointer-events:none}
+.sclist{display:flex;flex-direction:column;gap:2px}
+.scrow{display:flex;align-items:center;gap:10px;padding:6px 4px;border-radius:8px}
+.scrow:hover{background:var(--surface-2)}
+.scrow input{width:20px;height:20px;margin:0;flex:none}
+.scrow button{flex:1;min-width:0;text-align:left;background:none;border:0;padding:2px 0;font:600 14.5px var(--sans);color:var(--ink);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scrow.done button{color:var(--muted);text-decoration:line-through}
+.scrow.cur button{color:var(--accent)}
+.scrow .note{white-space:nowrap}
+table.xl input.ctick,.ctick{width:18px;height:18px;margin:0 4px;padding:0;accent-color:var(--accent)}
+table.xl th:first-child{width:26px}
+#r-table tr.ticked td:not(:first-child){opacity:.5}
 .bgpick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .bgpick button{display:flex;flex-direction:column;align-items:center;gap:5px;padding:0 0 7px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);cursor:pointer;font:600 11.5px var(--sans);color:var(--muted);overflow:hidden}
 .bgpick button i{display:block;width:100%;height:54px;background-color:var(--bg);border-bottom:1px solid var(--line)}
@@ -827,6 +838,10 @@ nav.tabs button{position:relative}
       <button class="btn primary" id="sol-new">+ New</button>
     </div>
     <p class="note" style="margin:0" id="sol-scope"></p>
+    <div class="card" id="sol-check" hidden>
+      <div class="row chead" style="justify-content:space-between"><h2>Prepared</h2><span class="chip" id="sol-check-n"></span></div>
+      <div class="sclist" id="sol-check-list"></div>
+    </div>
     <div class="card" id="sol-tpl" hidden>
       <div class="row" style="justify-content:space-between"><b>Start from</b><button class="btn sm ghost" id="sol-tpl-cancel">Cancel</button></div>
       <div class="tpls" id="sol-tpl-list"></div>
@@ -843,6 +858,7 @@ nav.tabs button{position:relative}
         <select id="r-vunit" style="width:auto"><option>mL</option><option>L</option><option>µL</option></select>
         <label class="f" style="flex-direction:row;align-items:center;gap:8px">Top up with<input id="r-dil" type="text" placeholder="water" style="width:170px"></label>
       </div>
+      <div class="row" style="justify-content:space-between;align-items:center"><label class="chk" style="font-size:14.5px;gap:8px"><input type="checkbox" id="r-prep"> Prepared <span class="note" id="r-prep-d"></span></label><button class="btn sm ghost" id="r-untick" hidden>Clear ticks</button></div>
       <div class="tablewrap"><table class="xl" id="r-table"></table></div>
       <div class="row"><span class="addn"><input class="nrows" id="r-add-n" type="number" min="1" max="200" value="1" aria-label="How many"><button class="btn sm ghost" id="r-add">Add components</button></span></div>
       <div class="calcline" id="r-out"></div>
@@ -2440,26 +2456,41 @@ function solsInScope(){const sc=solScope();return Object.values(Store.data.solut
 function renderSolSelect(){
   const L=solsInScope();const sc=solScope();
   if(!S.sol||(sc&&S.sol.protoId!==sc)||(!Store.data.solutions[S.sol.id]&&!S.sol.fresh)){S.sol=L.length?clone(L[0]):null}
-  const sel=$("#sol-select");sel.innerHTML=(L.length?"":`<option value="">No solutions yet</option>`)+L.map(r=>`<option value="${esc(r.id)}">${esc(r.name||"Untitled")}${!sc&&r.protoId&&Store.data.protocols[r.protoId]?" · "+esc(Store.data.protocols[r.protoId].name):""}</option>`).join("");
+  const sel=$("#sol-select");sel.innerHTML=(L.length?"":`<option value="">No solutions yet</option>`)+L.map(r=>`<option value="${esc(r.id)}">${r.prepared?"✓ ":""}${esc(r.name||"Untitled")}${!sc&&r.protoId&&Store.data.protocols[r.protoId]?" · "+esc(Store.data.protocols[r.protoId].name):""}</option>`).join("");
   if(S.sol)sel.value=S.sol.id;
   $("#sol-scope").textContent=sc?`Solutions for ${S.prot.name}. All solutions are in the Solutions tab at the bottom.`:"All your solutions. A solution linked to a protocol also appears inside that protocol.";
   $("#sol-empty").hidden=!!S.sol;$("#sol-card").hidden=!S.sol;
+  renderSolCheck(L);
   if(S.sol)fillSol();
   $("#sol-tpl-list").innerHTML=`<button class="tpl" data-st="-1"><b>Blank recipe</b><span>Add your own components</span></button>`+SOL_TPL.map((t,i)=>`<button class="tpl" data-st="${i}"><b>${esc(t.name)}</b><span>${t.comps.map(c=>esc(c.name)).join(", ")}</span></button>`).join("");
 }
+const fmtD=d=>{try{return new Date(d+"T12:00").toLocaleDateString("en-GB")}catch(e){return d}};
+function renderSolCheck(L){L=L||solsInScope();const box=$("#sol-check");box.hidden=!L.length;if(!L.length)return;
+  const cur=r=>S.sol&&S.sol.id===r.id?S.sol:r;const n=L.filter(r=>cur(r).prepared).length;
+  $("#sol-check-n").textContent=`${n}/${L.length}`;$("#sol-check-n").className="chip"+(n===L.length?" ok":"");
+  $("#sol-check-list").innerHTML=L.map(r0=>{const r=cur(r0);return `<div class="scrow${r.prepared?" done":""}${S.sol&&S.sol.id===r.id?" cur":""}"><input type="checkbox" data-prep="${esc(r.id)}"${r.prepared?" checked":""} aria-label="Prepared"><button data-open="${esc(r.id)}">${esc(r.name||"Untitled")}</button><span class="note">${r.prepared?fmtD(r.prepared):""}</span></div>`}).join("")}
+function setPrepared(id,on){if(S.sol&&S.sol.id===id){S.sol.prepared=on?today():null;queueSave("solutions");fillPrep()}else{const r=Store.data.solutions[id];if(!r)return;const c=clone(r);c.prepared=on?today():null;Store.save("solutions",c)}renderSolCheck()}
+function fillPrep(){const r=S.sol;if(!r)return;$("#r-prep").checked=!!r.prepared;$("#r-prep-d").textContent=r.prepared?fmtD(r.prepared):"";$("#r-untick").hidden=!(r.comps||[]).some(c=>c.done)}
+$("#sol-check-list").addEventListener("change",e=>{const i=e.target.closest("[data-prep]");if(i)setPrepared(i.dataset.prep,i.checked)});
+$("#sol-check-list").addEventListener("click",e=>{const b=e.target.closest("[data-open]");if(!b)return;const r=Store.data.solutions[b.dataset.open];if(r){flushSol();S.sol=clone(r);$("#sol-select").value=r.id;fillSol();renderSolCheck();$("#sol-card").scrollIntoView({block:"start",behavior:"smooth"})}});
+$("#r-prep").addEventListener("change",e=>{if(S.sol)setPrepared(S.sol.id,e.target.checked)});
+$("#r-untick").addEventListener("click",()=>{if(!S.sol)return;S.sol.comps.forEach(c=>delete c.done);renderSolRows();renderSolOut();fillPrep();queueSave("solutions")});
+$("#r-table").addEventListener("change",e=>{const t=e.target.closest(".ctick");if(!t||!S.sol)return;const c=S.sol.comps[+t.dataset.tick];if(!c)return;c.done=t.checked;t.closest("tr").classList.toggle("ticked",t.checked);
+  const named=S.sol.comps.filter(x=>(x.name||"").trim());if(t.checked&&named.length&&named.every(x=>x.done)&&!S.sol.prepared){S.sol.prepared=today();setStatus("All components added: marked as prepared")}
+  queueSave("solutions");fillPrep();renderSolCheck()});
 function fillSol(){
-  const r=S.sol;$("#r-name").value=r.name||"";$("#r-vol").value=r.vol||"";$("#r-vunit").value=r.vunit||"mL";$("#r-notes").value=r.notes||"";$("#r-dil").value=r.diluent||"";
+  const r=S.sol;fillPrep();$("#r-name").value=r.name||"";$("#r-vol").value=r.vol||"";$("#r-vunit").value=r.vunit||"mL";$("#r-notes").value=r.notes||"";$("#r-dil").value=r.diluent||"";
   $("#r-proto").innerHTML=`<option value="">None</option>`+protList().map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");$("#r-proto").value=r.protoId||"";
   $("#sol-del").classList.remove("armed");$("#sol-del").textContent="Delete";
   renderSolRows();renderSolOut();
 }
 function renderSolRows(){
   const r=S.sol;
-  $("#r-table").innerHTML=`<thead><tr><th>Component</th><th>Type</th><th>Target</th><th>Unit</th><th>MW / stock</th><th style="text-align:right">Amount</th><th></th></tr></thead><tbody>`+
+  $("#r-table").innerHTML=`<thead><tr><th title="Tick while you add it">✓</th><th>Component</th><th>Type</th><th>Target</th><th>Unit</th><th>MW / stock</th><th style="text-align:right">Amount</th><th></th></tr></thead><tbody>`+
     r.comps.map((c,i)=>{const un=c.type==="M"?Object.keys(MUN):c.type==="stock"?SUN:null;
       const unitCell=un?`<select class="un" id="rc-${i}-u" data-k="unit">${un.map(u=>`<option ${u===c.unit?"selected":""}>${u}</option>`).join("")}</select>`:`<span class="note">${({wv:"%",vv:"%",gl:"g/L",mll:"mL/L",mgml:"mg/mL",tab:"mL per tablet"})[c.type]||""}</span>`;
       const ex=c.type==="M"?`<input id="rc-${i}-x" data-k="extra" type="text" inputmode="decimal" value="${esc(c.extra)}" placeholder="g/mol">`:c.type==="stock"?`<input id="rc-${i}-x" data-k="extra" type="text" inputmode="decimal" value="${esc(c.extra)}" placeholder="stock">`:"";
-      return `<tr data-i="${i}"><td><input class="nm" id="rc-${i}-n" data-k="name" type="text" value="${esc(c.name)}" placeholder="e.g. NaCl"></td>
+      return `<tr data-i="${i}"${c.done?' class="ticked"':""}><td><input type="checkbox" class="ctick" data-tick="${i}"${c.done?" checked":""} aria-label="Added"></td><td><input class="nm" id="rc-${i}-n" data-k="name" type="text" value="${esc(c.name)}" placeholder="e.g. NaCl"></td>
         <td><select class="ty" id="rc-${i}-t" data-k="type">${Object.entries(CT).map(([k,l])=>`<option value="${k}" ${k===c.type?"selected":""}>${l}</option>`).join("")}</select></td>
         <td><input id="rc-${i}-v" data-k="val" type="text" inputmode="decimal" value="${esc(c.val)}"></td><td>${unitCell}</td><td>${ex}</td>
         <td class="o amt" id="rc-${i}-a"></td><td><button class="rm" data-rm="${i}" aria-label="Remove component">×</button></td></tr>`}).join("")+`</tbody>`;
@@ -2478,7 +2509,7 @@ $("#r-table").addEventListener("input",e=>{const tr=e.target.closest("tr[data-i]
 $("#r-table").addEventListener("click",e=>{const b=e.target.closest("[data-rm]");if(!b)return;S.sol.comps.splice(+b.dataset.rm,1);renderSolRows();renderSolOut();queueSave("solutions")});
 $("#r-add").addEventListener("click",()=>{const n0=S.sol.comps.length;for(let k=0,K=Math.max(1,Math.min(200,parseInt($("#r-add-n").value)||1));k<K;k++)S.sol.comps.push(c_("","M","","mM",""));renderSolRows();renderSolOut();queueSave("solutions");const e=$(`#rc-${n0}-n`);e&&e.focus()});
 [["#r-name","name"],["#r-vol","vol"],["#r-vunit","vunit"],["#r-notes","notes"],["#r-dil","diluent"],["#r-proto","protoId"]].forEach(([sel,k])=>$(sel).addEventListener("input",e=>{S.sol[k]=k==="protoId"?(e.target.value||null):e.target.value;renderSolOut();queueSave("solutions");if(k==="name"||k==="protoId")setTimeout(renderSolSelect,760)}));
-$("#sol-select").addEventListener("change",e=>{const r=Store.data.solutions[e.target.value];if(r){flushSol();S.sol=clone(r);fillSol()}});
+$("#sol-select").addEventListener("change",e=>{const r=Store.data.solutions[e.target.value];if(r){flushSol();S.sol=clone(r);fillSol();renderSolCheck()}});
 $("#sol-new").addEventListener("click",()=>{$("#sol-tpl").hidden=false});
 $("#sol-tpl-cancel").addEventListener("click",()=>{$("#sol-tpl").hidden=true});
 $("#sol-tpl-list").addEventListener("click",e=>{const b=e.target.closest("[data-st]");if(!b)return;flushSol();const i=+b.dataset.st;S.sol=newSol(i>=0?SOL_TPL[i]:null,solScope());Store.save("solutions",S.sol);$("#sol-tpl").hidden=true;renderSolSelect();$("#r-name").focus()});
