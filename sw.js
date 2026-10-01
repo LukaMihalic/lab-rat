@@ -1,5 +1,5 @@
 // Lab Rat service worker: works offline after the first visit.
-const VERSION = "lab-rat-v21";
+const VERSION = "lab-rat-v22";
 const SHELL = ["./", "index.html", "config.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/favicon-64.png"];
 
 self.addEventListener("install", e => {
