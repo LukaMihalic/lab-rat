@@ -610,6 +610,14 @@ nav.tabs button{position:relative}
         <label class="f" style="flex-direction:row;align-items:center;gap:8px">Plate<select id="pl-fmt" style="width:auto"><option value="96">96 wells</option><option value="48">48 wells</option><option value="24">24 wells</option><option value="12">12 wells</option></select></label>
         <div class="row"><button class="btn sm ghost" id="pl-big">Bigger wells</button><button class="btn sm ghost" id="pl-auto">Fill from tables</button><button class="btn sm ghost danger" id="pl-clear">Clear plate</button></div>
       </div>
+      <div class="row" id="pl-io"><button class="btn sm ghost" id="pl-copy">Copy as table</button><button class="btn sm ghost" id="pl-xlsx">Download Excel</button><button class="btn sm ghost" id="pl-imp">Import table</button></div>
+      <div class="pledit" id="pl-imp-box" hidden>
+        <div class="row" style="justify-content:space-between"><b>Import a plate layout</b><button class="btn sm ghost" id="pl-imp-x">Cancel</button></div>
+        <p class="note" style="margin:0">Paste from Excel, or upload a file (.xlsx, .csv, .txt). Either a plate grid (rows A–H, columns 1–12, with or without the headers) or a list with two columns: well and name (A1, Blank). Wells with the same name get the same colour.</p>
+        <textarea id="pl-imp-t" class="copyarea" style="min-height:110px" placeholder="Paste the table here"></textarea>
+        <div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><label class="btn sm ghost" style="cursor:pointer">Upload file<input type="file" id="pl-imp-f" accept=".xlsx,.xls,.csv,.tsv,.txt,text/plain,text/csv" hidden></label><span class="note" id="pl-imp-msg"></span><button class="btn sm primary" id="pl-imp-ok">Apply to plate</button></div>
+      </div>
+      <textarea class="copyarea" id="pl-copyarea" hidden readonly></textarea>
       <p class="note" style="margin:0" id="pl-hint">Tap wells to select them (tap a row letter or column number to select the whole line), then give them a name and colour.</p>
       <div class="platebox"><div class="plate" id="pl-grid"></div></div>
       <div class="pledit" id="pl-edit" hidden>
@@ -2794,7 +2802,7 @@ function renderPlate(){
     const labs=new Set([...S.plSel].map(id=>(P.w[id]||{}).label||""));if(document.activeElement!==$("#pl-label"))$("#pl-label").value=labs.size===1?[...labs][0]:"";
     const cols=new Set([...S.plSel].map(id=>(P.w[id]||{}).color||""));
     $("#pl-colors").innerHTML=PL_COL.map(c=>`<button data-c="${c}" style="background:${c}" aria-label="Colour" aria-pressed="${cols.size===1&&cols.has(c)}"></button>`).join("")}
-  $("#pl-legend").hidden=S.plFill;$("#pl-fmt").closest(".row").hidden=S.plFill;
+  $("#pl-legend").hidden=S.plFill;$("#pl-fmt").closest(".row").hidden=S.plFill;$("#pl-io").hidden=S.plFill;if(S.plFill)$("#pl-imp-box").hidden=true;
   const nf=used.filter(id=>P.w[id].filled).length;
   $("#pl-count").hidden=!(S.plFill||nf);$("#pl-count").innerHTML=`Filled <b>${nf}/${used.length}</b>`;
   $("#pl-all").hidden=!S.plFill||nf===used.length;$("#pl-reset").hidden=!nf;
@@ -2802,6 +2810,48 @@ function renderPlate(){
   $("#pl-hint").innerHTML=S.plFill?(next?`Next: <b>${next}</b>${P.w[next].label?" · "+esc(P.w[next].label):""}. Tap a well when it's filled.`:used.length?"All wells filled.":"Name some wells first."):"Tap wells to select them, or drag a box over several (on a phone: hold, then drag). A row letter or column number selects the whole line. Then give them a name and colour.";
   const card=$("#plate-card");card.classList.toggle("fs",S.plFill);card.classList.toggle("loading",S.plFill);document.body.classList.toggle("fslock",S.plFill||!!S.loadMode);
 }
+function plGrid(){const P=plate();const [Rn,Cn]=PL_FMT[P.fmt]||PL_FMT["96"];const head=["",...Array.from({length:Cn},(_,i)=>String(i+1))];const rows=[];
+  for(let r=0;r<Rn;r++){const L=String.fromCharCode(65+r);rows.push([L,...Array.from({length:Cn},(_,i)=>((P.w[L+(i+1)]||{}).label||""))])}return{head,rows}}
+$("#pl-copy").addEventListener("click",async()=>{const g=plGrid();const t=[g.head,...g.rows].map(r=>r.join("\t")).join("\n");const ta=$("#pl-copyarea");
+  try{await navigator.clipboard.writeText(t);setStatus("Plate copied: paste it into Excel");ta.hidden=true}catch(e){ta.value=t;ta.hidden=false;ta.style.minHeight="160px";ta.focus();ta.select();setStatus("Selected, copy manually")}});
+$("#pl-xlsx").addEventListener("click",()=>{const g=plGrid();const P=plate();const list=plIds().filter(id=>(P.w[id]||{}).label).map(id=>[id,P.w[id].label]);
+  const nm=(S.plateCtx==="qpcr"?(S.prot&&S.prot.name):(S.assay&&S.assay.name))||"Plate layout";
+  saveFile(`${String(nm).replace(/[\\/:*?"<>|]+/g,"-")} - plate.xlsx`,toXlsx({title:`${nm} · plate layout`,blocks:[{table:{name:"Plate",head:g.head,rows:g.rows}},{table:{name:"List",head:["Well","Name"],rows:list}}]}))});
+$("#pl-imp").addEventListener("click",()=>{const b=$("#pl-imp-box");b.hidden=!b.hidden;$("#pl-imp-msg").textContent="";if(!b.hidden)$("#pl-imp-t").focus()});
+$("#pl-imp-x").addEventListener("click",()=>{$("#pl-imp-box").hidden=true});
+function plSplit(text){const lines=String(text||"").replace(/\r/g,"").split("\n");const tab=lines.some(l=>l.includes("\t"));const sep=tab?"\t":(lines.some(l=>l.includes(";"))?";":",");
+  return lines.map(l=>{if(tab)return l.split("\t").map(x=>x.trim());const out=[];let cur="",q=false;for(let i=0;i<l.length;i++){const ch=l[i];if(q){if(ch==='"'){if(l[i+1]==='"'){cur+='"';i++}else q=false}else cur+=ch}else if(ch==='"')q=true;else if(ch===sep){out.push(cur.trim());cur=""}else cur+=ch}out.push(cur.trim());return out})
+    .filter(r=>r.some(x=>x!==""))}
+function plParse(rows){const [Rn,Cn]=PL_FMT[plate().fmt]||PL_FMT["96"];const map={};let skipped=0;const isWell=x=>/^[A-Pa-p]\s*0?\d{1,2}$/.test(x||"");const norm=x=>{const m=String(x).trim().match(/^([A-Pa-p])\s*0?(\d{1,2})$/);return m?m[1].toUpperCase()+(+m[2]):null};
+  const ok=id=>{const r=id.charCodeAt(0)-65,c=+id.slice(1);return r>=0&&r<Rn&&c>=1&&c<=Cn};
+  const listRows=rows.filter(r=>isWell(r[0]));
+  if(listRows.length&&listRows.length>=rows.length*0.6&&rows.every(r=>isWell(r[0])||!/^[A-Pa-p]$/.test(r[0]||""))&&listRows.every(r=>r.filter(x=>x!=="").length<=3)){
+    listRows.forEach(r=>{const id=norm(r[0]);const lab=r.slice(1).filter(x=>x!=="").join(" ");if(!lab)return;if(ok(id))map[id]=lab;else skipped++});return{map,skipped,kind:"list"}}
+  // grid
+  let hi=rows.findIndex(r=>{const nums=r.slice(1).filter(x=>x!=="");return nums.length>=2&&nums.every((x,i)=>/^\d{1,2}$/.test(x))&&+nums[0]===1});
+  let cols=null,data=rows;
+  if(hi>=0){cols=rows[hi].slice(1).map(x=>/^\d{1,2}$/.test(x)?+x:null);data=rows.slice(hi+1)}
+  const lettered=data.length&&data.every(r=>/^[A-Pa-p]$/.test(r[0]||""))||(hi>=0);
+  data.forEach((r,ri)=>{let L,cells;if(lettered){L=(r[0]||"").toUpperCase();cells=r.slice(1)}else{L=String.fromCharCode(65+ri);cells=r}
+    if(!/^[A-P]$/.test(L))return;
+    cells.forEach((v,ci)=>{if(v==="")return;const c=cols?cols[ci]:ci+1;if(!c)return;const id=L+c;if(ok(id))map[id]=v;else skipped++})});
+  return{map,skipped,kind:"grid"}}
+function plApply(text){const rows=plSplit(text);if(!rows.length){$("#pl-imp-msg").textContent="Nothing to import.";return}
+  const {map,skipped,kind}=plParse(rows);const n=Object.keys(map).length;if(!n){$("#pl-imp-msg").textContent="I couldn't find any wells in that table.";return}
+  const P=plate();const old={};Object.values(P.w).forEach(w=>{if(w&&w.label&&w.color)old[w.label]=w.color});
+  const used=new Set(Object.values(old));let ci=0;const next=()=>{for(let k=0;k<PL_COL.length;k++){const c=PL_COL[(ci+k)%PL_COL.length];if(!used.has(c)){ci+=k+1;used.add(c);return c}}return PL_COL[(ci++)%PL_COL.length]};
+  const col={};Object.values(map).forEach(l=>{if(!col[l])col[l]=old[l]||next()});
+  P.w={};Object.entries(map).forEach(([id,l])=>{P.w[id]={label:l,color:col[l]}});S.plSel.clear();plSave();
+  $("#pl-imp-box").hidden=true;$("#pl-imp-t").value="";setStatus(`Imported ${n} well${n===1?"":"s"} (${kind==="list"?"list":"plate grid"})${skipped?`; ${skipped} outside this plate skipped`:""}`,!!skipped)}
+$("#pl-imp-ok").addEventListener("click",()=>plApply($("#pl-imp-t").value));
+$("#pl-imp-f").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const msg=$("#pl-imp-msg");
+  try{if(/\.xlsx?$/i.test(f.name)){msg.textContent="Reading the Excel file…";
+      if(!window.XLSX)await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+      const wb=window.XLSX.read(await f.arrayBuffer(),{type:"array"});const ws=wb.Sheets[wb.SheetNames.find(n=>/plate/i.test(n))||wb.SheetNames[0]];
+      const txt=window.XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:""}).map(r=>r.map(x=>String(x??"").replace(/\t/g," ")).join("\t")).join("\n");
+      $("#pl-imp-t").value=txt;msg.textContent="";plApply(txt)}
+    else{const txt=await f.text();$("#pl-imp-t").value=txt;plApply(txt)}}
+  catch(err){msg.textContent="Couldn't read that file"+(window.XLSX?"":" (the Excel reader needs internet the first time)")+"."}});
 $("#pl-big").addEventListener("click",()=>{lsSet("bb.plbig",!lsGet("bb.plbig",false));renderPlate()});
 window.addEventListener("resize",()=>{if(S.plFill)renderPlate()});
 function plSave(){renderPlate();queueSave(S.plateCtx==="qpcr"?"protocols":"assays")}
