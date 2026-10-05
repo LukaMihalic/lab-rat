@@ -367,6 +367,8 @@ table.xl td.o.amt{color:var(--accent);font-size:14px}
 .plbox{position:absolute;border:1.5px solid var(--accent);background:rgba(9,110,146,.14);pointer-events:none;border-radius:4px;z-index:3}
 .pw.rsel{outline:2.5px solid var(--accent);outline-offset:1px}
 .pw.rdes{opacity:.4}
+.pw.copied{outline:2px dashed var(--accent);outline-offset:2px}
+.pw.copied.sel{outline:2.5px solid var(--ink)}
 .pw.filled::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;font:800 13px var(--sans);color:#fff;background:rgba(0,0,0,.28);border-radius:50%}
 .pw.filled span{opacity:0}
 .pw.next{outline:2.5px dashed var(--accent);outline-offset:2px}
@@ -631,7 +633,8 @@ nav.tabs button{position:relative}
         <div class="row" style="justify-content:space-between"><b id="pl-selcount"></b><button class="btn sm ghost" id="pl-desel">Deselect</button></div>
         <label class="f">Name<input id="pl-label" type="text" placeholder="e.g. Blank, BSA 250, C-1"></label>
         <div class="swatches" id="pl-colors"></div>
-        <div class="row"><button class="btn sm ghost danger" id="pl-empty">Empty these wells</button></div>
+        <div class="row"><button class="btn sm ghost" id="pl-cp">Copy</button><button class="btn sm ghost" id="pl-ps" disabled>Paste here</button><button class="btn sm ghost danger" id="pl-empty">Empty these wells</button></div>
+        <p class="note" style="margin:0">On a keyboard: Ctrl+C copies the selected wells, Ctrl+V pastes them from the top-left selected well, Delete empties them.</p>
       </div>
       <div class="legend" id="pl-legend"></div>
       <div class="row" style="justify-content:space-between">
@@ -2792,7 +2795,7 @@ function renderPlate(){
   const next=S.plFill?used.find(id=>!P.w[id].filled):null;
   const g=$("#pl-grid");g.style.setProperty("--c",C);g.style.setProperty("--r",R);g.classList.toggle("big",!!lsGet("bb.plbig",false)&&!S.plFill);$("#pl-big").textContent=lsGet("bb.plbig",false)?"Smaller wells":"Bigger wells";
   const tr=S.plFill&&window.matchMedia("(orientation:portrait)").matches;if(tr){g.style.setProperty("--c",R);g.style.setProperty("--r",C)}
-  const cell=(L,c)=>{const id=L+c,w=P.w[id]||{};const set=!!(w.label||w.color);return `<button class="pw${set?" set":""}${S.plSel.has(id)?" sel":""}${w.filled&&set?" filled":""}${id===next?" next":""}" data-w="${id}" title="${id}${w.label?": "+esc(w.label):""}" style="${w.color?`background:${w.color}`:set?"background:var(--muted)":""}"><span style="--fs:${plFs(w.label)}cqw">${plBreak(w.label)}</span></button>`};
+  const cell=(L,c)=>{const id=L+c,w=P.w[id]||{};const set=!!(w.label||w.color);return `<button class="pw${set?" set":""}${S.plSel.has(id)?" sel":""}${S.plCopied&&S.plCopied.has(id)?" copied":""}${w.filled&&set?" filled":""}${id===next?" next":""}" data-w="${id}" title="${id}${w.label?": "+esc(w.label):""}" style="${w.color?`background:${w.color}`:set?"background:var(--muted)":""}"><span style="--fs:${plFs(w.label)}cqw">${plBreak(w.label)}</span></button>`};
   let h=`<span></span>`;
   if(tr){for(let r=0;r<R;r++)h+=`<button class="hd">${String.fromCharCode(65+r)}</button>`;
     for(let c=1;c<=C;c++){h+=`<button class="hd">${c}</button>`;for(let r=0;r<R;r++)h+=cell(String.fromCharCode(65+r),c)}}
@@ -2889,6 +2892,7 @@ $("#pl-grid").addEventListener("click",e=>{if(plSuppress){plSuppress=false;retur
   if(b.dataset.w){const id=b.dataset.w;
     if(S.plFill){const w=P.w[id];if(!w||!(w.label||w.color))return;w.filled=!w.filled;try{navigator.vibrate&&navigator.vibrate(15)}catch(er){}plSave();return}
     if(e.shiftKey&&S.plLast){plRect(S.plLast,id).forEach(x=>S.plSel.add(x));S.plLast=id;renderPlate();return}
+    if(S.plCopyMode&&!e.shiftKey){S.plSel=new Set([id]);S.plCopyMode=false;S.plLast=id;renderPlate();return}
     S.plSel.has(id)?S.plSel.delete(id):S.plSel.add(id);S.plLast=id;renderPlate();return}
   if(S.plFill)return;
   const line=plIds().filter(id=>b.dataset.row?id[0]===b.dataset.row:id.slice(1)===b.dataset.col);
@@ -2902,7 +2906,7 @@ $("#pl-grid").addEventListener("click",e=>{if(plSuppress){plSuppress=false;retur
   const begin=()=>{if(!st)return;st.on=true;g.appendChild(box);draw();try{navigator.vibrate&&navigator.vibrate(15)}catch(_){}};
   const end=commit=>{if(!st)return;clearTimeout(st.t);const s0=st;st=null;window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",cc);
     box.remove();$$("#pl-grid .rsel,#pl-grid .rdes").forEach(w=>w.classList.remove("rsel","rdes"));
-    if(s0.on){plSuppress=true;setTimeout(()=>plSuppress=false,120);if(commit&&s0.h){s0.h.forEach(id=>s0.rm?S.plSel.delete(id):S.plSel.add(id));renderPlate()}}};
+    if(s0.on){plSuppress=true;setTimeout(()=>plSuppress=false,120);if(commit&&s0.h){if(S.plCopyMode&&!s0.rm){S.plSel=new Set();S.plCopyMode=false}s0.h.forEach(id=>s0.rm?S.plSel.delete(id):S.plSel.add(id));renderPlate()}}};
   const mv=e=>{if(!st)return;const d=Math.hypot(e.clientX-st.x0,e.clientY-st.y0);
     if(!st.on){if(d>6){if(st.mouse)begin();else{end(false);return}}else return}
     const pb=g.parentElement,r=pb.getBoundingClientRect();if(e.clientX>r.right-24)pb.scrollLeft+=10;else if(e.clientX<r.left+24)pb.scrollLeft-=10;
@@ -2918,6 +2922,30 @@ $("#pl-grid").addEventListener("click",e=>{if(plSuppress){plSuppress=false;retur
 $("#pl-label").addEventListener("input",e=>{const P=plate();S.plSel.forEach(id=>{P.w[id]=Object.assign({},P.w[id],{label:e.target.value})});plSave()});
 $("#pl-colors").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(!b)return;const P=plate();S.plSel.forEach(id=>{P.w[id]=Object.assign({},P.w[id],{color:b.dataset.c})});plSave()});
 $("#pl-empty").addEventListener("click",()=>{const P=plate();S.plSel.forEach(id=>delete P.w[id]);S.plSel.clear();plSave()});
+/* copy / paste / delete wells */
+const rcOf=id=>[id.charCodeAt(0)-65,+id.slice(1)];
+function plAnchor(){if(S.plSel&&S.plSel.size){let r=99,c=99;S.plSel.forEach(id=>{const [a,b]=rcOf(id);r=Math.min(r,a);c=Math.min(c,b)});return[r,c]}if(S.plLast)return rcOf(S.plLast);return null}
+function plCopySel(){const P=plate();if(!S.plSel.size)return null;const ids=[...S.plSel];const rs=ids.map(x=>rcOf(x)[0]),cs=ids.map(x=>rcOf(x)[1]);const r0=Math.min(...rs),c0=Math.min(...cs),r1=Math.max(...rs),c1=Math.max(...cs);
+  const cells=ids.map(id=>{const [r,c]=rcOf(id);return{dr:r-r0,dc:c-c0,w:P.w[id]?Object.assign({},P.w[id],{filled:false}):null}});
+  const lines=[];for(let r=r0;r<=r1;r++){const row=[];for(let c=c0;c<=c1;c++){const id=String.fromCharCode(65+r)+c;row.push(S.plSel.has(id)&&P.w[id]?P.w[id].label||"":"")}lines.push(row.join("\t"))}
+  S.plClip={cells,tsv:lines.join("\n")};S.plCopied=new Set(ids);S.plCopyMode=true;$("#pl-ps").disabled=false;renderPlate();return S.plClip}
+function plPasteCells(cells){const a=plAnchor();if(!a){setStatus("Select a well to paste into first");return}const P=plate();const [Rn,Cn]=PL_FMT[P.fmt]||PL_FMT["96"];
+  const nsel=new Set();let out=0;
+  cells.forEach(x=>{const r=a[0]+x.dr,c=a[1]+x.dc;if(r<0||r>=Rn||c<1||c>Cn){out++;return}const id=String.fromCharCode(65+r)+c;if(x.w&&(x.w.label||x.w.color))P.w[id]=Object.assign({},x.w);else delete P.w[id];nsel.add(id)});
+  S.plSel=nsel;plSave();setStatus(`Pasted ${nsel.size} well${nsel.size===1?"":"s"}${out?`; ${out} fell outside the plate`:""}`)}
+function plPasteText(t){const P=plate();const rows=impRows(t);if(!rows.length)return;
+  const colOf={};Object.values(P.w).forEach(w=>{if(w&&w.label&&w.color)colOf[w.label]=w.color});const used=new Set(Object.values(colOf));let ci=0;
+  const pick=l=>{if(colOf[l])return colOf[l];for(let k=0;k<PL_COL.length;k++){const c=PL_COL[(ci+k)%PL_COL.length];if(!used.has(c)){ci+=k+1;used.add(c);return colOf[l]=c}}return colOf[l]=PL_COL[(ci++)%PL_COL.length]};
+  const cells=[];rows.forEach((row,dr)=>row.forEach((v,dc)=>cells.push({dr,dc,w:v?{label:v,color:pick(v)}:null})));plPasteCells(cells)}
+const plActive=()=>{const c=$("#plate-card");return c&&!c.hidden&&c.offsetParent!==null&&!S.plFill&&!c.classList.contains("collapsed")&&$("#pl-imp-box").hidden};
+const typing=()=>{const a=document.activeElement;return a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"||a.tagName==="SELECT"||a.isContentEditable)};
+document.addEventListener("copy",e=>{if(!plActive()||typing()||!S.plSel.size)return;const sel=window.getSelection&&String(window.getSelection());if(sel)return;const c=plCopySel();if(!c)return;e.clipboardData.setData("text/plain",c.tsv);e.preventDefault();setStatus(`Copied ${c.cells.length} well${c.cells.length===1?"":"s"}`)});
+document.addEventListener("paste",e=>{if(!plActive()||typing())return;const t=(e.clipboardData||window.clipboardData).getData("text");e.preventDefault();
+  if(S.plClip&&(!t||t===S.plClip.tsv))plPasteCells(S.plClip.cells);else if(t)plPasteText(t)});
+document.addEventListener("keydown",e=>{if(!plActive()||typing())return;if((e.key==="Delete"||e.key==="Backspace")&&S.plSel.size){e.preventDefault();const P=plate();const n=S.plSel.size;S.plSel.forEach(id=>delete P.w[id]);plSave();setStatus(`Emptied ${n} well${n===1?"":"s"}`)}
+  else if(e.key==="Escape"&&(S.plSel.size||S.plCopied)){S.plSel.clear();S.plCopied=null;S.plCopyMode=false;renderPlate()}});
+$("#pl-cp").addEventListener("click",async()=>{const c=plCopySel();if(!c)return;try{await navigator.clipboard.writeText(c.tsv)}catch(_){}setStatus(`Copied ${c.cells.length} well${c.cells.length===1?"":"s"}: select a well and tap Paste here`)});
+$("#pl-ps").addEventListener("click",()=>{if(S.plClip)plPasteCells(S.plClip.cells)});
 $("#pl-desel").addEventListener("click",()=>{S.plSel.clear();renderPlate()});
 $("#pl-fmt").addEventListener("input",e=>{const P=plate();P.fmt=e.target.value;const ok=new Set(plIds());Object.keys(P.w).forEach(id=>{if(!ok.has(id))delete P.w[id]});S.plSel.clear();plSave()});
 armDelete("#pl-clear","Clear plate",()=>{plate().w={};S.plSel.clear();plSave()});
