@@ -667,8 +667,10 @@ nav.tabs button{position:relative}
       <div class="flags" id="a-flags"></div>
       <div class="sendbar">
         <label class="f" style="flex:1;min-width:10rem">Send to experiment<select id="a-exp"></select></label>
-        <div class="row"><button class="btn sm" id="a-copy">Copy</button><button class="btn sm primary" id="a-send">Send to gel</button></div>
+        <div class="grid2" id="a-wb-w" style="flex:1 1 100%" hidden><label class="f">Project<select id="a-wbp"></select></label><label class="f">Experiment<select id="a-wb"></select></label></div>
+        <div class="row"><button class="btn sm" id="a-copy">Copy</button><button class="btn sm primary" id="a-send">Send to gel</button><button class="btn sm primary" id="a-wbgo" hidden>Send</button></div>
       </div>
+      <p class="note" style="margin:0" id="a-wbnote" hidden>Sends these concentrations to another experiment. They appear in its <b>Samples</b> tab; in a Western blot you then pick gels and wells and send them to the gel.</p>
       <p class="note" style="margin:0" id="a-gelnote">Pick a <b>Gel</b> and <b>Well</b> for any sample to place it exactly. Samples left on Auto fill the free wells in order.</p>
       <div class="row" style="justify-content:space-between">
         <div class="row"><span class="addn"><input class="nrows" id="a-smp-add-n" type="number" min="1" max="200" value="5" aria-label="How many"><button class="btn sm ghost" id="a-smp-add">Add rows</button></span><button class="btn sm ghost" id="a-rep-add">+ Replicate column</button></div>
@@ -779,7 +781,7 @@ nav.tabs button{position:relative}
       <p class="note" style="margin:0" id="sm-hidden" hidden></p>
       <div class="row" style="justify-content:space-between">
         <div class="row"><button class="btn sm ghost" id="sm-all">Select all</button><button class="btn sm ghost" id="sm-none">Select none</button><span class="addn"><input class="nrows" id="sm-add-n" type="number" min="1" max="200" value="1" aria-label="How many"><button class="btn sm ghost" id="sm-add">Add samples by hand</button></span></div>
-        <button class="btn primary" id="sm-send">Send to gel</button>
+        <button class="btn primary" id="sm-send">Send to gel</button><button class="btn" id="sm-copy" hidden>Copy</button>
       </div>
       <div class="flags" id="sm-flags"></div>
     </div>
@@ -1944,7 +1946,7 @@ $("#prot-savetpl").addEventListener("click",()=>{flushProt();const p=S.prot;cons
   if(Object.values(Store.data.templates).some(x=>x.name===t.name))t.name+=" (from experiment)";Store.save("templates",t);setStatus(`Saved as protocol “${t.name}”`)});
 
 function hasQuant(p){const t=(p&&p.tools)||{};return t.quant===undefined?p&&p.method==="wb":!!t.quant}
-function protTabs(){if(isTpl())return [["prot","Steps"]];const t=S.prot.tools||{};return [["prot","Steps"],t.protein&&(S.prot.method==="wb"?["smp","Samples"]:["assay",S.prot.method==="elisa"?"Assay":"Protein concentration"]),t.qpcr&&["qset","Setup"],t.qpcr&&["qres","Results"],t.gel&&["gel","Gel"],t.images&&["img","Images"],hasQuant(S.prot)&&["quant","Quant"],t.solutions&&["psol","Solutions"],["hist","Report"]].filter(Boolean)}
+function protTabs(){if(isTpl())return [["prot","Steps"]];const t=S.prot.tools||{};const linkedSmp=S.prot.method!=="wb"&&S.prot.smp&&S.prot.smp.src;return [["prot","Steps"],linkedSmp&&["smp","Samples"],t.protein&&(S.prot.method==="wb"?["smp","Samples"]:["assay",S.prot.method==="elisa"?"Assay":"Protein concentration"]),t.qpcr&&["qset","Setup"],t.qpcr&&["qres","Results"],t.gel&&["gel","Gel"],t.images&&["img","Images"],hasQuant(S.prot)&&["quant","Quant"],t.solutions&&["psol","Solutions"],["hist","Report"]].filter(Boolean)}
 function renderPbar(){
   if(!S.prot)return;$("#pbar-name").innerHTML=(isTpl()?`<span class="tag">Protocol</span>`:expDone(S.prot)?`<span class="tag done">Done</span>`:"")+esc(S.prot.name||"Untitled");$("#p-back").textContent=isTpl()?"‹ Protocols":"‹ Experiments";
   $("#pbar-tabs").innerHTML=protTabs().map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}</button>`).join("");
@@ -2246,6 +2248,8 @@ function renderAssay(){
   const A=S.assay;if(!A)return;const R=assayCalc(A);const dir=A.method==="direct";
   $('[data-ck="curve"]').hidden=dir;$('[data-ck="stds"]').hidden=dir;if(S.plateCtx!=="qpcr"){$("#plate-card").hidden=dir;if(!dir)renderPlate()}$("#a-unit2-wrap").hidden=!dir;
   const hasGel=hasGelTool();$(".sendbar #a-send").hidden=!hasGel;$("#a-gelnote").hidden=!hasGel;$("#a-exp").closest("label").hidden=true;
+  const wbable=!hasGel&&S.prot&&S.prot.method!=="elisa"&&A.method!=="elisa";$("#a-wb-w").hidden=!wbable;$("#a-wbgo").hidden=!wbable;$("#a-wbnote").hidden=!wbable;
+  if(wbable)renderWbPick();
   $("#a-title").textContent=A.name||"Untitled";
   $("#a-sub").textContent=[A.date?new Date(A.date+"T12:00").toLocaleDateString("en-GB"):"",A.note].filter(Boolean).join(" · ");
   renderChart(R);
@@ -2333,6 +2337,24 @@ $("#a-copy").addEventListener("click",async()=>{const R=assayCalc(S.assay);const
   R.smp.forEach(s=>{if(s.name||s.v.length)L.push(`${s.name}\t${s.dil}\t${fmt(s.m,3)}\t${fmtC(s.conc*ru()[0])}\t${s.flag||""}`)});
   const t=L.join("\n"),ta=$("#a-copyarea");
   try{await navigator.clipboard.writeText(t);setStatus("Results copied");ta.hidden=true}catch(e){ta.value=t;ta.hidden=false;ta.style.minHeight=(L.length*17+20)+"px";ta.focus();ta.select();setStatus("Selected, copy manually")}});
+function renderWbPick(keepProj){const A=S.assay;const all=protList().filter(p=>p.id!==S.prot.id&&!(p.method==="protein"));
+  const projs=[...new Set(all.map(p=>(p.group||"").trim()).filter(Boolean))];const mine=(S.prot.group||"").trim();if(mine&&!projs.includes(mine))projs.push(mine);projs.sort((a,b)=>a.localeCompare(b));
+  const hasNone=all.some(p=>!(p.group||"").trim());const linked=all.find(p=>p.smp&&p.smp.src===A.id);
+  let pv=keepProj?$("#a-wbp").value:null;if(pv==null||pv===""){pv=linked?((linked.group||"").trim()||"__none"):(mine||(projs[0]||"__none"))}
+  $("#a-wbp").innerHTML=projs.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join("")+(hasNone||!projs.length?`<option value="__none">No project</option>`:"");$("#a-wbp").value=pv;if($("#a-wbp").value!==pv)$("#a-wbp").selectedIndex=0;pv=$("#a-wbp").value;
+  const inP=all.filter(p=>pv==="__none"?!(p.group||"").trim():(p.group||"").trim()===pv).sort((a,b)=>String(a.folder||"").localeCompare(String(b.folder||""))||String(a.name).localeCompare(String(b.name)));
+  const cur=$("#a-wb").value;
+  $("#a-wb").innerHTML=inP.map(p=>`<option value="${esc(p.id)}">${p.folder?esc(showPath(p.folder))+" › ":""}${esc(p.name||"Untitled")} — ${esc(p.method==="custom"&&catOfExp(p)==="prep"?"Sample preparation":methodLabel(p).split(" · ")[0])}${p.smp&&p.smp.src===A.id?" (linked)":""}</option>`).join("")+`<option value="__new">+ New Western blot${pv!=="__none"?" in "+esc(pv):""}</option>`;
+  $("#a-wb").value=[...$("#a-wb").options].some(o=>o.value===cur)?cur:((inP.find(p=>p.smp&&p.smp.src===A.id)||inP[0]||{id:"__new"}).id)}
+$("#a-wbp").addEventListener("change",()=>renderWbPick(true));
+$("#a-wbgo").addEventListener("click",()=>{const A=S.assay;if(!A)return;flushProt();
+  if(A.draft||!Store.data.assays[A.id]){delete A.draft;Store.save("assays",A)}else if(dirty.assays){clearTimeout(saveT.assays);Store.save("assays",A);dirty.assays=false}
+  const R0=assayCalc(A);if(!R0.smp.some(x=>Number.isFinite(x.conc)&&x.conc>0)){setStatus("No concentrations to send yet");return}
+  const v=$("#a-wb").value;let t;
+  if(v==="__new"){t=expFromTemplate(null,"wb");t.name=`Western blot · ${A.name||S.prot.name||"samples"}`;const pv=$("#a-wbp").value;if(pv&&pv!=="__none"){t.group=pv;t.folder=pv===(S.prot.group||"").trim()?(S.prot.folder||""):""}else{t.group="";t.folder=""}}
+  else{const x=Store.data.protocols[v];if(!x)return;t=clone(x)}
+  const old=t.smp&&t.smp.src;t.smp=Object.assign({picks:{},manual:[]},t.smp||{},{src:A.id});if(old!==A.id)t.smp.picks={};
+  Store.save("protocols",t);setStatus(`Samples from "${A.name||"assay"}" sent to ${t.name}`);openProtocol(clone(Store.data.protocols[t.id]||t),"smp")});
 $("#a-send").addEventListener("click",()=>{
   const R=assayCalc(S.assay);const list=R.smp.map((x,i)=>Object.assign({},x,{gi:parseInt(S.assay.samples[i].gel)||0,wi:parseInt(S.assay.samples[i].well)||0})).filter(x=>Number.isFinite(x.conc)&&x.conc>0);
   if(!list.length){setStatus("No concentrations to send yet");return}
@@ -3101,19 +3123,21 @@ function smRows(){const st=smState();const rows=[];const A0=Store.data.assays[st
 function onGelNames(){const n=new Set();(S.exp?gelsOf(S.exp.id):[]).map(g=>g.id===(S.gel&&S.gel.id)?S.gel:g).forEach(g=>g.lanes.forEach(l=>{if(l.type==="sample"&&l.name)n.add(l.name)}));return n}
 function visRows(){const st=smState();const rows=smRows();if(!st.hideSent)return rows;const on=onGelNames();return rows.filter(r=>!(r.name&&on.has(r.name)))}
 function renderSamples(){
-  if(!S.prot||S.prot.method!=="wb")return;const st=smState();const L=srcAssays();$("#sm-hide").checked=!!st.hideSent;
+  if(!S.prot||(S.prot.method!=="wb"&&!(S.prot.smp&&S.prot.smp.src)))return;const st=smState();const gl=hasGelTool();const L=srcAssays();$("#sm-hide").checked=!!st.hideSent;
   $("#sm-src").innerHTML=(L.length?"":`<option value="">No protein measurements yet</option>`)+L.map(a=>{const p=Store.data.protocols[a.protoId];return `<option value="${esc(a.id)}">${esc(p?p.name:"?")} · ${esc(a.name)}${a.date?" · "+esc(a.date):""}</option>`}).join("")+`<option value="__none">None, enter by hand</option>`;
   $("#sm-src").value=st.src||"__none";
   const all=smRows(),rows=visRows();const hid=all.length-rows.length;$("#sm-hidden").hidden=!hid;$("#sm-hidden").innerHTML=hid?`${hid} sample${hid>1?"s are":" is"} already on a gel and hidden. <button class="btn sm ghost" id="sm-showall">Show them</button>`:"";
-  $("#sm-table").innerHTML=`<thead><tr><th></th><th>Sample</th><th style="text-align:right">mg/mL</th><th>Gel</th><th>Well</th><th></th></tr></thead><tbody>`+
+  $("#sm-send").hidden=!gl;$("#sm-copy").hidden=gl;$("#sm-hide").closest("label").hidden=!gl;
+  $("#sm-hint").innerHTML=gl?"Measure concentrations in a <b>Protein concentration</b> experiment, then pick that measurement here. Tick the samples that go on the gel; give a gel and well to place them exactly, or leave Auto to fill free wells in order.":"Concentrations linked from a <b>Protein concentration</b> experiment. Tick the samples you need and copy them, e.g. to Excel.";
+  $("#sm-table").innerHTML=`<thead><tr><th></th><th>Sample</th><th style="text-align:right">mg/mL</th>${gl?"<th>Gel</th><th>Well</th>":""}<th></th></tr></thead><tbody>`+
     (rows.length?rows.map(r=>`<tr data-k="${r.k}" class="${r.on?"":"off"}"><td><input type="checkbox" data-f="on" ${r.on?"checked":""} aria-label="Include on gel"></td>
       <td>${r.manual?`<input class="nm" data-f="name" type="text" value="${esc(r.name||"")}" placeholder="Name">`:`<b>${esc(r.name)}</b>${r.flag?`<div class="note" style="color:var(--warn);font-size:11.5px;max-width:14rem;white-space:normal">${esc(r.flag)}</div>`:""}`}</td>
       <td class="o">${r.manual?`<input data-f="conc" type="text" inputmode="decimal" value="${Number.isFinite(r.conc)?r.conc:""}" placeholder="mg/mL" style="width:4.6rem">`:(Number.isFinite(r.conc)?fmtC(r.conc):"—")}</td>
-      <td><select class="gs" data-f="gel">${gelOpts(r.gel)}</select></td><td><input class="wl" data-f="well" type="text" inputmode="numeric" value="${esc(r.well)}" placeholder="–"></td>
+      ${gl?`<td><select class="gs" data-f="gel">${gelOpts(r.gel)}</select></td><td><input class="wl" data-f="well" type="text" inputmode="numeric" value="${esc(r.well)}" placeholder="–"></td>`:""}
       <td>${r.manual?`<button class="rm" data-f="rm" aria-label="Remove">×</button>`:""}</td></tr>`).join(""):`<tr><td colspan="6" class="note" style="font-family:var(--sans)">${hid?"All samples are on a gel.":"No samples yet."}</td></tr>`)+`</tbody>`;
   const pos={};rows.filter(r=>r.on&&r.gel&&r.well).forEach(r=>{const k=r.gel+"/"+r.well;(pos[k]=pos[k]||[]).push(r.name)});
   $("#sm-flags").innerHTML=Object.entries(pos).filter(([k,v])=>v.length>1).map(([k,v])=>`<span class="x"><b>Gel ${k.split("/")[0]}, well ${k.split("/")[1]}:</b> ${v.map(esc).join(" and ")}</span>`).join("");
-  $("#sm-hint").hidden=!!rows.length;
+  $("#sm-hint").hidden=gl&&!!rows.length;
 }
 function smSet(k,f,v){const st=smState();if(k[0]==="m"){const m=st.manual[+k.slice(1)];if(m)m[f]=v}else{st.picks[k]=Object.assign({},st.picks[k],{[f]:v})}queueSave("protocols")}
 $("#sm-src").addEventListener("input",e=>{const st=smState();st.src=e.target.value==="__none"?"__none":e.target.value;st.picks={};queueSave("protocols");renderSamples()});
@@ -3124,6 +3148,8 @@ $("#sm-table").addEventListener("click",e=>{const b=e.target.closest("[data-f=rm
 $("#sm-add").addEventListener("click",()=>{const st=smState(),n0=st.manual.length;for(let k=0,K=Math.max(1,Math.min(200,parseInt($("#sm-add-n").value)||1));k<K;k++)st.manual.push({name:"",conc:"",on:true});queueSave("protocols");renderSamples();const ins=$$("#sm-table input[data-f=name]");const e=ins[ins.length-(st.manual.length-n0)];e&&e.focus()});
 $("#sm-all").addEventListener("click",()=>{visRows().forEach(r=>smSet(r.k,"on",true));renderSamples()});
 $("#sm-none").addEventListener("click",()=>{visRows().forEach(r=>smSet(r.k,"on",false));renderSamples()});
+$("#sm-copy").addEventListener("click",async()=>{const rows=visRows().filter(r=>r.on);const t=["Sample\tmg/mL",...rows.map(r=>`${r.name}\t${Number.isFinite(r.conc)?fmtC(r.conc):""}`)].join("\n");
+  try{await navigator.clipboard.writeText(t);setStatus(`Copied ${rows.length} sample${rows.length===1?"":"s"}`)}catch(e){setStatus("Copy didn't work in this browser")}});
 $("#sm-send").addEventListener("click",()=>{flushProt();const list=visRows().filter(r=>r.on&&Number.isFinite(r.conc)&&r.conc>0).map(r=>({name:r.name,conc:r.conc,gi:parseInt(r.gel)||0,wi:parseInt(r.well)||0}));
   if(!list.length){setStatus("Tick at least one sample with a concentration",true);return}placeOnGels(list)});
 
