@@ -619,10 +619,12 @@ nav.tabs button{position:relative}
         <label class="f" style="flex-direction:row;align-items:center;gap:8px">Plate<select id="pl-fmt" style="width:auto"><option value="96">96 wells</option><option value="48">48 wells</option><option value="24">24 wells</option><option value="12">12 wells</option></select></label>
         <div class="row"><button class="btn sm ghost" id="pl-big">Bigger wells</button><button class="btn sm ghost" id="pl-auto">Fill from tables</button><button class="btn sm ghost danger" id="pl-clear">Clear plate</button></div>
       </div>
+      <div class="row" id="pl-sync"><button class="btn sm" id="pl-totab">Plate → sample tables</button><button class="btn sm primary" id="pl-read">Paste plate reading</button></div>
       <div class="row" id="pl-io"><button class="btn sm ghost" id="pl-copy">Copy as table</button><button class="btn sm ghost" id="pl-xlsx">Download Excel</button><button class="btn sm ghost" id="pl-imp">Import table</button></div>
       <div class="pledit" id="pl-imp-box" hidden>
-        <div class="row" style="justify-content:space-between"><b>Import a plate layout</b><button class="btn sm ghost" id="pl-imp-x">Cancel</button></div>
-        <p class="note" style="margin:0">Click a cell and paste from Excel (Ctrl+V): the cells fill from there, like in Excel. A copied plate with its A–H / 1–12 headers, or a two-column list (well, name), lands in the right wells wherever you paste it. You can also type in the cells or upload a file. Wells with the same name get the same colour.</p>
+        <div class="row" style="justify-content:space-between"><b id="pl-imp-title">Import a plate layout</b><button class="btn sm ghost" id="pl-imp-x">Cancel</button></div>
+        <p class="note" style="margin:0" id="pl-imp-readnote" hidden>Paste the absorbances from the plate reader into the grid (click A1, Ctrl+V; an export with A–H / 1–12 headers lands in place wherever you paste). Each named well's value goes to that standard or sample in the tables, in well order as replicates.</p>
+        <p class="note" style="margin:0" id="pl-imp-labnote">Click a cell and paste from Excel (Ctrl+V): the cells fill from there, like in Excel. A copied plate with its A–H / 1–12 headers, or a two-column list (well, name), lands in the right wells wherever you paste it. You can also type in the cells or upload a file. Wells with the same name get the same colour.</p>
         <div class="tablewrap"><table class="plin" id="pl-imp-g"></table></div>
         <div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div class="row"><label class="btn sm ghost" style="cursor:pointer">Upload file<input type="file" id="pl-imp-f" accept=".xlsx,.xls,.csv,.tsv,.txt,text/plain,text/csv" hidden></label><button class="btn sm ghost" id="pl-imp-clr">Clear table</button></div><span class="note" id="pl-imp-msg"></span><button class="btn sm primary" id="pl-imp-ok">Apply to plate</button></div>
       </div>
@@ -2834,7 +2836,7 @@ function renderPlate(){
     const labs=new Set([...S.plSel].map(id=>(P.w[id]||{}).label||""));if(document.activeElement!==$("#pl-label"))$("#pl-label").value=labs.size===1?[...labs][0]:"";
     const cols=new Set([...S.plSel].map(id=>(P.w[id]||{}).color||""));
     $("#pl-colors").innerHTML=PL_COL.map(c=>`<button data-c="${c}" style="background:${c}" aria-label="Colour" aria-pressed="${cols.size===1&&cols.has(c)}"></button>`).join("")}
-  $("#pl-legend").hidden=S.plFill;$("#pl-fmt").closest(".row").hidden=S.plFill;$("#pl-io").hidden=S.plFill;if(S.plFill)$("#pl-imp-box").hidden=true;
+  $("#pl-legend").hidden=S.plFill;$("#pl-fmt").closest(".row").hidden=S.plFill;$("#pl-io").hidden=S.plFill;$("#pl-sync").hidden=S.plFill||S.plateCtx==="qpcr";if(S.plFill)$("#pl-imp-box").hidden=true;
   const nf=used.filter(id=>P.w[id].filled).length;
   $("#pl-count").hidden=!(S.plFill||nf);$("#pl-count").innerHTML=`Filled <b>${nf}/${used.length}</b>`;
   $("#pl-all").hidden=!S.plFill||nf===used.length;$("#pl-reset").hidden=!nf;
@@ -2849,12 +2851,15 @@ $("#pl-copy").addEventListener("click",async()=>{const g=plGrid();const t=[g.hea
 $("#pl-xlsx").addEventListener("click",()=>{const g=plGrid();const P=plate();const list=plIds().filter(id=>(P.w[id]||{}).label).map(id=>[id,P.w[id].label]);
   const nm=(S.plateCtx==="qpcr"?(S.prot&&S.prot.name):(S.assay&&S.assay.name))||"Plate layout";
   saveFile(`${String(nm).replace(/[\\/:*?"<>|]+/g,"-")} - plate.xlsx`,toXlsx({title:`${nm} · plate layout`,blocks:[{table:{name:"Plate",head:g.head,rows:g.rows}},{table:{name:"List",head:["Well","Name"],rows:list}}]}))});
-function plImpGrid(){const P=plate();const [Rn,Cn]=PL_FMT[P.fmt]||PL_FMT["96"];let h=`<tr><th></th>${Array.from({length:Cn},(_,i)=>`<th>${i+1}</th>`).join("")}</tr>`;
-  for(let r=0;r<Rn;r++){const L=String.fromCharCode(65+r);h+=`<tr><th>${L}</th>${Array.from({length:Cn},(_,i)=>{const id=L+(i+1),v=(P.w[id]||{}).label||"";return `<td><input data-w="${id}" value="${esc(v)}"${v?' class="has"':""}></td>`}).join("")}</tr>`}
+let impMode="labels";
+function plImpGrid(){const P=plate();const rd=impMode==="read";const [Rn,Cn]=PL_FMT[P.fmt]||PL_FMT["96"];let h=`<tr><th></th>${Array.from({length:Cn},(_,i)=>`<th>${i+1}</th>`).join("")}</tr>`;
+  for(let r=0;r<Rn;r++){const L=String.fromCharCode(65+r);h+=`<tr><th>${L}</th>${Array.from({length:Cn},(_,i)=>{const id=L+(i+1),w=P.w[id]||{},v=rd?"":(w.label||"");return `<td><input data-w="${id}" value="${esc(v)}"${v?' class="has"':""}${rd&&w.label?` placeholder="${esc(w.label)}" title="${esc(w.label)}"`:""}${rd?' inputmode="decimal"':""}></td>`}).join("")}</tr>`}
   $("#pl-imp-g").innerHTML=h}
 const impCell=id=>$(`#pl-imp-g input[data-w="${id}"]`);
 function impSet(id,v){const i=impCell(id);if(!i)return false;i.value=v;i.classList.toggle("has",!!v);return true}
-$("#pl-imp").addEventListener("click",()=>{const b=$("#pl-imp-box");b.hidden=!b.hidden;$("#pl-imp-msg").textContent="";if(!b.hidden){plImpGrid();const f=impCell("A1");f&&f.focus()}});
+function impOpen(mode){impMode=mode;const rd=mode==="read";$("#pl-imp-title").textContent=rd?"Paste plate reading":"Import a plate layout";$("#pl-imp-readnote").hidden=!rd;$("#pl-imp-labnote").hidden=rd;$("#pl-imp-ok").textContent=rd?"Put into tables":"Apply to plate";$("#pl-imp-f").closest("label").hidden=false}
+$("#pl-read").addEventListener("click",()=>{const P=plate();if(!Object.values(P.w).some(w=>w&&w.label)){setStatus("Lay out the plate first (names in the wells)");return}impOpen("read");const b=$("#pl-imp-box");b.hidden=false;$("#pl-imp-msg").textContent="";plImpGrid();const f=impCell("A1");f&&f.focus();b.scrollIntoView({block:"nearest"})});
+$("#pl-imp").addEventListener("click",()=>{impOpen("labels");const b=$("#pl-imp-box");b.hidden=!b.hidden;$("#pl-imp-msg").textContent="";if(!b.hidden){plImpGrid();const f=impCell("A1");f&&f.focus()}});
 $("#pl-imp-clr").addEventListener("click",()=>{$$("#pl-imp-g input").forEach(i=>{i.value="";i.classList.remove("has")});$("#pl-imp-msg").textContent=""});
 $("#pl-imp-g").addEventListener("input",e=>{const i=e.target.closest("input");if(i)i.classList.toggle("has",!!i.value)});
 $("#pl-imp-g").addEventListener("keydown",e=>{const i=e.target.closest("input[data-w]");if(!i)return;const id=i.dataset.w,r=id.charCodeAt(0),c=+id.slice(1);let n=null;
@@ -2896,7 +2901,26 @@ function plApplyMap(map){const n=Object.keys(map).length;if(!n){$("#pl-imp-msg")
   const col={};Object.values(map).forEach(l=>{if(!col[l])col[l]=old[l]||next()});
   const prevW=P.w;P.w={};Object.entries(map).forEach(([id,l])=>{const pw=prevW[id];P.w[id]=pw&&pw.label===l?Object.assign({},pw):{label:l,color:col[l]}});S.plSel.clear();plSave();
   $("#pl-imp-box").hidden=true;setStatus(`Plate updated: ${n} well${n===1?"":"s"}`)}
-$("#pl-imp-ok").addEventListener("click",()=>{const map={};$$("#pl-imp-g input[data-w]").forEach(i=>{const v=i.value.trim();if(v)map[i.dataset.w]=v});plApplyMap(map)});
+$("#pl-imp-ok").addEventListener("click",()=>{const map={};$$("#pl-imp-g input[data-w]").forEach(i=>{const v=i.value.trim();if(v)map[i.dataset.w]=v});if(impMode==="read")plApplyReading(map);else plApplyMap(map)});
+/* plate <-> sample tables */
+function stdConc(l){const t=String(l||"").trim();if(/^(blank|blk|b0|0)$/i.test(t))return 0;const m=t.match(/^(?:s|std|standard|bsa|st)\s*[-_:]?\s*([\d]+(?:[.,]\d+)?)\s*(?:µg\/ml|ug\/ml|mg\/ml|µg|ug)?$/i);return m?num(m[1]):null}
+function plateGroups(){const P=plate();const order=[],by={};plIds().forEach(id=>{const w=P.w[id];if(!w||!w.label)return;const l=w.label.trim();if(!by[l]){by[l]=[];order.push(l)}by[l].push(id)});return{order,by}}
+function plToTables(quiet){if(S.plateCtx==="qpcr")return false;const A=S.assay;shapeAssay(A);const {order,by}=plateGroups();if(!order.length){setStatus("The plate is empty");return false}
+  const dir=A.method==="direct";const stds=[],smps=[];
+  order.forEach(l=>{const c=dir?null:stdConc(l);if(c!=null){const ex=A.stds.find(x=>num(x.c)===c);stds.push(ex?ex:{c:String(c),r:[]})}else{const ex=A.samples.find(x=>(x.name||"").trim()===l);smps.push(ex?ex:{name:l,dil:"",r:[]})}});
+  if(!dir){A.stds.forEach(x=>{if(!stds.includes(x)&&repVals(x.r).length)stds.push(x)});stds.sort((a,b)=>num(a.c)-num(b.c));A.stds=stds.length?stds:A.stds}
+  A.samples.forEach(x=>{if(!smps.includes(x)&&(repVals(x.r).length))smps.push(x)});A.samples=smps;
+  A.reps=Math.max(A.reps||1,...order.map(l=>by[l].length));
+  queueSave("assays");renderAssayRows();renderAssay();if(!quiet)setStatus(`Tables: ${stds.length} standard${stds.length===1?"":"s"}, ${smps.length} sample${smps.length===1?"":"s"} from the plate`);return true}
+$("#pl-totab").addEventListener("click",()=>plToTables(false));
+function plApplyReading(map){const A=S.assay;if(!Object.keys(map).length){$("#pl-imp-msg").textContent="Paste the readings first.";return}
+  const bad=Object.values(map).filter(v=>!Number.isFinite(num(v))).length;
+  plToTables(true);const {order,by}=plateGroups();const dir=A.method==="direct";let n=0,miss=0;
+  order.forEach(l=>{const vals=by[l].map(id=>map[id]).filter(v=>v!=null&&Number.isFinite(num(v))).map(v=>String(num(v)));if(!vals.length){miss++;return}
+    const c=dir?null:stdConc(l);const row=c!=null?A.stds.find(x=>num(x.c)===c):A.samples.find(x=>(x.name||"").trim()===l);if(!row)return;row.r=vals;n+=vals.length});
+  A.reps=Math.max(A.reps||1,...A.stds.map(x=>x.r.length),...A.samples.map(x=>x.r.length));
+  queueSave("assays");renderAssayRows();renderAssay();$("#pl-imp-box").hidden=true;
+  setStatus(`Put ${n} reading${n===1?"":"s"} into the tables${miss?`; ${miss} name${miss===1?"":"s"} had no reading`:""}${bad?`; ${bad} non-numeric cell${bad===1?"":"s"} skipped`:""}`,!!(miss||bad))}
 $("#pl-imp-f").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const msg=$("#pl-imp-msg");
   try{if(/\.xlsx?$/i.test(f.name)){msg.textContent="Reading the Excel file…";
       if(!window.XLSX)await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
@@ -3121,12 +3145,12 @@ function smRows(){const st=smState();const rows=[];const A0=Store.data.assays[st
   st.manual.forEach((m,j)=>rows.push({k:"m"+j,name:m.name,conc:num(m.conc),on:m.on!==false,gel:m.gel||"",well:m.well||"",manual:true,j}));
   return rows}
 function onGelNames(){const n=new Set();(S.exp?gelsOf(S.exp.id):[]).map(g=>g.id===(S.gel&&S.gel.id)?S.gel:g).forEach(g=>g.lanes.forEach(l=>{if(l.type==="sample"&&l.name)n.add(l.name)}));return n}
-function visRows(){const st=smState();const rows=smRows();if(!st.hideSent)return rows;const on=onGelNames();return rows.filter(r=>!(r.name&&on.has(r.name)))}
+function visRows(){const st=smState();const rows=smRows().filter(r=>!(r.src&&(st.picks[r.k]||{}).removed));if(!st.hideSent)return rows;const on=onGelNames();return rows.filter(r=>!(r.name&&on.has(r.name)))}
 function renderSamples(){
   if(!S.prot||(S.prot.method!=="wb"&&!(S.prot.smp&&S.prot.smp.src)))return;const st=smState();const gl=hasGelTool();const L=srcAssays();$("#sm-hide").checked=!!st.hideSent;
   $("#sm-src").innerHTML=(L.length?"":`<option value="">No protein measurements yet</option>`)+L.map(a=>{const p=Store.data.protocols[a.protoId];return `<option value="${esc(a.id)}">${esc(p?p.name:"?")} · ${esc(a.name)}${a.date?" · "+esc(a.date):""}</option>`}).join("")+`<option value="__none">None, enter by hand</option>`;
   $("#sm-src").value=st.src||"__none";
-  const all=smRows(),rows=visRows();const hid=all.length-rows.length;$("#sm-hidden").hidden=!hid;$("#sm-hidden").innerHTML=hid?`${hid} sample${hid>1?"s are":" is"} already on a gel and hidden. <button class="btn sm ghost" id="sm-showall">Show them</button>`:"";
+  const all=smRows(),rows=visRows();const rmd=all.filter(r=>r.src&&(st.picks[r.k]||{}).removed).length,hid=all.length-rows.length-rmd;$("#sm-hidden").hidden=!(hid||rmd);$("#sm-hidden").innerHTML=(hid?`${hid} sample${hid>1?"s are":" is"} already on a gel and hidden. <button class="btn sm ghost" id="sm-showall">Show them</button> `:"")+(rmd?`${rmd} sample${rmd>1?"s":""} removed. <button class="btn sm ghost" id="sm-restore">Restore</button>`:"");
   $("#sm-send").hidden=!gl;$("#sm-copy").hidden=gl;$("#sm-hide").closest("label").hidden=!gl;
   $("#sm-hint").innerHTML=gl?"Measure concentrations in a <b>Protein concentration</b> experiment, then pick that measurement here. Tick the samples that go on the gel; give a gel and well to place them exactly, or leave Auto to fill free wells in order.":"Concentrations linked from a <b>Protein concentration</b> experiment. Tick the samples you need and copy them, e.g. to Excel.";
   $("#sm-table").innerHTML=`<thead><tr><th></th><th>Sample</th><th style="text-align:right">mg/mL</th>${gl?"<th>Gel</th><th>Well</th>":""}<th></th></tr></thead><tbody>`+
@@ -3134,7 +3158,7 @@ function renderSamples(){
       <td>${r.manual?`<input class="nm" data-f="name" type="text" value="${esc(r.name||"")}" placeholder="Name">`:`<b>${esc(r.name)}</b>${r.flag?`<div class="note" style="color:var(--warn);font-size:11.5px;max-width:14rem;white-space:normal">${esc(r.flag)}</div>`:""}`}</td>
       <td class="o">${r.manual?`<input data-f="conc" type="text" inputmode="decimal" value="${Number.isFinite(r.conc)?r.conc:""}" placeholder="mg/mL" style="width:4.6rem">`:(Number.isFinite(r.conc)?fmtC(r.conc):"—")}</td>
       ${gl?`<td><select class="gs" data-f="gel">${gelOpts(r.gel)}</select></td><td><input class="wl" data-f="well" type="text" inputmode="numeric" value="${esc(r.well)}" placeholder="–"></td>`:""}
-      <td>${r.manual?`<button class="rm" data-f="rm" aria-label="Remove">×</button>`:""}</td></tr>`).join(""):`<tr><td colspan="6" class="note" style="font-family:var(--sans)">${hid?"All samples are on a gel.":"No samples yet."}</td></tr>`)+`</tbody>`;
+      <td><button class="rm" data-f="rm" aria-label="Remove" title="Remove">×</button></td></tr>`).join(""):`<tr><td colspan="6" class="note" style="font-family:var(--sans)">${hid?"All samples are on a gel.":rmd?"All samples removed.":"No samples yet."}</td></tr>`)+`</tbody>`;
   const pos={};rows.filter(r=>r.on&&r.gel&&r.well).forEach(r=>{const k=r.gel+"/"+r.well;(pos[k]=pos[k]||[]).push(r.name)});
   $("#sm-flags").innerHTML=Object.entries(pos).filter(([k,v])=>v.length>1).map(([k,v])=>`<span class="x"><b>Gel ${k.split("/")[0]}, well ${k.split("/")[1]}:</b> ${v.map(esc).join(" and ")}</span>`).join("");
   $("#sm-hint").hidden=gl&&!!rows.length;
@@ -3144,7 +3168,7 @@ $("#sm-src").addEventListener("input",e=>{const st=smState();st.src=e.target.val
 $("#sm-table").addEventListener("change",e=>{const tr=e.target.closest("tr[data-k]"),f=e.target.dataset.f;if(!tr||!f)return;
   if(f==="on"){smSet(tr.dataset.k,"on",e.target.checked);tr.classList.toggle("off",!e.target.checked)}else if(f==="gel"){smSet(tr.dataset.k,"gel",e.target.value);renderSamples()}});
 $("#sm-table").addEventListener("input",e=>{const tr=e.target.closest("tr[data-k]"),f=e.target.dataset.f;if(!tr||!["name","conc","well"].includes(f))return;smSet(tr.dataset.k,f,e.target.value);if(f==="well"){clearTimeout(renderSamples.t);renderSamples.t=setTimeout(()=>{const a=document.activeElement;renderSamples()},900)}});
-$("#sm-table").addEventListener("click",e=>{const b=e.target.closest("[data-f=rm]");if(!b)return;const st=smState();st.manual.splice(+b.closest("tr").dataset.k.slice(1),1);queueSave("protocols");renderSamples()});
+$("#sm-table").addEventListener("click",e=>{const b=e.target.closest("[data-f=rm]");if(!b)return;const st=smState(),k=b.closest("tr").dataset.k;if(k[0]==="m")st.manual.splice(+k.slice(1),1);else st.picks[k]=Object.assign({},st.picks[k],{removed:true});queueSave("protocols");renderSamples()});
 $("#sm-add").addEventListener("click",()=>{const st=smState(),n0=st.manual.length;for(let k=0,K=Math.max(1,Math.min(200,parseInt($("#sm-add-n").value)||1));k<K;k++)st.manual.push({name:"",conc:"",on:true});queueSave("protocols");renderSamples();const ins=$$("#sm-table input[data-f=name]");const e=ins[ins.length-(st.manual.length-n0)];e&&e.focus()});
 $("#sm-all").addEventListener("click",()=>{visRows().forEach(r=>smSet(r.k,"on",true));renderSamples()});
 $("#sm-none").addEventListener("click",()=>{visRows().forEach(r=>smSet(r.k,"on",false));renderSamples()});
@@ -3154,7 +3178,7 @@ $("#sm-send").addEventListener("click",()=>{flushProt();const list=visRows().fil
   if(!list.length){setStatus("Tick at least one sample with a concentration",true);return}placeOnGels(list)});
 
 $("#sm-hide").addEventListener("change",e=>{smState().hideSent=e.target.checked;queueSave("protocols");renderSamples()});
-$("#sm-hidden").addEventListener("click",e=>{if(e.target.id==="sm-showall"){smState().hideSent=false;queueSave("protocols");renderSamples()}});
+$("#sm-hidden").addEventListener("click",e=>{if(e.target.id==="sm-showall"){smState().hideSent=false;queueSave("protocols");renderSamples()}else if(e.target.id==="sm-restore"){const st=smState();Object.keys(st.picks).forEach(k=>{if(st.picks[k]&&st.picks[k].removed){st.picks[k]=Object.assign({},st.picks[k]);delete st.picks[k].removed}});queueSave("protocols");renderSamples()}});
 /* ================= IMAGES ================= */
 const IT_L={membrane:"Membrane",gel:"Gel",other:"Image"};
 let assetsNS;async function getAssets(){if(assetsNS!==undefined)return assetsNS;try{assetsNS=window.claude&&typeof window.claude.use==="function"?await window.claude.use("assets"):null}catch(e){assetsNS=null}return assetsNS}
