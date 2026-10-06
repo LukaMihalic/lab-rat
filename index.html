@@ -250,6 +250,7 @@ table.xl td.o{font:600 13px var(--mono);text-align:right;padding:0 6px;white-spa
 table.xl td.o.v{color:var(--accent)}
 table.xl tr.w td.o{color:var(--warn)}
 table.xl tr.x td.o{color:var(--bad)}
+#gel-table .rm{background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1}#gel-table .rm:hover{color:var(--bad)}
 table.xl .rm{background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 6px;line-height:1}
 .flags{display:flex;flex-direction:column;gap:3px;font-size:12.5px}
 .flags .w{color:var(--warn)}.flags .x{color:var(--bad)}
@@ -577,8 +578,9 @@ nav.tabs button{position:relative}
 
     <div class="card collapsible" data-ck="vis">
       <div class="row chead" style="justify-content:space-between">
-        <div><div style="font-weight:700;font-size:17px" id="gel-title"></div><div class="note" id="gel-sub"></div></div>
+        <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:17px" id="gel-title"></div><div class="note" id="gel-sub"></div></div>
       </div>
+      <div class="row" style="gap:6px;justify-content:flex-end"><button class="btn sm ghost" id="gel-clear">Clear samples</button><button class="btn sm danger" id="gel-del2">Delete gel</button></div>
       <div class="gelbox"><div class="gel" id="gel-vis"></div></div>
       <div class="chips" id="gel-chips"></div>
       <div class="row" style="justify-content:space-between">
@@ -590,7 +592,7 @@ nav.tabs button{position:relative}
     <div class="card collapsible" data-ck="plan">
       <div class="row chead" style="justify-content:space-between"><h2>Loading plan</h2><div class="row"><button class="btn sm" id="gel-copy">Copy as text</button></div></div>
       <div class="tablewrap"><table>
-        <thead><tr><th>#</th><th>Sample</th><th>c µg/µL</th><th id="gh-3">Sample µL</th><th id="gh-4">Buffer µL</th><th id="gh-5">Water µL</th></tr></thead>
+        <thead><tr><th>#</th><th>Sample</th><th>c µg/µL</th><th id="gh-3">Sample µL</th><th id="gh-4">Buffer µL</th><th id="gh-5">Water µL</th><th></th></tr></thead>
         <tbody id="gel-table"></tbody>
       </table></div>
       <textarea class="copyarea" id="gel-copyarea" hidden readonly></textarea>
@@ -1446,12 +1448,12 @@ function renderGelSelect(){
   let h="";if(S.exp&&!Store.data.experiments[S.exp.id])h+=`<option value="${esc(S.exp.id)}">${esc(S.exp.name)}</option>`;
   h+=xs.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}${x.date?" · "+esc(x.date):""}</option>`).join("");sel.innerHTML=h;if(S.exp)sel.value=S.exp.id;
   const gs=gelsOf(S.exp.id);
-  $("#gel-strip").innerHTML=gs.map(g=>{const n=g.lanes.filter(l=>l.type==="sample").length;return `<button data-g="${esc(g.id)}" aria-pressed="${g.id===S.gel.id}">${esc(g.name||"Gel")}<span class="cnt">${n}</span></button>`}).join("")+`<button class="add" id="gel-add">+ Gel</button>`;
+  $("#gel-strip").innerHTML=gs.map(g=>g.id===S.gel.id?S.gel:g).map(g=>{const n=g.lanes.filter(l=>l.type==="sample").length;return `<button data-g="${esc(g.id)}" aria-pressed="${g.id===S.gel.id}">${esc(g.name||"Gel")}<span class="cnt">${n}</span></button>`}).join("")+`<button class="add" id="gel-add">+ Gel</button>`;
 }
 function fillGelForm(){
   const g=S.gel;$("#x-name").value=S.exp.name||"";$("#x-date").value=S.exp.date||"";$("#g-name").value=g.name||"";$("#g-wells").value=String(g.wells);
   $("#g-ug").value=g.targetUg;$("#g-final").value=g.finalUl;$("#g-max").value=g.wellMax;$("#g-lb").value=String(g.lbFactor);$("#g-mode").value=g.mode||"premix";$("#g-lbstock").value=g.lbStock||"ready";$("#g-lbextra").value=g.lbExtra??"10";$("#g-bme").value=g.bme||"";$("#g-lbcust").checked=!!g.lbCustom;$("#g-lbvol").value=g.lbVol||"";$("#g-lbvol-wrap").hidden=!g.lbCustom;$("#g-mix").value=g.mix||"1:1";
-  $("#g-ladder").value=g.ladderUl;$("#g-note").value=g.note||"";$("#gel-del").classList.remove("armed");$("#gel-del").textContent="Delete gel";$("#exp-del").classList.remove("armed");$("#exp-del").textContent="Delete experiment";
+  $("#g-ladder").value=g.ladderUl;$("#g-note").value=g.note||"";$("#gel-del").classList.remove("armed");$("#gel-del").textContent="Delete gel";$("#gel-del2").classList.remove("armed");$("#gel-del2").textContent="Delete gel";$("#gel-clear").classList.remove("armed");$("#gel-clear").textContent="Clear samples";$("#exp-del").classList.remove("armed");$("#exp-del").textContent="Delete experiment";
 }
 function ladderBands(){const pos=[8,17,27,38,50,64,80,96,110];const cols=["var(--l4)","var(--l1)","var(--l1)","var(--l2)","var(--l1)","var(--l3)","var(--l1)","var(--l1)","var(--l1)"];
   return pos.map((p,i)=>`<span class="b" style="top:${(p/120*100).toFixed(1)}%;background:${cols[i]}"></span>`).join("")}
@@ -1488,9 +1490,9 @@ function renderGel(){
   $("#gel-chips").innerHTML=chips.join("");
   $("#gel-table").innerHTML=g.lanes.map((l,i)=>{
     if(l.type==="empty")return "";
-    if(l.type==="ladder")return `<tr class="lrow${l.loaded?" loaded":""}" data-i="${i}"><td>${l.loaded?"✓":i+1}</td><td class="n">${esc(l.name||"Ladder")}</td><td></td><td>${fmt(num(g.ladderUl))}</td><td></td><td></td></tr>`;
+    if(l.type==="ladder")return `<tr class="lrow${l.loaded?" loaded":""}" data-i="${i}"><td>${l.loaded?"✓":i+1}</td><td class="n">${esc(l.name||"Ladder")}</td><td></td><td>${fmt(num(g.ladderUl))}</td><td></td><td></td><td><button class="rm" data-rm="${i}" aria-label="Remove from gel" title="Remove from gel">×</button></td></tr>`;
     const c=laneCalc(g,l);
-    return `<tr class="lrow${c.bad?" bad":""}${l.loaded?" loaded":""}" data-i="${i}"><td>${l.loaded?"✓":i+1}</td><td class="n">${esc(l.name||"?")}${c.warn?`<span class="wmsg">${esc(c.warn)}</span>`:""}</td><td>${fmt(num(l.conc),2)}</td>${c.premix?`<td>${fmt(c.s)}</td><td>${fmt(c.lb)}</td><td><b>${fmt(c.load)}</b></td>`:`<td>${fmt(c.s)}</td><td>${fmt(c.lb)}</td><td>${fmt(c.w)}</td>`}</tr>`}).join("")||`<tr><td colspan="6" class="muted" style="text-align:left;font-family:var(--sans)">No samples yet. Tap a well.</td></tr>`;
+    return `<tr class="lrow${c.bad?" bad":""}${l.loaded?" loaded":""}" data-i="${i}"><td>${l.loaded?"✓":i+1}</td><td class="n">${esc(l.name||"?")}${c.warn?`<span class="wmsg">${esc(c.warn)}</span>`:""}</td><td>${fmt(num(l.conc),2)}</td>${c.premix?`<td>${fmt(c.s)}</td><td>${fmt(c.lb)}</td><td><b>${fmt(c.load)}</b></td>`:`<td>${fmt(c.s)}</td><td>${fmt(c.lb)}</td><td>${fmt(c.w)}</td>`}<td><button class="rm" data-rm="${i}" aria-label="Remove from gel" title="Remove from gel">×</button></td></tr>`}).join("")||`<tr><td colspan="7" class="muted" style="text-align:left;font-family:var(--sans)">No samples yet. Tap a well.</td></tr>`;
   if(!$("#sheet").hidden)renderLaneCalc();
 }
 function gelLb(g){let t=0,n=0;g.lanes.forEach(l=>{const c=laneCalc(g,l);if(c&&Number.isFinite(c.lb)&&c.lb>0){t+=c.lb;n++}});return{t,n}}
@@ -1553,7 +1555,7 @@ $("#gel-loadmode").addEventListener("click",()=>{S.loadMode=!S.loadMode;if(S.loa
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&S.loadMode&&$("#sheet").hidden){S.loadMode=false;renderGel();fsOff()}});
 $("#gel-loadall").addEventListener("click",()=>{S.gel.lanes.forEach(l=>{if(l.type!=="empty")l.loaded=true});renderGel();queueSave("gels");setStatus("All wells checked")});
 $("#gel-loadreset").addEventListener("click",()=>{S.gel.lanes.forEach(l=>delete l.loaded);renderGel();queueSave("gels");setStatus("Loading ticks cleared")});
-$("#gel-table").addEventListener("click",e=>{const r=e.target.closest("tr.lrow");if(r)wellTap(+r.dataset.i)});
+$("#gel-table").addEventListener("click",e=>{const x=e.target.closest("[data-rm]");if(x){const i=+x.dataset.rm,nm=S.gel.lanes[i].name;S.gel.lanes[i]=blankLane();renderGel();renderGelSelect();queueSave("gels");setStatus(`${nm||"Well "+(i+1)} removed from the gel`);return}const r=e.target.closest("tr.lrow");if(r)wellTap(+r.dataset.i)});
 function flushGel(){if(dirty.gels){clearTimeout(saveT.gels);Store.save("gels",S.gel);dirty.gels=false}}
 function openExp(x){flushGel();S.exp=x;const gs=gelsOf(x.id);S.gel=gs.length?clone(gs[0]):draftGel(x.id);S.loadMode=false;fillGelForm();renderGelSelect();renderGel()}
 $("#exp-select").addEventListener("change",e=>{const x=Store.data.experiments[e.target.value];if(x)openExp(clone(x))});
@@ -1564,13 +1566,15 @@ $("#gel-strip").addEventListener("click",e=>{const b=e.target.closest("button");
     S.gel=newGel(S.exp.id,S.gel);Store.save("gels",S.gel);S.loadMode=false;fillGelForm();renderGelSelect();renderGel();setStatus(`${S.gel.name} added`);return}
   const g=Store.data.gels[b.dataset.g];if(g&&g.id!==S.gel.id){S.gel=clone(g);S.loadMode=false;fillGelForm();renderGelSelect();renderGel()}});
 [["#x-name","name"],["#x-date","date"]].forEach(([sel,k])=>$(sel).addEventListener("input",e=>{S.exp[k]=e.target.value;renderGel();renderGelSelect();queueSave("experiments")}));
-armDelete("#exp-del","Delete experiment",async()=>{const id=S.exp.id;for(const g of gelsOf(id))await Store.remove("gels",g.id);await Store.remove("experiments",id);
+armDelete("#exp-del","Delete experiment",async()=>{const id=S.exp.id;clearTimeout(saveT.gels);dirty.gels=false;clearTimeout(saveT.experiments);dirty.experiments=false;for(const g of gelsOf(id))await Store.remove("gels",g.id);await Store.remove("experiments",id);
   const xs=expList();if(xs.length)openExp(clone(xs[0]));else{S.exp=draftExp();S.gel=draftGel(S.exp.id);fillGelForm();renderGelSelect();renderGel()}setStatus("Experiment deleted")});
 const gelBind=[["#g-lbstock","lbStock"],["#g-lbextra","lbExtra"],["#g-bme","bme"],["#g-mode","mode"],["#g-mix","mix"],["#g-name","name"],["#g-wells","wells"],["#g-ug","targetUg"],["#g-final","finalUl"],["#g-max","wellMax"],["#g-lb","lbFactor"],["#g-ladder","ladderUl"],["#g-note","note"]];
 $("#g-lbcust").addEventListener("change",e=>{S.gel.lbCustom=e.target.checked;$("#g-lbvol-wrap").hidden=!e.target.checked;if(e.target.checked&&!S.gel.lbVol){const r=gelsOf(S.exp.id).reduce((a,x)=>a+gelLb(x.id===S.gel.id?S.gel:x).t,0);if(r>0){S.gel.lbVol=String(Math.ceil(r*1.1/10)*10);$("#g-lbvol").value=S.gel.lbVol}}renderGel();queueSave("gels");if(e.target.checked)$("#g-lbvol").focus()});
 $("#g-lbvol").addEventListener("input",e=>{S.gel.lbVol=e.target.value;renderGel();queueSave("gels")});
 gelBind.forEach(([sel,key])=>{$(sel).addEventListener("input",e=>{S.gel[key]=key==="wells"?+e.target.value:e.target.value;renderGel();if(key==="name")renderGelSelect();queueSave("gels")})});
-armDelete("#gel-del","Delete gel",async()=>{const id=S.gel.id;await Store.remove("gels",id);const list=gelsOf(S.exp.id).filter(x=>x.id!==id&&!x.draft);S.gel=list.length?clone(list[0]):draftGel(S.exp.id);fillGelForm();renderGelSelect();renderGel();setStatus("Gel deleted")});
+function delGelNow(){return (async()=>{const id=S.gel.id;clearTimeout(saveT.gels);dirty.gels=false;await Store.remove("gels",id);const list=gelsOf(S.exp.id).filter(x=>x.id!==id&&!x.draft);S.gel=list.length?clone(list[0]):draftGel(S.exp.id);fillGelForm();renderGelSelect();renderGel();setStatus("Gel deleted")})()}
+armDelete("#gel-del","Delete gel",delGelNow);armDelete("#gel-del2","Delete gel",delGelNow);
+armDelete("#gel-clear","Clear samples",()=>{let n=0;S.gel.lanes.forEach((l,i)=>{if(l.type==="sample"){S.gel.lanes[i]=blankLane();n++}});renderGel();renderGelSelect();queueSave("gels");setStatus(n?`${n} sample${n>1?"s":""} removed from ${S.gel.name||"the gel"}`:"No samples on this gel")});
 $("#gel-copy").addEventListener("click",async()=>{const t=gelText();const ta=$("#gel-copyarea");
   try{await navigator.clipboard.writeText(t);setStatus("Plan copied");ta.hidden=true}
   catch(e){ta.value=t;ta.hidden=false;ta.style.minHeight=(t.split("\n").length*17+20)+"px";ta.focus();ta.select();setStatus("Selected, copy manually")}});
@@ -2311,7 +2315,6 @@ function cellPaste(e){
   if(t==="p"&&c0<=A.reps){const need=c0+W-1;if(need>A.reps)A.reps=need}
   if(t==="s"&&c0+W-1>A.reps)A.reps=c0+W-1;
   rows.forEach((cells,i)=>cells.forEach((v,j)=>setCell(t,r0+i,c0+j,v)));
-  if(t==="p")A.samples=A.samples.filter((s,i)=>i<r0+rows.length||s.name||repVals(s.r).length);
   renderAssayRows();renderAssay();queueSave("assays");
   setStatus(`Pasted ${rows.length} row${rows.length>1?"s":""}`);
 }
