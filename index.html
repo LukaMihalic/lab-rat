@@ -92,6 +92,8 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 .tpl.mytpl .tplmain{flex:1;min-width:0;background:none;border:0;text-align:left;padding:10px 12px;cursor:pointer;font:inherit;color:var(--ink);display:flex;flex-direction:column;gap:3px}
 .tpl.mytpl .mtdel{background:none;border:0;border-left:1px solid var(--line);color:var(--muted);padding:0 10px;cursor:pointer;font:600 12px var(--sans)}
 .tpl.mytpl .mtdel.armed{background:var(--bad);color:#fff}
+.tpl.mytpl .mtdel{font-size:16px;min-width:36px;padding:0 8px}
+.tpl.mytpl .mted{font-size:15px}
 .tpl.mytpl .mtstar{background:none;border:0;border-left:1px solid var(--line);color:var(--muted);padding:0 14px;cursor:pointer;font-size:20px;line-height:1}
 .tpl.mytpl .mtstar[aria-pressed=true]{color:#E0A100}
 .tpl.mytpl.def{border-color:var(--accent);background:var(--accent-soft)}
@@ -2214,10 +2216,12 @@ function renderHome(){
 function renderTplList(){
   const n=hNav();$("#tpl-where").textContent=n.p&&n.p!=="__none"?`It will go into ${n.p}${n.f?" › "+showPath(n.f):""}.`:"";
   const q=($("#tpl-q").value||"").trim().toLowerCase();const mine=protList();
-  const tb=([k,T])=>`<button class="tpl" data-tpl="${k}"><span class="tph">${micon(k==="custom"?"other":catOfTpl(k,T),1)}<b>${esc(k==="custom"?"Blank experiment":T.name)}</b></span><span>${esc(T.desc)}</span></button>`;
+  const tbInner=([k,T])=>`<span class="tph">${micon(k==="custom"?"other":catOfTpl(k,T),1)}<b>${esc(k==="custom"?"Blank experiment":T.name)}</b></span><span>${esc(T.desc)}</span>`;
+  const tb=([k,T])=>k==="custom"?`<button class="tpl" data-tpl="${k}">${tbInner([k,T])}</button>`:`<div class="tpl mytpl"><button class="tplmain" data-tpl="${k}">${tbInner([k,T])}</button><button class="mtdel mted" data-editbi="${k}" title="Edit (makes your own copy)" aria-label="Edit ${esc(T.name)}">✎</button><button class="mtdel" data-hide="${k}" title="Remove from this list (you can bring it back)" aria-label="Remove ${esc(T.name)}">×</button></div>`;
+  const HID=hiddenBuiltins();
   const eb=t=>`<button class="tpl" data-ce="${esc(t.id)}"><span class="tph">${micon(catOfExp(t),1)}<b>${esc(t.name)}</b></span><span>${esc(methodLabel(t))} · ${(t.steps||[]).length} steps${t.group?" · "+esc([pj(t),pf(t)].filter(Boolean).join(" › ")):""}</span></button>`;
-  const ents=Object.entries(TEMPLATES).filter(([k])=>k!=="custom");const myT=tplList();
-  const mb=t=>`<div class="tpl mytpl${t.isDefault?" def":""}"><button class="tplmain" data-mt="${esc(t.id)}"><span class="tph">${micon(catOfExp(t),1)}<b>${esc(t.name||"Untitled")}</b></span><span>${t.isDefault?"★ Your default · ":"Your protocol · "}${(t.steps||[]).length} steps</span></button><button class="mtstar" data-star="${esc(t.id)}" aria-pressed="${!!t.isDefault}" title="${t.isDefault?"Your default for this method (tap to undo)":"Make this your default for this method"}" aria-label="Default">${t.isDefault?"★":"☆"}</button></div>`;
+  const ents=Object.entries(TEMPLATES).filter(([k])=>k!=="custom"&&!HID.has(k));const myT=tplList();
+  const mb=t=>`<div class="tpl mytpl${t.isDefault?" def":""}"><button class="tplmain" data-mt="${esc(t.id)}"><span class="tph">${micon(catOfExp(t),1)}<b>${esc(t.name||"Untitled")}</b></span><span>${t.isDefault?"★ Your default · ":"Your protocol · "}${(t.steps||[]).length} steps</span></button><button class="mtdel mted" data-editt="${esc(t.id)}" title="Edit steps, name and tools" aria-label="Edit">✎</button><button class="mtdel" data-tdelp="${esc(t.id)}" title="Delete this protocol" aria-label="Delete">×</button><button class="mtstar" data-star="${esc(t.id)}" aria-pressed="${!!t.isDefault}" title="${t.isDefault?"Your default for this method (tap to undo)":"Make this your default for this method"}" aria-label="Default">${t.isDefault?"★":"☆"}</button></div>`;
   if(q){const m=ents.filter(([k,T])=>(T.name+" "+T.desc+" "+(T.label||"")).toLowerCase().includes(q)),e=mine.filter(t=>[t.name,t.group,t.folder,methodLabel(t)].join(" ").toLowerCase().includes(q)),mt=myT.filter(t=>[t.name,methodLabel(t),t.notes].join(" ").toLowerCase().includes(q));
     $("#tpl-list").innerHTML=(mt.length?`<div class="tplh" style="margin-top:4px">Your protocols</div><div class="tpls">${mt.map(mb).join("")}</div>`:"")+(m.length?`<div class="tpls">${m.map(tb).join("")}</div>`:"")+(e.length?`<div class="tplh" style="margin-top:10px">Copy the steps of an earlier experiment</div><div class="tpls">${e.map(eb).join("")}</div>`:"")||`<p class="note">Nothing found.</p>`;return}
   const open=S.tplOpen||"";
@@ -2228,6 +2232,7 @@ function renderTplList(){
     h+=`<details class="tcat" data-cat="${c}"${open===c?" open":""}><summary><span class="tph">${micon(c,1)}${label}${def?` <span class="defname">★ ${esc(def.name)}</span>`:""}</span><span>${items.length+mine2.length}</span></summary><div class="tpls">${inner}</div></details>`});
   if(mine.length){let inner="";CATS.forEach(([c,label])=>{const it=mine.filter(t=>catOfExp(t)===c);if(it.length)inner+=`<div class="tplh">${label}</div>`+it.map(eb).join("")});
     h+=`<details class="tcat" data-cat="__mine"${open==="__mine"?" open":""}><summary>Copy an earlier experiment<span>${mine.length}</span></summary><div class="tpls">${inner}</div></details>`}
+  if(HID.size){const hl=[...HID].filter(k=>TEMPLATES[k]);if(hl.length)h+=`<details class="tcat" data-cat="__hid"${open==="__hid"?" open":""}><summary>Removed methods<span>${hl.length}</span></summary><div class="tpls">${hl.map(k=>`<div class="tpl mytpl"><div class="tplmain"><span class="tph">${micon(catOfTpl(k,TEMPLATES[k]),1)}<b>${esc(TEMPLATES[k].name)}</b></span><span>Hidden from the list</span></div><button class="mtstar" data-unhide="${k}" title="Bring it back" style="font:600 12.5px var(--sans);color:var(--accent)">Restore</button></div>`).join("")}</div></details>`}
   $("#tpl-list").innerHTML=h}
 $("#tpl-list").addEventListener("toggle",e=>{const d=e.target;if(!d.classList||!d.classList.contains("tcat"))return;if(d.open){S.tplOpen=d.dataset.cat;$$("#tpl-list .tcat").forEach(x=>{if(x!==d)x.open=false})}else if(S.tplOpen===d.dataset.cat)S.tplOpen=""},true);
 $("#tpl-q").addEventListener("input",renderTplList);
@@ -2304,7 +2309,9 @@ $("#mk-ok").addEventListener("click",()=>{if(!MK)return;const {mode,n}=MK;const 
   else if(mode==="renproj"){every.filter(p=>pj(p)===n.p).forEach(p=>upd(p,c=>{c.group=name}));fdocs().filter(d=>d.project===n.p).forEach(d=>Store.save("folders",Object.assign(clone(d),{project:name})));setNav({p:name,f:null})}
   else if(mode==="renfolder"){const par=n.f.split("/").slice(0,-1).join("/");const np=(par?par+"/":"")+name;every.filter(p=>pj(p)===n.p&&under(pf(p),n.f)).forEach(p=>upd(p,c=>{c.folder=np+pf(p).slice(n.f.length)}));fdocs().filter(d=>d.project===n.p&&d.path&&under(d.path,n.f)).forEach(d=>Store.save("folders",Object.assign(clone(d),{path:np+d.path.slice(n.f.length)})));setNav({p:n.p,f:np})}
   MK=null;setStatus("Saved")});
-function tplList(){return Object.values(Store.data.templates).sort((a,b)=>String(a.name).localeCompare(String(b.name)))}
+function hiddenBuiltins(){const d=Store.data.templates&&Store.data.templates.__hidden;return new Set((d&&d.keys)||[])}
+function setHiddenBuiltins(set){Store.save("templates",{id:"__hidden",keys:[...set]})}
+function tplList(){return Object.values(Store.data.templates).filter(t=>!String(t.id).startsWith("__")).sort((a,b)=>String(a.name).localeCompare(String(b.name)))}
 function freshSteps(steps){return (steps||[]).map(x=>Object.assign({},x,{id:uid()+Math.random().toString(36).slice(2,5)}))}
 function expFromTemplate(src,builtinKey){
   const b=builtinKey?newProt(builtinKey):null;const t=src||b;
@@ -2331,6 +2338,14 @@ async function deleteProtocol(id){
 $("#home-new").addEventListener("click",()=>{$("#tpl-q").value="";renderHome();$("#tpl-card").hidden=false;$("#tpl-card").scrollIntoView({block:"nearest"})});
 $("#tpl-cancel").addEventListener("click",()=>{$("#tpl-card").hidden=true});
 $("#tpl-list").addEventListener("click",e=>{
+  const eb=e.target.closest("[data-editbi]");if(eb){const k=eb.dataset.editbi;const t=newTemplate(k);t.name="My "+TEMPLATES[k].name.replace(/^My /,"");t.cat=catOfTpl(k,TEMPLATES[k]);
+    tplList().filter(x=>x.isDefault&&catOfExp(x)===t.cat).forEach(x=>{const y=clone(x);delete y.isDefault;Store.save("templates",y)});t.isDefault=true;Store.save("templates",t);
+    $("#tpl-card").hidden=true;openTemplate(clone(t));S.editSteps=true;renderSteps();$("#prot-params").open=true;openStepsCard();setStatus("Your own copy: change the steps, name or tools. It is now your default; the built-in stays under Show built-in.",true);return}
+  const et=e.target.closest("[data-editt]");if(et){const t=Store.data.templates[et.dataset.editt];if(!t)return;$("#tpl-card").hidden=true;openTemplate(clone(t));S.editSteps=true;renderSteps();$("#prot-params").open=true;openStepsCard();return}
+  const hd=e.target.closest("[data-hide]");if(hd){const H=hiddenBuiltins();H.add(hd.dataset.hide);setHiddenBuiltins(H);renderTplList();setStatus(`Removed “${TEMPLATES[hd.dataset.hide].name}”. Bring it back under Removed methods.`);return}
+  const uh=e.target.closest("[data-unhide]");if(uh){const H=hiddenBuiltins();H.delete(uh.dataset.unhide);setHiddenBuiltins(H);renderTplList();setStatus("Method restored");return}
+  const dp=e.target.closest("[data-tdelp]");if(dp){if(!dp.classList.contains("armed")){dp.classList.add("armed");dp.textContent="Delete?";setTimeout(()=>{dp.classList.remove("armed");dp.textContent="×"},3500);return}
+    const t=Store.data.templates[dp.dataset.tdelp];Store.remove("templates",dp.dataset.tdelp);setTimeout(renderTplList,30);setStatus(`Protocol “${t?t.name:""}” deleted (your experiments are not affected)`);return}
   const st=e.target.closest("[data-star]");if(st){const t=Store.data.templates[st.dataset.star];if(!t)return;const on=!t.isDefault;const c=catOfExp(t);
     tplList().filter(x=>x.id!==t.id&&x.isDefault&&catOfExp(x)===c).forEach(x=>{const y=clone(x);delete y.isDefault;Store.save("templates",y)});
     const y=clone(t);if(on)y.isDefault=true;else delete y.isDefault;Store.save("templates",y);renderTplList();setStatus(on?`“${t.name}” is now your default`:"Default removed: built-in protocols are back on top");return}
@@ -2418,6 +2433,7 @@ $("#prot-steps").addEventListener("input",e=>{const row=e.target.closest(".sedit
   s[k]=k==="min"?(num(e.target.value)>0?num(e.target.value):null):k==="rep"?(parseInt(e.target.value)||0):e.target.value;queueSave("protocols")});
 
 function clock(sec){sec=Math.max(0,Math.round(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(s).padStart(2,"0")}
+function openStepsCard(){const c=$("#prot-steps").closest(".card.collapsible");if(c&&collapsedSet.has(c.dataset.ck)){collapsedSet.delete(c.dataset.ck);lsSet("bb.collapsed",[...collapsedSet]);const u=ckUpd.get(c.dataset.ck);u&&u()}}
 function renderSteps(){
   const p=S.prot;if(!p)return;const steps=p.steps||[];
   $("#prot-edit").textContent=S.editSteps?"Done":"Edit steps";$("#prot-edit").classList.toggle("primary",!!S.editSteps);
