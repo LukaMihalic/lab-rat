@@ -311,6 +311,11 @@ table.xl tr.dup input.wl,table.xl tr.dup select.gs{border-color:var(--bad)}
 .crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:14px;color:var(--muted)}
 .crumbs button{background:none;border:0;padding:4px 2px;font:600 14px var(--sans);color:var(--accent);cursor:pointer}
 .crumbs b{color:var(--ink);font-size:17px}
+.fcolors{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.fcolors .lb{font-size:13px;color:var(--muted);width:100%}
+.fcolors button.sw{width:34px;height:34px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.fcolors button.sw[aria-pressed=true]{border-color:var(--ink);box-shadow:0 0 0 2px var(--surface) inset}
+.fcolors button.def{font:600 13px var(--sans);border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:999px;padding:7px 12px;cursor:pointer}
 .ftiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .ftiles:empty{display:none}
 .ftile{display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;font:inherit;color:var(--ink)}
@@ -516,6 +521,7 @@ nav.tabs button{position:relative}
       <div class="row"><select id="home-filter" style="width:auto" aria-label="Status"></select><select id="home-sort" style="width:auto" aria-label="Sort experiments"><option value="used">Recently used</option><option value="new">Newest first</option><option value="old">Oldest first</option><option value="name">Name A–Z</option></select></div>
       <div class="row" id="home-acts"></div>
     </div>
+    <div class="fcolors" id="home-color" hidden></div>
     <div class="ghead" id="home-lhead" hidden></div>
     <div class="plist" id="home-list"></div>
   </section>
@@ -1812,10 +1818,15 @@ function ensureFolderDocs(every){if(!booted||!Store.loaded.folders)return;const 
   const need=new Set();every.forEach(p=>{const g=pj(p);if(!g)return;need.add(g+"\u0001");if(pf(p))need.add(g+"\u0001"+pf(p))});
   undoMute++;try{need.forEach(k=>{if(!have.has(k)){const [project,path]=k.split("\u0001");Store.save("folders",{id:uid(),project,path})}})}finally{undoMute--}}
 let fidN=0;
-function folderIcon(st,muted){const id="fg"+(++fidN);
+const FCOL={blue:["#7CC3F2","#3D9BE0","#2F86CC"],teal:["#7FDCD2","#2BB3A3","#1F9688"],green:["#9BE08C","#4CAF50","#3B8F3F"],yellow:["#FFE07A","#F5C211","#D9A900"],orange:["#FFC28A","#F28C28","#D2701A"],red:["#F59A9A","#E04848","#C23434"],pink:["#F7A8D0","#E5539B","#C83C82"],purple:["#C6A8F2","#8B5CF6","#7040DA"],brown:["#D2B08C","#A0703F","#83592F"],gray:["#C9CED9","#8A92A6","#6E7690"]};
+function folderColor(proj,path){const D=fdocs().filter(d=>d.project===proj&&d.color&&FCOL[d.color]);let x=path||"";
+  while(true){const d=D.find(d=>(d.path||"")===x);if(d)return d.color;if(!x)return null;x=x.includes("/")?x.slice(0,x.lastIndexOf("/")):""}}
+function folderIcon(st,muted,col){const id="fg"+(++fidN);const C=!muted&&col&&FCOL[col];
+  if(C&&st==="A")return `<svg viewBox="0 0 34 28"><path d="M2 5a3 3 0 0 1 3-3h8l3 3h13a3 3 0 0 1 3 3v2H2z" fill="${C[1]}" opacity=".55"/><rect x="2" y="8" width="30" height="18" rx="3" fill="${C[1]}"/></svg>`;
+  if(C&&st==="B")return `<svg viewBox="0 0 34 28" fill="none" stroke="${C[2]}" stroke-width="2.2" stroke-linejoin="round"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h7l3 3.5h13A2.5 2.5 0 0 1 31 10v12.5A2.5 2.5 0 0 1 28.5 25h-23A2.5 2.5 0 0 1 3 22.5z" fill="${C[0]}" fill-opacity=".35"/></svg>`;
   if(st==="A")return muted?`<svg viewBox="0 0 34 28"><path d="M2 5a3 3 0 0 1 3-3h8l3 3h13a3 3 0 0 1 3 3v2H2z" fill="var(--muted)" opacity=".45"/><rect x="2" y="8" width="30" height="18" rx="3" fill="var(--muted)" opacity=".7"/></svg>`:`<svg viewBox="0 0 34 28"><path d="M2 5a3 3 0 0 1 3-3h8l3 3h13a3 3 0 0 1 3 3v2H2z" fill="var(--accent)" opacity=".55"/><rect x="2" y="8" width="30" height="18" rx="3" fill="var(--accent)"/></svg>`;
   if(st==="B")return `<svg viewBox="0 0 34 28" fill="none" stroke="${muted?"var(--muted)":"var(--accent)"}" stroke-width="2.2" stroke-linejoin="round"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h7l3 3.5h13A2.5 2.5 0 0 1 31 10v12.5A2.5 2.5 0 0 1 28.5 25h-23A2.5 2.5 0 0 1 3 22.5z" fill="${muted?"var(--surface-2)":"var(--accent-soft)"}"/></svg>`;
-  const c=muted?["#B7BCCB","#9097AB","#7C8398"]:["#7CC3F2","#3D9BE0","#2F86CC"];
+  const c=muted?["#B7BCCB","#9097AB","#7C8398"]:C||FCOL.blue;
   return `<svg viewBox="0 0 34 28"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c[0]}"/><stop offset="1" stop-color="${c[1]}"/></linearGradient></defs><path d="M2 5a3 3 0 0 1 3-3h7.5l3 3H29a3 3 0 0 1 3 3v2H2z" fill="${c[2]}"/><rect x="2" y="7.5" width="30" height="18.5" rx="3" fill="url(#${id})"/><rect x="2" y="7.5" width="30" height="2" rx="1" fill="#fff" opacity=".35"/></svg>`}
 function renderHome(){
   const every=protList();ensureFolderDocs(every);let n=hNav();const q=($("#home-q").value||"").trim().toLowerCase();
@@ -1832,7 +1843,7 @@ function renderHome(){
     if(n.f!=null){const segs=n.f.split("/");segs.forEach((sg,i)=>{cr.push("›");cr.push(i===segs.length-1?`<b>${esc(sg)}</b>`:`<button data-nav="f" data-path="${esc(segs.slice(0,i+1).join("/"))}">${esc(sg)}</button>`)})}}
   $("#home-crumbs").innerHTML=cr.join(" ");
   const cnt=L=>{if(!L.length)return "Empty";const a=L.filter(p=>!expDone(p)).length;return `${L.length} experiment${L.length===1?"":"s"}${a?` · ${a} in progress`:""}`};
-  const tile=(label,nav,L,none)=>`<button class="ftile${none?" none":""}" data-go='${esc(JSON.stringify(nav))}'><span class="ic">${folderIcon(lsGet("bb.ficon","C"),none)}</span><span class="tx"><b lang="en">${esc(label)}</b><span>${cnt(L)}</span></span></button>`;
+  const tile=(label,nav,L,none)=>`<button class="ftile${none?" none":""}" data-go='${esc(JSON.stringify(nav))}'><span class="ic">${folderIcon(lsGet("bb.ficon","C"),none,none?null:folderColor(nav.p,nav.f))}</span><span class="tx"><b lang="en">${esc(label)}</b><span>${cnt(L)}</span></span></button>`;
   let tiles="";
   if(!q&&n.p==null){tiles=projects.map(g=>tile(g,{p:g,f:null},every.filter(p=>pj(p)===g))).join("");const nn=every.filter(p=>!pj(p));if(nn.length)tiles+=tile("No project",{p:"__none",f:null},nn,true)}
   else if(!q&&n.p!=null&&n.p!=="__none")tiles=folders.map(f=>{const path=(n.f?n.f+"/":"")+f;return tile(f,{p:n.p,f:path},every.filter(p=>pj(p)===n.p&&under(pf(p),path)))}).join("");
@@ -1857,9 +1868,12 @@ function renderHome(){
   // actions
   let acts="";
   if(!q){if(n.p==null)acts=`<button class="btn sm" data-act="newproj">+ Project</button>`;
-    else if(n.f==null&&n.p!=="__none")acts=`<button class="btn sm" data-act="newfolder">+ Folder</button><button class="btn sm ghost" data-act="add">Add experiments</button><button class="btn sm ghost" data-act="renproj">Rename</button><button class="btn sm ghost danger" data-act="rmproj">Remove project</button>`;
-    else if(n.f!=null)acts=`<button class="btn sm" data-act="newfolder">+ Folder</button><button class="btn sm ghost" data-act="add">Add experiments</button><button class="btn sm ghost" data-act="renfolder">Rename</button><button class="btn sm ghost danger" data-act="rmfolder">Remove folder</button>`}
+    else if(n.f==null&&n.p!=="__none")acts=`<button class="btn sm" data-act="newfolder">+ Folder</button><button class="btn sm ghost" data-act="add">Add experiments</button><button class="btn sm ghost" data-act="color">Color</button><button class="btn sm ghost" data-act="renproj">Rename</button><button class="btn sm ghost danger" data-act="rmproj">Remove project</button>`;
+    else if(n.f!=null)acts=`<button class="btn sm" data-act="newfolder">+ Folder</button><button class="btn sm ghost" data-act="add">Add experiments</button><button class="btn sm ghost" data-act="color">Color</button><button class="btn sm ghost" data-act="renfolder">Rename</button><button class="btn sm ghost danger" data-act="rmfolder">Remove folder</button>`}
   $("#home-acts").innerHTML=acts;
+  const hc=$("#home-color");if(!(S.colorOpen&&!q&&n.p&&n.p!=="__none"&&S.colorOpen===n.p+"\u0001"+(n.f||""))){hc.hidden=true;S.colorOpen=null}else{hc.hidden=false;
+    const own=(fdocs().find(d=>d.project===n.p&&(d.path||"")===(n.f||""))||{}).color,eff=folderColor(n.p,n.f);
+    hc.innerHTML=`<span class="lb">${n.f?`Color of this folder (folders inside it follow it)`:`Color of the project's folders`}</span>`+Object.entries(FCOL).map(([k,c])=>`<button class="sw" data-col="${k}" aria-label="${k}" aria-pressed="${eff===k}" style="background:linear-gradient(${c[0]},${c[1]})"></button>`).join("")+`<button class="def" data-col="">${n.f&&!own&&eff?"Same as parent":"Default"}</button><button class="def" data-col="__close">Done</button>`}
   renderTplList();
 }
 function renderTplList(){
@@ -1920,7 +1934,13 @@ function openMk(mode){const n=hNav();const every=protList();MK={mode,n};const pn
     cand.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
     $("#mk-list").innerHTML=cand.length?cand.map(p=>`<label><input type="checkbox" value="${esc(p.id)}"><span>${esc(p.name||"Untitled")}</span><span class="w">${esc([pj(p),showPath(pf(p))].filter(Boolean).join(" › ")||"no project")}</span></label>`).join(""):`<p class="note" style="margin:4px">No other experiments to move.</p>`}
   pnl.hidden=false;pnl.scrollIntoView({block:"nearest"});if(naming){$("#mk-name").focus();$("#mk-name").select()}}
+$("#home-color").addEventListener("click",e=>{const b=e.target.closest("[data-col]");if(!b)return;const n=hNav(),c=b.dataset.col;
+  if(c==="__close"){S.colorOpen=null;renderHome();return}
+  const path=n.f||"";const d=fdocs().find(d=>d.project===n.p&&(d.path||"")===path);
+  if(d)Store.save("folders",Object.assign(clone(d),{color:c||null}));else if(c)Store.save("folders",{id:uid(),project:n.p,path,color:c});
+  renderHome();setStatus(c?"Folder color changed":"Folder color reset")});
 $("#home-acts").addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b)return;const a=b.dataset.act,n=hNav();
+  if(a==="color"){const k=n.p+"\u0001"+(n.f||"");S.colorOpen=S.colorOpen===k?null:k;renderHome();return}
   if(a==="rmfolder"){if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Tap again: contents move up one level";setTimeout(()=>{b.classList.remove("armed");b.textContent="Remove folder"},4000);return}
     const par=n.f.split("/").slice(0,-1).join("/");protList().filter(p=>pj(p)===n.p&&under(pf(p),n.f)).forEach(p=>{const c=clone(p);c.folder=(par+pf(p).slice(n.f.length)).replace(/^\//,"");Store.save("protocols",c)});
     fdocs().filter(d=>d.project===n.p&&d.path&&under(d.path,n.f)).forEach(d=>{if(d.path===n.f)Store.remove("folders",d.id);else Store.save("folders",Object.assign(clone(d),{path:(par+d.path.slice(n.f.length)).replace(/^\//,"")}))});
