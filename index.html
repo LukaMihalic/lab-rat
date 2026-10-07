@@ -99,6 +99,8 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 .tpl.mytpl.def{border-color:var(--accent);background:var(--accent-soft)}
 .tpl.mytpl .tplmain b{color:var(--ink)}
 .tpl.bitog{background:none;border-style:dashed}
+.tplclean{display:flex;flex-direction:column;gap:6px;border:1px solid var(--warn);background:var(--warn-soft);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.tplclean b{font-size:14px}.tplclean span{font-size:12.5px;color:var(--ink)}
 .tcat .defname{font:600 12px var(--sans);color:var(--accent);margin-left:6px}
 .linkbtn{background:none;border:0;padding:0;color:var(--accent);font:600 inherit;cursor:pointer;text-decoration:underline}
 .plin{border-collapse:separate;border-spacing:2px}
@@ -1665,7 +1667,7 @@ function maybeBoot(){
   Object.values(Store.data.solutions).filter(r=>!r.isTpl&&r.protoId).forEach(r=>{const p=Store.data.protocols[r.protoId];
     if(p){const c=clone(p);if(!Array.isArray(c.sols))c.sols=[];if(!c.sols.some(e=>e.id===r.id)){c.sols.push({id:r.id,prepared:r.prepared||null,done:(r.comps||[]).map((x,i)=>x.done?i:-1).filter(i=>i>=0)});Store.save("protocols",c)}}
     const rc=clone(r);rc.protoId=null;delete rc.prepared;(rc.comps||[]).forEach(x=>delete x.done);Store.save("solutions",rc)});
-  seedRecipes();
+  seedRecipes();setTimeout(dedupeData,2500);
   let wb=protList().find(p=>p.method==="wb");
   const orphX=Object.values(Store.data.experiments).filter(x=>!x.protoId||!Store.data.protocols[x.protoId]);
   const orphA=Object.values(Store.data.assays).filter(x=>!x.protoId||!Store.data.protocols[x.protoId]);
@@ -1677,8 +1679,7 @@ function maybeBoot(){
   // experiments: status + synced step ticks; seed the protocol library from existing experiments once
   Object.values(Store.data.protocols).forEach(p=>{if(p.method==="wb"&&p.tools&&p.tools.images===undefined){const c=clone(p);c.tools.images=true;Store.save("protocols",c);p=Store.data.protocols[c.id]}
     if(!p.status||!Array.isArray(p.done)){const c=clone(p);if(!c.status)c.status="active";if(!Array.isArray(c.done))c.done=(S.checks[c.id]||[]).filter(id=>(c.steps||[]).some(x=>x.id===id));Store.save("protocols",c)}});
-  if(!Object.keys(Store.data.templates).length&&!lsGet("bb.tplSeeded",false)){const seen=new Set();Object.values(Store.data.protocols).forEach(p=>{const nm=String(p.name||"").replace(/ · \d{2}\/\d{2}\/\d{4}$/,"").replace(/ \(copy\)$/,"");if(!nm||seen.has(nm))return;seen.add(nm);
-    Store.save("templates",{id:uid(),name:nm,method:p.method,assayMethod:p.assayMethod,tools:Object.assign({},p.tools),steps:freshSteps(p.steps),notes:p.notes||"",created:p.created||Date.now()})});lsSet("bb.tplSeeded",true)}
+  // (protocols are no longer created automatically from experiments)
   renderHome();
   const last=lsGet("bb.proto",null),lastTab=BOOT_TAB||"home";
   const p=(last&&Store.data.protocols[last])||null;
@@ -1708,10 +1709,10 @@ function onData(kind,first){
     if(S.tab==="lib")renderLib();
   }else if(kind==="records"){
     if(S.tab==="hist"&&!(S.rec&&dirty.records))renderHist();
-  }else if(kind==="solutions"){
+  }else if(kind==="solutions"){dedupeSoon();
     if(S.sol&&Store.data.solutions[S.sol.id]&&!dirty.solutions&&(Store.data.solutions[S.sol.id].updatedAt||0)>(S.sol.updatedAt||0)){S.sol=clone(Store.data.solutions[S.sol.id]);fillSol()}
     if(S.tab==="sol"||S.tab==="psol")renderSolSelect();
-  }else if(kind==="folders"){if(S.tab==="home")renderHome();
+  }else if(kind==="folders"){dedupeSoon();if(S.tab==="home")renderHome();
   }else if(kind==="assays"){
     const list=Store.list("assays");
     if(S.assay&&Store.data.assays[S.assay.id]&&!dirty.assays&&(Store.data.assays[S.assay.id].updatedAt||0)>(S.assay.updatedAt||0)){S.assay=clone(Store.data.assays[S.assay.id]);fillAssay()}
@@ -2249,7 +2250,9 @@ function renderTplList(){
   if(q){const m=ents.filter(([k,T])=>(T.name+" "+T.desc+" "+(T.label||"")).toLowerCase().includes(q)),e=mine.filter(t=>[t.name,t.group,t.folder,methodLabel(t)].join(" ").toLowerCase().includes(q)),mt=myT.filter(t=>[t.name,methodLabel(t),t.notes].join(" ").toLowerCase().includes(q));
     $("#tpl-list").innerHTML=(mt.length?`<div class="tplh" style="margin-top:4px">Your protocols</div><div class="tpls">${mt.map(mb).join("")}</div>`:"")+(m.length?`<div class="tpls">${m.map(tb).join("")}</div>`:"")+(e.length?`<div class="tplh" style="margin-top:10px">Copy the steps of an earlier experiment</div><div class="tpls">${e.map(eb).join("")}</div>`:"")||`<p class="note">Nothing found.</p>`;return}
   const open=S.tplOpen||"";
-  let h=`<div class="tpls">${tb(["custom",TEMPLATES.custom])}</div>`;
+  let h="";const AI=autoImported();
+  if(AI.length&&!lsGet("bb.tplCleanNo",false))h+=`<div class="tplclean"><b>${AI.length} protocol${AI.length>1?"s were":" was"} made automatically from your earlier experiments</b><span>An older version copied every experiment into a protocol, once on each device, which is why some appear several times. Finishing experiments doesn't do this any more. Your experiments are not affected.</span><span class="note">${AI.slice(0,10).map(t=>esc(t.name)).join(" · ")}${AI.length>10?" …":""}</span><div class="row"><button class="btn sm danger" data-clean="rm">Remove ${AI.length}</button><button class="btn sm ghost" data-clean="keep">Keep them</button></div></div>`;
+  h+=`<div class="tpls">${tb(["custom",TEMPLATES.custom])}</div>`;
   CATS.forEach(([c,label])=>{const items=ents.filter(([k,T])=>catOfTpl(k,T)===c);const mine2=myT.filter(t=>catOfExp(t)===c).sort((a,b)=>(!!b.isDefault-!!a.isDefault)||String(a.name).localeCompare(String(b.name)));if(!items.length&&!mine2.length)return;
     const def=mine2.find(t=>t.isDefault);
     const inner=(mine2.length?mine2.map(mb).join(""):"")+(def&&items.length?`<button class="tpl bitog" data-bi="${c}"><b>${S.biOpen===c?"Hide":"Show"} built-in protocols (${items.length})</b><span>Kept for reference and for new users</span></button>`+(S.biOpen===c?items.map(tb).join(""):""):items.map(tb).join(""));
@@ -2335,6 +2338,7 @@ $("#mk-ok").addEventListener("click",()=>{if(!MK)return;const {mode,n}=MK;const 
   MK=null;setStatus("Saved")});
 function hiddenBuiltins(){const d=Store.data.templates&&Store.data.templates.__hidden;return new Set((d&&d.keys)||[])}
 function setHiddenBuiltins(set){Store.save("templates",{id:"__hidden",keys:[...set]})}
+function autoImported(){return tplList().filter(t=>!t.cat&&!t.isDefault&&!("sols" in t)&&!t.kept)}
 function tplList(){return Object.values(Store.data.templates).filter(t=>!String(t.id).startsWith("__")).sort((a,b)=>String(a.name).localeCompare(String(b.name)))}
 function freshSteps(steps){return (steps||[]).map(x=>Object.assign({},x,{id:uid()+Math.random().toString(36).slice(2,5)}))}
 function expFromTemplate(src,builtinKey){
@@ -2362,6 +2366,9 @@ async function deleteProtocol(id){
 $("#home-new").addEventListener("click",()=>{$("#tpl-q").value="";renderHome();$("#tpl-card").hidden=false;$("#tpl-card").scrollIntoView({block:"nearest"})});
 $("#tpl-cancel").addEventListener("click",()=>{$("#tpl-card").hidden=true});
 $("#tpl-list").addEventListener("click",e=>{
+  const cl=e.target.closest("[data-clean]");if(cl){if(cl.dataset.clean==="keep"){autoImported().forEach(t=>{const y=clone(t);y.kept=true;Store.save("templates",y)});lsSet("bb.tplCleanNo",true);renderTplList();return}
+    if(!cl.classList.contains("armed")){cl.classList.add("armed");cl.textContent="Tap again to remove";return}
+    const L=autoImported();L.forEach(t=>Store.remove("templates",t.id));setTimeout(renderTplList,40);setStatus(`Removed ${L.length} automatic protocol${L.length>1?"s":""}`);return}
   const eb=e.target.closest("[data-editbi]");if(eb){const k=eb.dataset.editbi;const t=newTemplate(k);t.name="My "+TEMPLATES[k].name.replace(/^My /,"");t.cat=catOfTpl(k,TEMPLATES[k]);
     tplList().filter(x=>x.isDefault&&catOfExp(x)===t.cat).forEach(x=>{const y=clone(x);delete y.isDefault;Store.save("templates",y)});t.isDefault=true;Store.save("templates",t);
     $("#tpl-card").hidden=true;openTemplate(clone(t));S.editSteps=true;renderSteps();$("#prot-params").open=true;openStepsCard();setStatus("Your own copy: change the steps, name or tools. It is now your default; the built-in stays under Show built-in.",true);return}
@@ -3112,6 +3119,26 @@ $("#sol-select").addEventListener("change",e=>{const r=Store.data.solutions[e.ta
 $("#sol-new").addEventListener("click",()=>{flushSol();S.sol=newSol(null,null);S.sol.name="New recipe";Store.save("solutions",S.sol);solAddCur();renderSolSelect();const n=$("#r-name");n.focus();n.select();setStatus("New recipe: give it a name and add components")});
 $("#sol-tpl-cancel").addEventListener("click",()=>{$("#sol-tpl").hidden=true});
 function solSlug(n){return "solbi-"+String(n||"").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,48)}
+/* merge copies that older versions created once per device */
+function recipeSig(r){return JSON.stringify([String(r.name||"").trim().toLowerCase(),String(r.vol||""),r.vunit||"",String(r.diluent||"").trim().toLowerCase(),(r.comps||[]).map(c=>[String(c.name||"").trim().toLowerCase(),c.type,String(c.val),c.unit||"",String(c.extra||"")])])}
+let ddT=0;function dedupeSoon(){clearTimeout(ddT);ddT=setTimeout(dedupeData,1500)}
+function dedupeData(){if(!booted)return;let nSol=0,nFol=0;undoMute++;try{
+  // recipes: identical name and contents
+  const groups={};Object.values(Store.data.solutions).filter(r=>!r.isTpl).forEach(r=>{(groups[recipeSig(r)]=groups[recipeSig(r)]||[]).push(r)});
+  const remap={};
+  Object.values(groups).filter(g=>g.length>1).forEach(g=>{
+    const used=id=>Object.values(Store.data.protocols).some(p=>Array.isArray(p.sols)&&p.sols.some(e=>e.id===id));
+    g.sort((a,b)=>(String(b.id).startsWith("solbi-")-String(a.id).startsWith("solbi-"))||(used(b.id)-used(a.id))||String(a.id).localeCompare(String(b.id)));
+    const keep=g[0];g.slice(1).forEach(r=>{remap[r.id]=keep.id;Store.remove("solutions",r.id);nSol++})});
+  if(nSol){Object.values(Store.data.protocols).forEach(p=>{if(!Array.isArray(p.sols)||!p.sols.some(e=>remap[e.id]))return;const c=S.prot&&S.prot.id===p.id?S.prot:clone(p);const seen=new Set();
+      c.sols=c.sols.map(e=>remap[e.id]?Object.assign({},e,{id:remap[e.id]}):e).filter(e=>{if(seen.has(e.id))return false;seen.add(e.id);return true});if(c===S.prot)queueSave("protocols");else Store.save("protocols",c)});
+    if(S.sol&&remap[S.sol.id]){const k=Store.data.solutions[remap[S.sol.id]];S.sol=k?clone(k):null}}
+  // folders: same project and path
+  const fg={};fdocs().forEach(d=>{const k=(d.project||"")+"\u0001"+(d.path||"");(fg[k]=fg[k]||[]).push(d)});
+  Object.values(fg).filter(g=>g.length>1).forEach(g=>{g.sort((a,b)=>(!!b.color-!!a.color)||String(a.id).localeCompare(String(b.id)));g.slice(1).forEach(d=>{Store.remove("folders",d.id);nFol++})});
+}finally{undoMute--}
+  if(nSol&&(S.tab==="sol"||S.tab==="psol"))renderSolSelect();if(nFol&&S.tab==="home")renderHome();
+  if(nSol||nFol)console.info(`Lab Rat: merged ${nSol} duplicate recipes, ${nFol} duplicate folders`)}
 function seedRecipes(){const key=s=>String(s||"").trim().toLowerCase();
   undoMute++;try{
     // saved "my recipes" become normal recipes
