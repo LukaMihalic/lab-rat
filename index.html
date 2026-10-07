@@ -897,7 +897,7 @@ nav.tabs button{position:relative}
       <div class="calcline" id="r-out"></div>
       <label class="f">Notes<textarea id="r-notes" style="min-height:60px;font-family:var(--sans);font-size:14px"></textarea></label>
       <textarea class="copyarea" id="r-copyarea" hidden readonly></textarea>
-      <div class="row" style="justify-content:flex-end"><button class="btn sm" id="r-savetpl">Save to my recipes</button><button class="btn sm" id="r-copy">Copy recipe</button><button class="btn danger sm" id="sol-del">Delete</button></div>
+      <div class="row" style="justify-content:flex-end"><button class="btn sm" id="r-savetpl">Save to my recipes</button><button class="btn sm" id="r-copy">Copy recipe</button><button class="btn danger sm" id="sol-del">Delete recipe</button></div>
     </div>
   </section>
 
@@ -2029,7 +2029,7 @@ $("#p-folder").addEventListener("input",e=>{S.prot.folder=e.target.value;queueSa
 $("#p-notes").addEventListener("input",e=>{S.prot.notes=e.target.value;renderSteps();queueSave("protocols")});
 $("#p-tools").addEventListener("change",e=>{const k=e.target.dataset.tool;if(!k)return;S.prot.tools=Object.assign({},S.prot.tools,{[k]:e.target.checked});renderPbar();queueSave("protocols")});
 $("#prot-dup").addEventListener("click",()=>{flushProt();if(isTpl()){const t=clone(S.prot);t.id=uid();t.name+=" (copy)";t.created=Date.now();t.steps=freshSteps(t.steps);delete t.updatedAt;Store.save("templates",t);openTemplate(clone(t));setStatus("Protocol copied");return}const c=copyProtocol(S.prot);openProtocol(clone(c));$("#prot-params").open=true;$("#p-name").focus();$("#p-name").select();setStatus("Copy created; rename and adjust it")});
-armDelete("#prot-del","Delete",async()=>{if(isTpl()){await Store.remove("templates",S.prot.id);S.protKind="protocols";S.prot=draftProt();showTab("lib");setStatus("Protocol deleted");return}await deleteProtocol(S.prot.id);lsSet("bb.proto",null);showTab("home");renderHome();setStatus("Experiment deleted")});
+armDelete("#prot-del","Delete",async()=>{clearTimeout(saveT.protocols);dirty.protocols=false;if(isTpl()){await Store.remove("templates",S.prot.id);S.protKind="protocols";S.prot=draftProt();showTab("lib");setStatus("Protocol deleted");return}await deleteProtocol(S.prot.id);lsSet("bb.proto",null);showTab("home");renderHome();setStatus("Experiment deleted")});
 $("#prot-reset").addEventListener("click",()=>{S.prot.done=[];queueSave("protocols");Object.keys(S.timers).forEach(k=>{if(k.startsWith(S.prot.id+"|"))delete S.timers[k]});renderSteps()});
 $("#prot-edit").addEventListener("click",()=>{S.editSteps=!S.editSteps;renderSteps()});
 $("#step-add").addEventListener("click",()=>{const last=S.prot.steps[S.prot.steps.length-1];for(let k=0,K=Math.max(1,Math.min(200,parseInt($("#step-add-n").value)||1));k<K;k++)S.prot.steps.push({id:uid()+k,phase:last?last.phase:"",t:"",d:"",min:null,rep:0});renderSteps();queueSave("protocols");const ins=$$("#prot-steps .sedit input[data-k='t']");ins.length&&ins[ins.length-1].focus()});
@@ -2381,7 +2381,7 @@ $("#a-dil").addEventListener("input",e=>{S.assay.dil=e.target.value;$$("#a-sampl
 [["#a-runit","runit"],["#a-model","model"],["#a-unit","unit"],["#a-blank","blank"],["#a-name","name"],["#a-date","date"],["#a-note","note"]].forEach(([sel,k])=>$(sel).addEventListener("input",e=>{S.assay[k]=e.target.value;if(k==="unit"){S.assay.runit=e.target.value;$("#a-runit").value=e.target.value;renderAssayRows()}if(k==="name")renderAssaySelect();renderAssay();queueSave("assays")}));
 $("#assay-select").addEventListener("change",e=>{const a=Store.data.assays[e.target.value];if(a){S.assay=clone(a);fillAssay()}});
 $("#assay-new").addEventListener("click",()=>{S.assay=newAssay();Store.save("assays",S.assay);fillAssay();renderAssaySelect();window.scrollTo(0,0)});
-armDelete("#assay-del","Delete assay",async()=>{await Store.remove("assays",S.assay.id);const list=Store.list("assays");S.assay=list.length?clone(list[0]):draftAssay();fillAssay();renderAssaySelect();setStatus("Assay deleted")});
+armDelete("#assay-del","Delete assay",async()=>{clearTimeout(saveT.assays);dirty.assays=false;await Store.remove("assays",S.assay.id);const list=Store.list("assays");S.assay=list.length?clone(list[0]):draftAssay();fillAssay();renderAssaySelect();setStatus("Assay deleted")});
 $("#a-copy").addEventListener("click",async()=>{const R=assayCalc(S.assay);const f=R.fit;
   const L=[`${S.assay.name} (${S.assay.date})`,f?`Fit: ${f.model}, R² = ${fmt(f.r2,4)}`:"No curve","",`Sample\tDilution\tMean A\t${ru()[1]}\tNote`];
   R.smp.forEach(s=>{if(s.name||s.v.length)L.push(`${s.name}\t${s.dil}\t${fmt(s.m,3)}\t${fmtC(s.conc*ru()[0])}\t${s.flag||""}`)});
@@ -2633,7 +2633,7 @@ $("#r-table").addEventListener("change",e=>{const t=e.target.closest(".ctick");i
 function fillSol(){
   const r=S.sol;fillPrep();$("#r-name").value=r.name||"";$("#r-vol").value=r.vol||"";$("#r-vunit").value=r.vunit||"mL";$("#r-notes").value=r.notes||"";$("#r-dil").value=r.diluent||"";
   $("#r-proto").innerHTML=`<option value="">None</option>`+protList().map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");$("#r-proto").value=r.protoId||"";
-  $("#sol-del").classList.remove("armed");$("#sol-del").textContent="Delete";
+  $("#sol-del").classList.remove("armed");$("#sol-del").textContent="Delete recipe";
   renderSolRows();renderSolOut();
 }
 function renderSolRows(){
@@ -2673,7 +2673,7 @@ $("#sol-tpl-list").addEventListener("click",e=>{const del=e.target.closest("[dat
   if(del){if(!del.classList.contains("armed")){del.classList.add("armed");del.textContent="Tap again";setTimeout(()=>{del.classList.remove("armed");del.textContent="Remove"},4000);return}
     Store.remove("solutions",del.dataset.mtdel);setTimeout(renderSolSelect,50);setStatus("Removed from My recipes");return}
   const mt=e.target.closest("[data-mt]");if(mt){const t=Store.data.solutions[mt.dataset.mt];if(!t)return;flushSol();S.sol=newSol(recipeFrom(t),null);Store.save("solutions",S.sol);solAddCur();$("#sol-tpl").hidden=true;renderSolSelect();$("#r-name").focus();return}const b=e.target.closest("[data-st]");if(!b)return;flushSol();const i=+b.dataset.st;S.sol=newSol(i>=0?SOL_TPL[i]:null,null);Store.save("solutions",S.sol);solAddCur();$("#sol-tpl").hidden=true;renderSolSelect();$("#r-name").focus()});
-armDelete("#sol-del","Delete",async()=>{await Store.remove("solutions",S.sol.id);S.sol=null;renderSolSelect();setStatus("Solution deleted")});
+armDelete("#sol-del","Delete recipe",async()=>{clearTimeout(saveT.solutions);dirty.solutions=false;const sid=S.sol.id;await Store.remove("solutions",sid);Object.values(Store.data.protocols).filter(p=>Array.isArray(p.sols)&&p.sols.some(e=>e.id===sid)).forEach(p=>{if(S.prot&&S.prot.id===p.id){S.prot.sols=S.prot.sols.filter(e=>e.id!==sid);queueSave("protocols")}else{const c=clone(p);c.sols=c.sols.filter(e=>e.id!==sid);Store.save("protocols",c)}});S.sol=null;renderSolSelect();setStatus("Recipe deleted")});
 $("#r-copy").addEventListener("click",async()=>{const t=S._solText||"";const ta=$("#r-copyarea");try{await navigator.clipboard.writeText(t);setStatus("Recipe copied");ta.hidden=true}catch(e){ta.value=t;ta.hidden=false;ta.style.minHeight=(t.split("\n").length*17+20)+"px";ta.focus();ta.select();setStatus("Selected, copy manually")}});
 function flushSol(){if(dirty.solutions&&S.sol){clearTimeout(saveT.solutions);Store.save("solutions",S.sol);dirty.solutions=false}}
 
@@ -2763,7 +2763,7 @@ function renderHist(){
 $("#hist-list").addEventListener("click",e=>{const b=e.target.closest("[data-r]");if(!b)return;S.rec=clone(Store.data.records[b.dataset.r]);renderHist();window.scrollTo(0,0)});
 $("#hist-back").addEventListener("click",()=>{if(dirty.records){clearTimeout(saveT.records);Store.save("records",S.rec);dirty.records=false}S.rec=null;renderHist()});
 $("#hist-notes").addEventListener("input",e=>{S.rec.notes=e.target.value;queueSave("records")});
-armDelete("#hist-del","Delete",async()=>{await Store.remove("records",S.rec.id);S.rec=null;renderHist();setStatus("Run deleted")});
+armDelete("#hist-del","Delete",async()=>{clearTimeout(saveT.records);dirty.records=false;await Store.remove("records",S.rec.id);S.rec=null;renderHist();setStatus("Run deleted")});
 $("#hist-copy").addEventListener("click",async()=>{const t=recText(S.rec);const ta=$("#hist-copyarea");try{await navigator.clipboard.writeText(t);setStatus("Report copied");ta.hidden=true}catch(e){ta.value=t;ta.hidden=false;ta.style.minHeight="200px";ta.focus();ta.select();setStatus("Selected, copy manually")}});
 
 /* ================= EXPORT (PDF / Word / Excel / CSV / text) ================= */
