@@ -2113,9 +2113,32 @@ const TEMPLATES={
     st("Clarify","Centrifuge","12 000–15 000 × g, 4 °C",15),
     st("Clarify","Collect supernatant","Middle, clear layer: avoid the fat on top (pancreas is fatty) and the pellet. Into clean cold tubes, on ice"),
     st("Store","Aliquot","Keep one aliquot for protein concentration (Lowry); rest at −80 °C")]},
+  ihc:{name:"Immunohistochemistry (free-floating, DAB)",method:"custom",label:"Immunohistochemistry",desc:"PFA-fixed brain sections, free-floating; ABC + DAB, mounting and coverslipping. Fluorescent variant in the notes.",tools:{protein:false,gel:false,images:true,solutions:true},sols:["1× PBS (pH 7.4)","4% PFA in PBS","30% sucrose in PBS","Cryoprotectant (ethylene glycol / glycerol)","Citrate buffer 10 mM, pH 6.0","PBS-T (0.3% Triton X-100)","IHC blocking buffer (5% normal serum)","Tris buffer 0.05 M, pH 7.6 (TB)","DAB solution (0.05% DAB, 0.01% H₂O₂)"],notes:"Controls: one well of sections without the primary antibody (negative control), and if possible a tissue known to express the target (positive control). Process all groups to be compared in the same run, with the same DAB time.\nFluorescent variant: skip the peroxidase block, ABC and DAB. After the primary, use a fluorophore-conjugated secondary (1:500, 2 h RT, in the dark), DAPI 1:5000 for 10 min, wash, mount and coverslip with antifade medium; keep slides dark at 4 °C.",steps:()=>[
+    st("Before","Perfusion and fixation","Transcardial perfusion: cold PBS, then 4% PFA. Post-fix the brain in 4% PFA for 24 h at 4 °C"),
+    st("Before","Cryoprotection","30% sucrose in PBS at 4 °C until the brain sinks (2–3 days)"),
+    st("Before","Sectioning","30–40 µm coronal sections (cryostat, freezing microtome or vibratome). Store free-floating in cryoprotectant at −20 °C"),
+    st("Day 1","Wash out cryoprotectant","Pick sections into a 12/24-well plate with netwells. PBS, gentle shaking",10,3),
+    st("Day 1","Antigen retrieval (if the antibody needs it)","Citrate buffer pH 6.0 at 80 °C, then cool in the same buffer for 20 min. Skip for antibodies that work without it",30),
+    st("Day 1","Wash","PBS",10,3),
+    st("Day 1","Block endogenous peroxidase","1% H₂O₂ in PBS (or 0.3% H₂O₂ in 50% methanol). Needed for DAB detection",30),
+    st("Day 1","Wash","PBS",10,3),
+    st("Day 1","Blocking","IHC blocking buffer: 5% normal serum from the secondary's host + 0.3% Triton X-100 in PBS, room temperature",60),
+    st("Day 1","Primary antibody","Diluted in blocking buffer (dilution from the datasheet, often 1:500–1:2000). Overnight (or 48 h) at 4 °C, gentle shaking. Leave one well without primary as negative control"),
+    st("Day 2","Wash","PBS-T",10,3),
+    st("Day 2","Biotinylated secondary","1:200–1:500 in PBS-T with 1–2% normal serum, room temperature",90),
+    st("Day 2","Prepare ABC","Mix reagents A and B in PBS 30 min before use and let the complex form",30),
+    st("Day 2","Wash","PBS-T",10,3),
+    st("Day 2","ABC","Avidin–biotin–peroxidase complex, room temperature",60),
+    st("Day 2","Wash","PBS 2×, then 1× Tris buffer (TB) pH 7.6",10,3),
+    st("Day 2","DAB","DAB solution (add H₂O₂ just before use). Watch the colour under the microscope, usually 2–10 min; keep the same time for all groups. DAB is a carcinogen: gloves, collect waste and inactivate with bleach",5),
+    st("Day 2","Stop and wash","Transfer to TB, then PBS",5,3),
+    st("Day 2","Mount","Mount on gelatin-coated or Superfrost slides in PBS, in rostro-caudal order. Air-dry overnight"),
+    st("Day 3","Dehydrate and clear","Ethanol 70% → 96% → 100% → 100% (2–3 min each), xylene 2 × 5 min (fume hood)"),
+    st("Day 3","Coverslip","DPX or Entellan, avoid bubbles. Dry flat in the hood"),
+    st("Analysis","Image and quantify","Brightfield, same exposure and white balance for all slides. Count cells or measure optical density in ImageJ/Fiji, blind to group")]},
   custom:{name:"New protocol",method:"custom",label:"Custom",desc:"Start with no steps and choose the tools you need.",tools:{protein:false,gel:false,solutions:true},steps:()=>[]}
 };
-function newProt(key){const T=TEMPLATES[key]||TEMPLATES.custom;return{id:uid(),name:T.name,method:T.method,elisaType:T.elisaType,assayMethod:T.assay||"lowry",tools:Object.assign({},T.tools),steps:T.steps().map(x=>Object.assign({id:uid()+Math.random().toString(36).slice(2,5)},x)),notes:"",created:Date.now()}}
+function newProt(key){const T=TEMPLATES[key]||TEMPLATES.custom;return{id:uid(),name:T.name,method:T.method,elisaType:T.elisaType,assayMethod:T.assay||"lowry",tools:Object.assign({},T.tools),steps:T.steps().map(x=>Object.assign({id:uid()+Math.random().toString(36).slice(2,5)},x)),notes:T.notes||"",created:Date.now()}}
 function draftProt(){const p=newProt("wb");p.draft=true;return p}
 function migrateProt(p){ // old parameter-based western blot protocol → editable steps
   if(Array.isArray(p.steps))return false;
@@ -2125,21 +2148,22 @@ function migrateProt(p){ // old parameter-based western blot protocol → editab
 function protList(){return Object.values(Store.data.protocols).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))}
 const ELISA_T={kit:"sandwich kit",sandwich:"sandwich",direct:"direct",indirect:"indirect",competitive:"competitive"};
 const MICON={
+  ihc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h4l-1 5h-2z"/><path d="M11 8v3"/><path d="M8 14a5 5 0 0 0 9 3"/><path d="M5 21h14M8 21v-3h6"/><circle cx="11" cy="13" r="2"/></svg>',
   wb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M7 8h3M14 8h3M7 12.5h3M14 14h3M7 17h3"/></svg>',
   protein:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L5.2 18.2A1.8 1.8 0 0 0 6.8 21h10.4a1.8 1.8 0 0 0 1.6-2.8L14 9.5V3"/><path d="M7.5 15h9"/></svg>',
   elisa:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><circle cx="7" cy="9.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="9.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="17" cy="9.5" r="1.4"/><circle cx="7" cy="14.5" r="1.4"/><circle cx="12" cy="14.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="17" cy="14.5" r="1.4"/></svg>',
   qpcr:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M6 17c4 0 5-.5 7-5s3-6 7-6"/></svg>',
   prep:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5h8M9.5 2.5V17a2.5 2.5 0 0 0 5 0V2.5"/><path d="M9.5 11h5"/></svg>',
   other:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>'};
-const MCOL={wb:"#4F5BD5",protein:"#0E8A9A",elisa:"#C2570C",qpcr:"#2F8A4E",prep:"#A86A12",other:"#6B7489"};
+const MCOL={ihc:"#A23B8C",wb:"#4F5BD5",protein:"#0E8A9A",elisa:"#C2570C",qpcr:"#2F8A4E",prep:"#A86A12",other:"#6B7489"};
 function shortD(ms){const d=new Date(ms);if(isNaN(d))return "";return d.toLocaleDateString("en-GB",d.getFullYear()===new Date().getFullYear()?{day:"numeric",month:"short"}:{day:"numeric",month:"short",year:"numeric"})}
 function micon(cat,sm){cat=MICON[cat]?cat:"other";return `<span class="mic${sm?" sm":""}" style="--mc:${MCOL[cat]}" aria-hidden="true">${MICON[cat]}</span>`}
-function methodLabel(p){return p.method==="qpcr"?"qPCR":p.method==="elisa"?"ELISA"+(p.elisaType?" · "+ELISA_T[p.elisaType]:""):p.method==="wb"?"Western blot":p.method==="protein"?({lowry:"Protein concentration · Lowry",bca:"Protein concentration · BCA",bradford:"Protein concentration · Bradford",direct:"Protein concentration · direct reading"})[p.assayMethod]||"Protein concentration":"Custom"}
+function methodLabel(p){return p.method==="qpcr"?"qPCR":p.method==="elisa"?"ELISA"+(p.elisaType?" · "+ELISA_T[p.elisaType]:""):p.method==="wb"?"Western blot":p.method==="protein"?({lowry:"Protein concentration · Lowry",bca:"Protein concentration · BCA",bradford:"Protein concentration · Bradford",direct:"Protein concentration · direct reading"})[p.assayMethod]||"Protein concentration":p.cat==="ihc"?"Immunohistochemistry":p.cat==="prep"?"Sample preparation":"Custom"}
 /* ---- Experiments list (home) ---- */
 const isTpl=()=>S.protKind==="templates";
 const expDone=p=>p.status==="done";
-const CATS=[["prep","Sample preparation"],["protein","Protein concentration"],["wb","Western blot"],["elisa","ELISA"],["qpcr","qPCR"],["other","Other"]];
-function catOfTpl(k,T){return k==="homog"?"prep":T.method==="protein"?"protein":T.method==="wb"?"wb":T.method==="elisa"?"elisa":T.method==="qpcr"?"qpcr":"other"}
+const CATS=[["prep","Sample preparation"],["protein","Protein concentration"],["wb","Western blot"],["elisa","ELISA"],["qpcr","qPCR"],["ihc","Immunohistochemistry"],["other","Other"]];
+function catOfTpl(k,T){return k==="homog"?"prep":k==="ihc"?"ihc":T.method==="protein"?"protein":T.method==="wb"?"wb":T.method==="elisa"?"elisa":T.method==="qpcr"?"qpcr":"other"}
 function catOfExp(p){if(p.cat)return p.cat;if(p.method==="custom"&&/lysate|homogen/i.test((p.templateName||"")+" "+(p.name||"")))return "prep";return ({protein:"protein",wb:"wb",elisa:"elisa",qpcr:"qpcr"})[p.method]||"other"}
 const pj=p=>(p.group||"").trim(),pf=p=>(p.folder||"").trim();
 function hNav(){const n=lsGet("bb.hnav",null);return n&&typeof n==="object"?n:{p:null,f:null}}
@@ -2957,6 +2981,14 @@ const MUN={M:1,mM:1e-3,"µM":1e-6,nM:1e-9};
 const SUN=["×","M","mM","µM","mg/mL","µg/mL","%"];
 const c_=(name,type,val,unit,extra)=>({name,type,val:String(val),unit:unit||"",extra:extra==null?"":String(extra)});
 const SOL_TPL=[
+  {name:"4% PFA in PBS",vol:"500",vunit:"mL",diluent:"1× PBS",notes:"In the fume hood: heat ~400 mL PBS to 60 °C (not above), add PFA and a few drops of 1 M NaOH until it clears. Cool, adjust pH to 7.4, top up, filter. Keep at 4 °C and use within a week. Toxic: gloves, hood.",comps:[c_("Paraformaldehyde","wv",4)]},
+  {name:"30% sucrose in PBS",vol:"500",vunit:"mL",diluent:"1× PBS",notes:"Cryoprotection after fixation; brains are ready when they sink. Keep at 4 °C.",comps:[c_("Sucrose","wv",30)]},
+  {name:"Cryoprotectant (ethylene glycol / glycerol)",vol:"500",vunit:"mL",diluent:"1× PBS",notes:"For storing free-floating sections at −20 °C for months.",comps:[c_("Ethylene glycol","vv",30),c_("Glycerol","vv",30)]},
+  {name:"Citrate buffer 10 mM, pH 6.0",vol:"1",vunit:"L",notes:"Adjust pH to 6.0 with HCl. Antigen retrieval at ~80 °C.",comps:[c_("Trisodium citrate dihydrate","M",10,"mM",294.1),c_("Tween-20","vv",0.05)]},
+  {name:"PBS-T (0.3% Triton X-100)",vol:"1",vunit:"L",diluent:"1× PBS",notes:"Washes and antibody dilutions for free-floating IHC.",comps:[c_("Triton X-100","vv",0.3)]},
+  {name:"IHC blocking buffer (5% normal serum)",vol:"10",vunit:"mL",diluent:"1× PBS",notes:"Use serum from the host of the secondary antibody (e.g. normal goat serum for a goat anti-rabbit secondary). Also used to dilute the primary. Make fresh.",comps:[c_("Normal serum","vv",5),c_("Triton X-100","vv",0.3)]},
+  {name:"Tris buffer 0.05 M, pH 7.6 (TB)",vol:"1",vunit:"L",notes:"Adjust pH to 7.6 with HCl. For the wash before DAB and for the DAB solution.",comps:[c_("Tris base","M",50,"mM",121.14)]},
+  {name:"DAB solution (0.05% DAB, 0.01% H₂O₂)",vol:"10",vunit:"mL",diluent:"TB (0.05 M Tris, pH 7.6)",notes:"Dissolve DAB in TB, filter, add the H₂O₂ right before use. Or use a DAB kit. DAB is a carcinogen: weigh in the hood, collect waste and inactivate with bleach.",comps:[c_("DAB (3,3′-diaminobenzidine)","wv",0.05),c_("30% H₂O₂","vv",0.033)]},
   {name:"10× running buffer (Tris-glycine-SDS)",vol:"1",vunit:"L",notes:"Do not adjust pH (~8.3). Dilute 1:10 for use.",comps:[c_("Tris base","gl",30.3),c_("Glycine","gl",144),c_("SDS","gl",10)]},
   {name:"1× transfer buffer (Towbin)",vol:"1",vunit:"L",notes:"Chill to 4 °C before wet transfer.",comps:[c_("Tris base","gl",3.03),c_("Glycine","gl",14.4),c_("Methanol","vv",20)]},
   {name:"10× TBS (pH 7.6)",vol:"1",vunit:"L",notes:"Adjust pH to 7.6 with HCl before topping up.",comps:[c_("Tris base","M",200,"mM",121.14),c_("NaCl","M",1.5,"M",58.44)]},
