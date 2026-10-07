@@ -1,5 +1,5 @@
 // Lab Rat service worker: works offline after the first visit.
-const VERSION = "lab-rat-v36";
+const VERSION = "lab-rat-v37";
 const SHELL = ["./", "index.html", "config.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/favicon-64.png"];
 
 self.addEventListener("install", e => {
@@ -21,4 +21,12 @@ self.addEventListener("fetch", e => {
   }
   // Fonts and the sync library: cache first
   e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); return res; })));
+});
+// Tapping an alarm notification brings Lab Rat to the front
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+    for (const c of list) { if ("focus" in c) return c.focus(); }
+    return self.clients.openWindow ? self.clients.openWindow("./") : null;
+  }));
 });
