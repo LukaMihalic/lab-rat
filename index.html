@@ -82,10 +82,12 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 .scrow{display:flex;align-items:center;gap:10px;padding:6px 4px;border-radius:8px}
 .scrow:hover{background:var(--surface-2)}
 .scrow input{width:20px;height:20px;margin:0;flex:none}
-.scrow button{flex:1;min-width:0;text-align:left;background:none;border:0;padding:2px 0;font:600 14.5px var(--sans);color:var(--ink);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.scrow.done button{color:var(--muted);text-decoration:line-through}
+.scrow button[data-open]{flex:1;min-width:0;text-align:left;background:none;border:0;padding:2px 0;font:600 14.5px var(--sans);color:var(--ink);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scrow.done button[data-open]{color:var(--muted);text-decoration:line-through}
 .scrow.cur button{color:var(--accent)}
 .scrow .note{white-space:nowrap}
+.scrow .rm{background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;flex:none}
+#sol-card.noticks #r-table th:first-child,#sol-card.noticks #r-table td:first-child{display:none}
 table.xl input.ctick,.ctick{width:18px;height:18px;margin:0 4px;padding:0;accent-color:var(--accent)}
 table.xl th:first-child{width:26px}
 #r-table tr.ticked td:not(:first-child){opacity:.5}
@@ -864,12 +866,14 @@ nav.tabs button{position:relative}
   <section class="tab" id="tab-sol" hidden>
     <div class="docbar">
       <select id="sol-select" aria-label="Selected solution"></select>
-      <button class="btn primary" id="sol-new">+ New</button>
+      <button class="btn primary" id="sol-new">+ New recipe</button>
     </div>
     <p class="note" style="margin:0" id="sol-scope"></p>
     <div class="card" id="sol-check" hidden>
-      <div class="row chead" style="justify-content:space-between"><h2>Prepared</h2><span class="chip" id="sol-check-n"></span></div>
+      <div class="row chead" style="justify-content:space-between"><h2>Solutions for this experiment</h2><span class="chip" id="sol-check-n"></span></div>
+      <p class="note" style="margin:0" id="sol-check-hint">Pick the solutions this experiment needs and tick them as you prepare them. Tap a name to see the recipe.</p>
       <div class="sclist" id="sol-check-list"></div>
+      <div class="row" style="gap:6px;flex-wrap:nowrap"><select id="sol-pick" aria-label="Add a solution from your recipes" style="flex:1;min-width:0"></select><button class="btn sm" id="sol-pick-add">Add</button></div>
     </div>
     <div class="card" id="sol-tpl" hidden>
       <div class="row" style="justify-content:space-between"><b>Start from</b><button class="btn sm ghost" id="sol-tpl-cancel">Cancel</button></div>
@@ -880,14 +884,14 @@ nav.tabs button{position:relative}
       <div class="row"><h2>Recipe</h2></div>
       <div class="grid2">
         <label class="f">Name<input id="r-name" type="text"></label>
-        <label class="f">Used in experiment<select id="r-proto"></select></label>
+        <label class="f" id="r-proto-w" hidden>Used in experiment<select id="r-proto"></select></label>
       </div>
       <div class="row">
         <label class="f" style="flex-direction:row;align-items:center;gap:8px">Make<input id="r-vol" type="text" inputmode="decimal" style="width:90px"></label>
         <select id="r-vunit" style="width:auto"><option>mL</option><option>L</option><option>µL</option></select>
         <label class="f" style="flex-direction:row;align-items:center;gap:8px">Top up with<input id="r-dil" type="text" placeholder="water" style="width:170px"></label>
       </div>
-      <div class="row" style="justify-content:space-between;align-items:center"><label class="chk" style="font-size:14.5px;gap:8px"><input type="checkbox" id="r-prep"> Prepared <span class="note" id="r-prep-d"></span></label><button class="btn sm ghost" id="r-untick" hidden>Clear ticks</button></div>
+      <div class="row" id="r-prep-row" style="justify-content:space-between;align-items:center"><label class="chk" style="font-size:14.5px;gap:8px"><input type="checkbox" id="r-prep"> Prepared <span class="note" id="r-prep-d"></span></label><button class="btn sm ghost" id="r-untick" hidden>Clear ticks</button></div>
       <div class="tablewrap"><table class="xl" id="r-table"></table></div>
       <div class="row"><span class="addn"><input class="nrows" id="r-add-n" type="number" min="1" max="200" value="1" aria-label="How many"><button class="btn sm ghost" id="r-add">Add components</button></span></div>
       <div class="calcline" id="r-out"></div>
@@ -1340,6 +1344,10 @@ function maybeBoot(){
   if(booted||!Object.values(Store.loaded).every(Boolean))return;booted=true;setTimeout(()=>{UNDO.length=0;undoBtn()},3000);
   // migrate old data into the protocol structure
   Object.values(Store.data.protocols).forEach(p=>{const c=clone(p);const m=migrateProt(c);if(!c.created){c.created=c.updatedAt||Date.now()}if(m||!p.created)Store.save("protocols",c)});
+  // solutions are recipes now; an experiment keeps its own list (p.sols) with prepared ticks
+  Object.values(Store.data.solutions).filter(r=>!r.isTpl&&r.protoId).forEach(r=>{const p=Store.data.protocols[r.protoId];
+    if(p){const c=clone(p);if(!Array.isArray(c.sols))c.sols=[];if(!c.sols.some(e=>e.id===r.id)){c.sols.push({id:r.id,prepared:r.prepared||null,done:(r.comps||[]).map((x,i)=>x.done?i:-1).filter(i=>i>=0)});Store.save("protocols",c)}}
+    const rc=clone(r);rc.protoId=null;delete rc.prepared;(rc.comps||[]).forEach(x=>delete x.done);Store.save("solutions",rc)});
   let wb=protList().find(p=>p.method==="wb");
   const orphX=Object.values(Store.data.experiments).filter(x=>!x.protoId||!Store.data.protocols[x.protoId]);
   const orphA=Object.values(Store.data.assays).filter(x=>!x.protoId||!Store.data.protocols[x.protoId]);
@@ -1937,7 +1945,7 @@ function tplList(){return Object.values(Store.data.templates).sort((a,b)=>String
 function freshSteps(steps){return (steps||[]).map(x=>Object.assign({},x,{id:uid()+Math.random().toString(36).slice(2,5)}))}
 function expFromTemplate(src,builtinKey){
   const b=builtinKey?newProt(builtinKey):null;const t=src||b;
-  const p={id:uid(),name:`${builtinKey==="custom"?"New experiment":t.name} · ${new Date().toLocaleDateString("en-GB")}`,method:t.method,elisaType:t.elisaType,assayMethod:t.assayMethod||"lowry",tools:Object.assign({},t.tools),steps:src?freshSteps(src.steps):b.steps,notes:t.notes||"",done:[],status:"active",created:Date.now(),templateId:src?src.id:null,templateName:src?src.name:(builtinKey==="custom"?"":TEMPLATES[builtinKey].name)};
+  const p={id:uid(),name:`${builtinKey==="custom"?"New experiment":t.name} · ${new Date().toLocaleDateString("en-GB")}`,method:t.method,elisaType:t.elisaType,assayMethod:t.assayMethod||"lowry",tools:Object.assign({},t.tools),steps:src?freshSteps(src.steps):b.steps,notes:t.notes||"",done:[],status:"active",created:Date.now(),templateId:src?src.id:null,templateName:src?src.name:(builtinKey==="custom"?"":TEMPLATES[builtinKey].name)};if(src&&Array.isArray(src.sols))p.sols=src.sols.filter(e=>Store.data.solutions[e.id]).map(e=>({id:e.id,prepared:null,done:[]}));
   const n=hNav();if(n.p&&n.p!=="__none"){p.group=n.p;if(n.f)p.folder=n.f}if(builtinKey)p.cat=catOfTpl(builtinKey,TEMPLATES[builtinKey]||{});else if(src)p.cat=catOfExp(src);return p;
 }
 $("#home-list").addEventListener("click",async e=>{const cp=e.target.closest("[data-copy]");
@@ -1948,7 +1956,7 @@ $("#home-list").addEventListener("click",async e=>{const cp=e.target.closest("[d
     d.classList.add("armed");d.textContent="Tap again to delete";d._t=setTimeout(()=>{d.classList.remove("armed");d.textContent="Delete"},4000);return}
   const b=e.target.closest("[data-p]");if(!b)return;const p=Store.data.protocols[b.dataset.p];if(p)openProtocol(clone(p))});
 $("#home-filter").addEventListener("input",e=>{lsSet("bb.hstatus",e.target.value);renderHome()});
-function copyProtocol(src){const c=clone(src);c.id=uid();c.name=(src.name||"Experiment")+" (copy)";c.created=Date.now();c.steps=freshSteps(c.steps);c.done=[];c.status="active";delete c.completed;delete c.results;delete c.updatedAt;delete c.draft;Store.save("protocols",c);return c}
+function copyProtocol(src){const c=clone(src);c.id=uid();c.name=(src.name||"Experiment")+" (copy)";c.created=Date.now();c.steps=freshSteps(c.steps);c.done=[];if(Array.isArray(c.sols))c.sols=c.sols.map(e=>({id:e.id,prepared:null,done:[]}));c.status="active";delete c.completed;delete c.results;delete c.updatedAt;delete c.draft;Store.save("protocols",c);return c}
 $("#home-sort").addEventListener("input",e=>{lsSet("bb.hsort",e.target.value);renderHome()});
 async function deleteProtocol(id){
   for(const x of Object.values(Store.data.experiments).filter(x=>x.protoId===id)){for(const g of Object.values(Store.data.gels).filter(g=>g.expId===x.id))await Store.remove("gels",g.id);await Store.remove("experiments",x.id)}
@@ -1985,7 +1993,7 @@ $("#lib-list").addEventListener("click",async e=>{const b=e.target.closest("butt
   if(b.dataset.tdel){if(b.classList.contains("armed")){clearTimeout(b._t);await Store.remove("templates",b.dataset.tdel);renderLib();setStatus("Protocol deleted");return}
     b.classList.add("armed");b.textContent="Tap again";b._t=setTimeout(()=>{b.classList.remove("armed");b.textContent="Delete"},4000)}});
 $("#tpl-start").addEventListener("click",()=>{flushProt();const t=Store.data.templates[S.prot.id]||S.prot;const p=expFromTemplate(t);Store.save("protocols",p);openProtocol(clone(p));setStatus("Experiment started")});
-$("#prot-savetpl").addEventListener("click",()=>{flushProt();const p=S.prot;const t={id:uid(),name:p.templateName&&!/\(copy\)/.test(p.name)?p.templateName:String(p.name).replace(/ · \d{2}\/\d{2}\/\d{4}$/,""),method:p.method,assayMethod:p.assayMethod,tools:Object.assign({},p.tools),steps:freshSteps(p.steps),notes:p.notes||"",created:Date.now()};
+$("#prot-savetpl").addEventListener("click",()=>{flushProt();const p=S.prot;const t={id:uid(),name:p.templateName&&!/\(copy\)/.test(p.name)?p.templateName:String(p.name).replace(/ · \d{2}\/\d{2}\/\d{4}$/,""),method:p.method,assayMethod:p.assayMethod,tools:Object.assign({},p.tools),steps:freshSteps(p.steps),notes:p.notes||"",created:Date.now(),sols:psList(p).map(e=>({id:e.id,prepared:null,done:[]}))};
   if(Object.values(Store.data.templates).some(x=>x.name===t.name))t.name+=" (from experiment)";Store.save("templates",t);setStatus(`Saved as protocol “${t.name}”`)});
 
 function hasQuant(p){const t=(p&&p.tools)||{};return t.quant===undefined?p&&p.method==="wb":!!t.quant}
@@ -2580,14 +2588,19 @@ function compAmt(c,V){const v=num(c.val),x=num(c.extra);if(!(V>0)||!Number.isFin
   }return null}
 function solScope(){return S.tab==="psol"&&S.prot?S.prot.id:null}
 function myRecipes(){return Object.values(Store.data.solutions).filter(r=>r.isTpl).sort((a,b)=>String(a.name).localeCompare(String(b.name)))}
-function solsInScope(){const sc=solScope();return Object.values(Store.data.solutions).filter(r=>!r.isTpl&&(!sc||r.protoId===sc)).sort((a,b)=>String(a.name).localeCompare(String(b.name)))}
+function allRecipes(){return Object.values(Store.data.solutions).filter(r=>!r.isTpl).sort((a,b)=>String(a.name).localeCompare(String(b.name)))}
+function psList(p){p=p||S.prot;if(!p)return [];if(!Array.isArray(p.sols))p.sols=[];return p.sols}
+function psEntry(id){return psList().find(e=>e.id===id)||null}
+function expSols(p){return (Array.isArray(p.sols)?p.sols:[]).map(e=>Store.data.solutions[e.id]).filter(Boolean)}
+function solsInScope(){const sc=solScope();if(!sc)return allRecipes();return psList().map(e=>Store.data.solutions[e.id]||(S.sol&&S.sol.id===e.id?S.sol:null)).filter(Boolean)}
 function renderSolSelect(){
   const L=solsInScope();const sc=solScope();
-  if(!S.sol||(sc&&S.sol.protoId!==sc)||(!Store.data.solutions[S.sol.id]&&!S.sol.fresh)){S.sol=L.length?clone(L[0]):null}
-  const sel=$("#sol-select");sel.innerHTML=(L.length?"":`<option value="">No solutions yet</option>`)+L.map(r=>`<option value="${esc(r.id)}">${r.prepared?"✓ ":""}${esc(r.name||"Untitled")}${!sc&&r.protoId&&Store.data.protocols[r.protoId]?" · "+esc(Store.data.protocols[r.protoId].name):""}</option>`).join("");
+  if(!S.sol||(sc&&!psEntry(S.sol.id))||(!Store.data.solutions[S.sol.id]&&!S.sol.fresh)){S.sol=L.length?clone(L[0]):null}
+  $("#sol-select").closest(".docbar").querySelector("select").hidden=!!sc;$("#sol-card").classList.toggle("noticks",!sc);$("#r-prep-row").hidden=!sc;$("#sol-del").hidden=!!sc;
+  const sel=$("#sol-select");sel.innerHTML=(L.length?"":`<option value="">No solutions yet</option>`)+L.map(r=>`<option value="${esc(r.id)}">${esc(r.name||"Untitled")}</option>`).join("");
   if(S.sol)sel.value=S.sol.id;
-  $("#sol-scope").textContent=sc?`Solutions for ${S.prot.name}. All solutions are in the Solutions tab at the bottom.`:"All your solutions. A solution linked to a protocol also appears inside that protocol.";
-  $("#sol-empty").hidden=!!S.sol;$("#sol-card").hidden=!S.sol;
+  $("#sol-scope").textContent=sc?"Recipes are shared: editing one here changes it everywhere. All recipes are in Solutions at the bottom.":"Your recipe library. Inside an experiment, open its Solutions tab to pick the ones you need and tick them off as you make them.";
+  $("#sol-empty").hidden=!!S.sol||!!sc;$("#sol-card").hidden=!S.sol;
   renderSolCheck(L);
   if(S.sol)fillSol();
   const mine=myRecipes();
@@ -2596,19 +2609,27 @@ function renderSolSelect(){
     SOL_TPL.map((t,i)=>`<button class="tpl" data-st="${i}"><b>${esc(t.name)}</b><span>${t.comps.map(c=>esc(c.name)).join(", ")}</span></button>`).join("");
 }
 const fmtD=d=>{try{return new Date(d+"T12:00").toLocaleDateString("en-GB")}catch(e){return d}};
-function renderSolCheck(L){L=L||solsInScope();const box=$("#sol-check");box.hidden=!L.length;if(!L.length)return;
-  const cur=r=>S.sol&&S.sol.id===r.id?S.sol:r;const n=L.filter(r=>cur(r).prepared).length;
-  $("#sol-check-n").textContent=`${n}/${L.length}`;$("#sol-check-n").className="chip"+(n===L.length?" ok":"");
-  $("#sol-check-list").innerHTML=L.map(r0=>{const r=cur(r0);return `<div class="scrow${r.prepared?" done":""}${S.sol&&S.sol.id===r.id?" cur":""}"><input type="checkbox" data-prep="${esc(r.id)}"${r.prepared?" checked":""} aria-label="Prepared"><button data-open="${esc(r.id)}">${esc(r.name||"Untitled")}</button><span class="note">${r.prepared?fmtD(r.prepared):""}</span></div>`}).join("")}
-function setPrepared(id,on){if(S.sol&&S.sol.id===id){S.sol.prepared=on?today():null;queueSave("solutions");fillPrep()}else{const r=Store.data.solutions[id];if(!r)return;const c=clone(r);c.prepared=on?today():null;Store.save("solutions",c)}renderSolCheck()}
-function fillPrep(){const r=S.sol;if(!r)return;$("#r-prep").checked=!!r.prepared;$("#r-prep-d").textContent=r.prepared?fmtD(r.prepared):"";$("#r-untick").hidden=!(r.comps||[]).some(c=>c.done)}
+function renderSolCheck(L){const sc=solScope();const box=$("#sol-check");box.hidden=!sc;if(!sc)return;L=L||solsInScope();
+  const E=psList();const n=L.filter(r=>(psEntry(r.id)||{}).prepared).length;
+  $("#sol-check-n").textContent=L.length?`${n}/${L.length}`:"";$("#sol-check-n").className="chip"+(L.length&&n===L.length?" ok":"");$("#sol-check-n").hidden=!L.length;
+  $("#sol-check-list").innerHTML=L.length?L.map(r=>{const e=psEntry(r.id)||{};const nm=(S.sol&&S.sol.id===r.id?S.sol:r).name;return `<div class="scrow${e.prepared?" done":""}${S.sol&&S.sol.id===r.id?" cur":""}"><input type="checkbox" data-prep="${esc(r.id)}"${e.prepared?" checked":""} aria-label="Prepared"><button data-open="${esc(r.id)}">${esc(nm||"Untitled")}</button><span class="note">${e.prepared?fmtD(e.prepared):""}</span><button class="rm" data-unpick="${esc(r.id)}" aria-label="Remove from this experiment" title="Remove from this experiment">×</button></div>`}).join(""):`<p class="note" style="margin:0">None picked yet. Choose one below, or tap <b>+ New recipe</b>.</p>`;
+  const have=new Set(E.map(e=>e.id));const rest=allRecipes().filter(r=>!have.has(r.id));
+  $("#sol-pick").innerHTML=rest.length?`<option value="">Add a solution…</option>`+rest.map(r=>`<option value="${esc(r.id)}">${esc(r.name||"Untitled")}</option>`).join(""):`<option value="">All your recipes are added</option>`;$("#sol-pick-add").disabled=!rest.length}
+function setPrepared(id,on){const e=psEntry(id);if(!e)return;e.prepared=on?today():null;queueSave("protocols");if(S.sol&&S.sol.id===id)fillPrep();renderSolCheck()}
+function fillPrep(){const r=S.sol;if(!r)return;const e=solScope()?psEntry(r.id):null;$("#r-prep").checked=!!(e&&e.prepared);$("#r-prep-d").textContent=e&&e.prepared?fmtD(e.prepared):"";$("#r-untick").hidden=!(e&&(e.done||[]).length)}
+function compDone(i){const e=solScope()&&S.sol?psEntry(S.sol.id):null;return !!(e&&(e.done||[]).includes(i))}
+$("#sol-pick-add").addEventListener("click",()=>{const id=$("#sol-pick").value;if(!id||psEntry(id))return;psList().push({id,prepared:null,done:[]});queueSave("protocols");flushSol();S.sol=clone(Store.data.solutions[id]);renderSolSelect();setStatus("Added to this experiment")});
+$("#sol-check-list").addEventListener("click",e=>{const b=e.target.closest("[data-unpick]");if(!b)return;const L=psList(),i=L.findIndex(x=>x.id===b.dataset.unpick);if(i<0)return;
+  if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Remove?";setTimeout(()=>{b.classList.remove("armed");b.textContent="×"},3000);return}
+  L.splice(i,1);queueSave("protocols");if(S.sol&&S.sol.id===b.dataset.unpick){flushSol();S.sol=null}renderSolSelect();setStatus("Removed from this experiment (the recipe stays in your library)")});
 $("#sol-check-list").addEventListener("change",e=>{const i=e.target.closest("[data-prep]");if(i)setPrepared(i.dataset.prep,i.checked)});
 $("#sol-check-list").addEventListener("click",e=>{const b=e.target.closest("[data-open]");if(!b)return;const r=Store.data.solutions[b.dataset.open];if(r){flushSol();S.sol=clone(r);$("#sol-select").value=r.id;fillSol();renderSolCheck();$("#sol-card").scrollIntoView({block:"start",behavior:"smooth"})}});
 $("#r-prep").addEventListener("change",e=>{if(S.sol)setPrepared(S.sol.id,e.target.checked)});
-$("#r-untick").addEventListener("click",()=>{if(!S.sol)return;S.sol.comps.forEach(c=>delete c.done);renderSolRows();renderSolOut();fillPrep();queueSave("solutions")});
-$("#r-table").addEventListener("change",e=>{const t=e.target.closest(".ctick");if(!t||!S.sol)return;const c=S.sol.comps[+t.dataset.tick];if(!c)return;c.done=t.checked;t.closest("tr").classList.toggle("ticked",t.checked);
-  const named=S.sol.comps.filter(x=>(x.name||"").trim());if(t.checked&&named.length&&named.every(x=>x.done)&&!S.sol.prepared){S.sol.prepared=today();setStatus("All components added: marked as prepared")}
-  queueSave("solutions");fillPrep();renderSolCheck()});
+$("#r-untick").addEventListener("click",()=>{if(!S.sol)return;const e=psEntry(S.sol.id);if(!e)return;e.done=[];renderSolRows();renderSolOut();fillPrep();queueSave("protocols")});
+$("#r-table").addEventListener("change",e=>{const t=e.target.closest(".ctick");if(!t||!S.sol)return;const en=psEntry(S.sol.id);if(!en)return;const i=+t.dataset.tick;
+  en.done=(en.done||[]).filter(x=>x!==i);if(t.checked)en.done.push(i);t.closest("tr").classList.toggle("ticked",t.checked);
+  const named=S.sol.comps.map((x,k)=>[x,k]).filter(([x])=>(x.name||"").trim());if(t.checked&&named.length&&named.every(([,k])=>en.done.includes(k))&&!en.prepared){en.prepared=today();setStatus("All components added: marked as prepared")}
+  queueSave("protocols");fillPrep();renderSolCheck()});
 function fillSol(){
   const r=S.sol;fillPrep();$("#r-name").value=r.name||"";$("#r-vol").value=r.vol||"";$("#r-vunit").value=r.vunit||"mL";$("#r-notes").value=r.notes||"";$("#r-dil").value=r.diluent||"";
   $("#r-proto").innerHTML=`<option value="">None</option>`+protList().map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");$("#r-proto").value=r.protoId||"";
@@ -2621,7 +2642,7 @@ function renderSolRows(){
     r.comps.map((c,i)=>{const un=c.type==="M"?Object.keys(MUN):c.type==="stock"?SUN:null;
       const unitCell=un?`<select class="un" id="rc-${i}-u" data-k="unit">${un.map(u=>`<option ${u===c.unit?"selected":""}>${u}</option>`).join("")}</select>`:`<span class="note">${({wv:"%",vv:"%",gl:"g/L",mll:"mL/L",mgml:"mg/mL",tab:"mL per tablet"})[c.type]||""}</span>`;
       const ex=c.type==="M"?`<input id="rc-${i}-x" data-k="extra" type="text" inputmode="decimal" value="${esc(c.extra)}" placeholder="g/mol">`:c.type==="stock"?`<input id="rc-${i}-x" data-k="extra" type="text" inputmode="decimal" value="${esc(c.extra)}" placeholder="stock">`:"";
-      return `<tr data-i="${i}"${c.done?' class="ticked"':""}><td><input type="checkbox" class="ctick" data-tick="${i}"${c.done?" checked":""} aria-label="Added"></td><td><input class="nm" id="rc-${i}-n" data-k="name" type="text" value="${esc(c.name)}" placeholder="e.g. NaCl"></td>
+      const dn=compDone(i);return `<tr data-i="${i}"${dn?' class="ticked"':""}><td><input type="checkbox" class="ctick" data-tick="${i}"${dn?" checked":""} aria-label="Added"></td><td><input class="nm" id="rc-${i}-n" data-k="name" type="text" value="${esc(c.name)}" placeholder="e.g. NaCl"></td>
         <td><select class="ty" id="rc-${i}-t" data-k="type">${Object.entries(CT).map(([k,l])=>`<option value="${k}" ${k===c.type?"selected":""}>${l}</option>`).join("")}</select></td>
         <td><input id="rc-${i}-v" data-k="val" type="text" inputmode="decimal" value="${esc(c.val)}"></td><td>${unitCell}</td><td>${ex}</td>
         <td class="o amt" id="rc-${i}-a"></td><td><button class="rm" data-rm="${i}" aria-label="Remove component">×</button></td></tr>`}).join("")+`</tbody>`;
@@ -2643,6 +2664,7 @@ $("#r-add").addEventListener("click",()=>{const n0=S.sol.comps.length;for(let k=
 $("#sol-select").addEventListener("change",e=>{const r=Store.data.solutions[e.target.value];if(r){flushSol();S.sol=clone(r);fillSol();renderSolCheck()}});
 $("#sol-new").addEventListener("click",()=>{$("#sol-tpl").hidden=false});
 $("#sol-tpl-cancel").addEventListener("click",()=>{$("#sol-tpl").hidden=true});
+function solAddCur(){if(solScope()&&S.sol&&!psEntry(S.sol.id)){psList().push({id:S.sol.id,prepared:null,done:[]});queueSave("protocols")}}
 function recipeFrom(r){const t=clone(r);["id","protoId","isTpl","prepared","updatedAt","fresh","draft"].forEach(k=>delete t[k]);(t.comps||[]).forEach(c=>delete c.done);return t}
 $("#r-savetpl").addEventListener("click",()=>{if(!S.sol)return;flushSol();const base=recipeFrom(S.sol);const name=(base.name||"").trim()||"My recipe";
   const ex=myRecipes().find(t=>String(t.name).trim().toLowerCase()===name.toLowerCase());
@@ -2650,7 +2672,7 @@ $("#r-savetpl").addEventListener("click",()=>{if(!S.sol)return;flushSol();const 
 $("#sol-tpl-list").addEventListener("click",e=>{const del=e.target.closest("[data-mtdel]");
   if(del){if(!del.classList.contains("armed")){del.classList.add("armed");del.textContent="Tap again";setTimeout(()=>{del.classList.remove("armed");del.textContent="Remove"},4000);return}
     Store.remove("solutions",del.dataset.mtdel);setTimeout(renderSolSelect,50);setStatus("Removed from My recipes");return}
-  const mt=e.target.closest("[data-mt]");if(mt){const t=Store.data.solutions[mt.dataset.mt];if(!t)return;flushSol();S.sol=newSol(recipeFrom(t),solScope());Store.save("solutions",S.sol);$("#sol-tpl").hidden=true;renderSolSelect();$("#r-name").focus();return}const b=e.target.closest("[data-st]");if(!b)return;flushSol();const i=+b.dataset.st;S.sol=newSol(i>=0?SOL_TPL[i]:null,solScope());Store.save("solutions",S.sol);$("#sol-tpl").hidden=true;renderSolSelect();$("#r-name").focus()});
+  const mt=e.target.closest("[data-mt]");if(mt){const t=Store.data.solutions[mt.dataset.mt];if(!t)return;flushSol();S.sol=newSol(recipeFrom(t),null);Store.save("solutions",S.sol);solAddCur();$("#sol-tpl").hidden=true;renderSolSelect();$("#r-name").focus();return}const b=e.target.closest("[data-st]");if(!b)return;flushSol();const i=+b.dataset.st;S.sol=newSol(i>=0?SOL_TPL[i]:null,null);Store.save("solutions",S.sol);solAddCur();$("#sol-tpl").hidden=true;renderSolSelect();$("#r-name").focus()});
 armDelete("#sol-del","Delete",async()=>{await Store.remove("solutions",S.sol.id);S.sol=null;renderSolSelect();setStatus("Solution deleted")});
 $("#r-copy").addEventListener("click",async()=>{const t=S._solText||"";const ta=$("#r-copyarea");try{await navigator.clipboard.writeText(t);setStatus("Recipe copied");ta.hidden=true}catch(e){ta.value=t;ta.hidden=false;ta.style.minHeight=(t.split("\n").length*17+20)+"px";ta.focus();ta.select();setStatus("Selected, copy manually")}});
 function flushSol(){if(dirty.solutions&&S.sol){clearTimeout(saveT.solutions);Store.save("solutions",S.sol);dirty.solutions=false}}
@@ -2664,7 +2686,7 @@ function openFinish(){
   let h=`<label class="chk" style="align-self:flex-start"><input type="checkbox" data-inc="steps" checked> Steps (${(p.steps||[]).length}, ${(S.checks[p.id]||[]).length} ticked)</label>`;
   const as=assaysOf(p.id);if(t.protein&&as.length)h+=`<div class="fopt"><label class="chk" style="align-self:flex-start"><input type="checkbox" data-inc="assay" checked> Protein concentration</label><select id="fin-assay">${as.map(a=>`<option value="${esc(a.id)}" ${S.assay&&a.id===S.assay.id?"selected":""}>${esc(a.name)} · ${esc(a.date||"")}</option>`).join("")}</select></div>`;
   const xs=expList().filter(x=>Store.data.experiments[x.id]);if(t.gel&&xs.length)h+=`<div class="fopt"><label class="chk" style="align-self:flex-start"><input type="checkbox" data-inc="gel" checked> Gels</label><select id="fin-exp">${xs.map(x=>`<option value="${esc(x.id)}" ${S.exp&&x.id===S.exp.id?"selected":""}>${esc(x.name)} (${gelsOf(x.id).length} gel${gelsOf(x.id).length===1?"":"s"})</option>`).join("")}</select></div>`;
-  const ss=Object.values(Store.data.solutions).filter(r=>r.protoId===p.id);if(ss.length)h+=`<label class="chk" style="align-self:flex-start"><input type="checkbox" data-inc="sol" checked> Solutions (${ss.length})</label>`;
+  const ss=expSols(p);if(ss.length)h+=`<label class="chk" style="align-self:flex-start"><input type="checkbox" data-inc="sol" checked> Solutions (${ss.length})</label>`;
   $("#fin-opts").innerHTML=h;$("#fin-scrim").hidden=false;$("#fin-sheet").hidden=false;
 }
 function closeFinish(){$("#fin-scrim").hidden=true;$("#fin-sheet").hidden=true}
@@ -2678,13 +2700,13 @@ function buildRecord(){
       stds:R.stds.map((x,i)=>({c:A.stds[i].c,mean:x.m})),samples:R.smp.filter(x=>x.name||x.v.length).map(x=>({name:x.name,mean:x.m,dil:x.dil,conc:x.conc,flag:x.flag})),plate:A.plate||null}}}
   if(inc("gel")){const x=Store.data.experiments[$("#fin-exp").value];if(x){rec.exp={name:x.name,date:x.date,gels:gelsOf(x.id).filter(g=>!g.draft).map(g=>({name:g.name,targetUg:g.targetUg,mode:g.mode||"premix",mix:g.mix||"1:1",
       lanes:g.lanes.map((l,i)=>{const c=laneCalc(g,l);return{well:i+1,type:l.type,name:l.name,conc:l.conc,load:c?(c.premix?c.load:c.s):(l.type==="ladder"?num(g.ladderUl):null),loaded:!!l.loaded}})}))}}}
-  if(inc("sol"))rec.solutions=Object.values(Store.data.solutions).filter(r=>r.protoId===p.id).map(r=>{const V=volML(r);return{name:r.name,vol:r.vol,vunit:r.vunit,notes:r.notes,lines:r.comps.map(c=>{const a=compAmt(c,V);return `${c.name||"component"}: ${a&&!a.err?fmtAmt(a.a,a.u):"?"}`})}});
+  if(inc("sol"))rec.solutions=expSols(p).map(r=>{const V=volML(r);return{name:r.name,vol:r.vol,vunit:r.vunit,notes:r.notes,lines:r.comps.map(c=>{const a=compAmt(c,V);return `${c.name||"component"}: ${a&&!a.err?fmtAmt(a.a,a.u):"?"}`})}});
   return rec;
 }
 $("#prot-finish").addEventListener("click",openFinish);$("#hist-new").addEventListener("click",openFinish);
 $("#fin-close").addEventListener("click",closeFinish);$("#fin-scrim").addEventListener("click",closeFinish);
 $("#fin-save").addEventListener("click",()=>{const rec=buildRecord();Store.save("records",rec);
-  if($("#fin-reset").checked){S.checks[S.prot.id]=[];lsSet("bb.checks",S.checks);Object.keys(S.timers).forEach(k=>{if(k.startsWith(S.prot.id+"|"))delete S.timers[k]});renderSteps()}
+  if($("#fin-reset").checked){psList().forEach(e=>{e.prepared=null;e.done=[]});queueSave("protocols");S.checks[S.prot.id]=[];lsSet("bb.checks",S.checks);Object.keys(S.timers).forEach(k=>{if(k.startsWith(S.prot.id+"|"))delete S.timers[k]});renderSteps()}
   closeFinish();S.rec=clone(Store.data.records[rec.id]);showTab("hist");S.rec=clone(Store.data.records[rec.id]);renderHist();setStatus("Run saved")});
 function recHTML(r){
   let h=`<div><div style="font-weight:700;font-size:18px">${esc(r.name)}</div><div class="note">${esc(r.method||"")} · saved ${new Date(r.created).toLocaleString("en-GB")}</div></div>`;
@@ -2718,7 +2740,7 @@ function buildLive(){
     lanes:g.lanes.map((l,i)=>{const c=laneCalc(g,l);return{well:i+1,type:l.type,name:l.name,conc:l.conc,load:c?(c.premix?c.load:c.s):(l.type==="ladder"?num(g.ladderUl):null),loaded:!!l.loaded}})}))}}}
   if(t.qpcr&&p.qpcr){const R=qCalc();if(R.rows.length)rec.qpcr={tgts:R.tgts,refs:R.refs,ctrl:R.ctrl,rows:R.rows.map(r2=>({name:r2.name,group:r2.group,ref:r2.ref,dct:r2.dct,fold:r2.fold})),summ:R.summ}}
   if((p.imgs||[]).length)rec.images=p.imgs.map(sc=>({type:sc.type,title:sc.title,notes:sc.notes,n:(sc.images||[]).length,srcs:(sc.images||[]).map(imgSrc).filter(Boolean)}));
-  const ss=Object.values(Store.data.solutions).filter(r=>r.protoId===p.id);if(ss.length)rec.solutions=ss.map(r=>{const V=volML(r);return{name:r.name,vol:r.vol,vunit:r.vunit,notes:r.notes,lines:r.comps.map(c=>{const a=compAmt(c,V);return `${c.name||"component"}: ${a&&!a.err?fmtAmt(a.a,a.u):"?"}`})}});
+  const ss=expSols(p);if(ss.length)rec.solutions=ss.map(r=>{const V=volML(r);return{name:r.name,vol:r.vol,vunit:r.vunit,notes:r.notes,lines:r.comps.map(c=>{const a=compAmt(c,V);return `${c.name||"component"}: ${a&&!a.err?fmtAmt(a.a,a.u):"?"}`})}});
   if(expDone(p)&&p.completed)rec.method+=` · finished ${new Date(p.completed).toLocaleDateString("en-GB")}`;
   return rec;
 }
