@@ -709,6 +709,32 @@ nav.tabs button{position:relative}
 .bsheet .bs-sol{break-inside:avoid;margin-bottom:6px}
 
 .bsheet,.bsheet *{color:#000}.bsheet .bs-sub,.bsheet .bs-st i{color:#444}
+/* calendar */
+#tab-cal .back{background:none;border:0;color:var(--accent);font:600 14px var(--sans);cursor:pointer;padding:4px 0}
+.calcard{gap:10px}
+.calhead{display:flex;align-items:center;justify-content:space-between}
+.calhead b{font-size:17px}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.calgrid .wd{font:600 11px var(--sans);color:var(--muted);text-align:center;padding:2px 0;text-transform:uppercase;letter-spacing:.04em}
+.calgrid .dy{aspect-ratio:1/1;min-height:40px;border:1px solid transparent;border-radius:10px;background:var(--surface-2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:5px 2px 3px;gap:3px;font:600 13.5px var(--sans);color:var(--ink)}
+.calgrid .dy.out{background:none;color:var(--muted);opacity:.5}
+.calgrid .dy.today{border-color:var(--accent);color:var(--accent)}
+.calgrid .dy.sel{background:var(--accent);color:var(--accent-ink)}
+.calgrid .dy .dots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;max-width:90%}
+.calgrid .dy .dots i{width:6px;height:6px;border-radius:50%;background:var(--mc,var(--accent))}
+.calgrid .dy.sel .dots i{background:var(--accent-ink)!important}
+.calgrid .dy .cnt{font:600 10px var(--sans);opacity:.8}
+.calday-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.calday-h b{font-size:16px}
+.calexp{display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface-2);cursor:pointer;text-align:left;font:inherit;color:var(--ink);width:100%}
+.calexp:hover{border-color:var(--accent)}
+.calexp .ht{display:flex;gap:8px;align-items:center}
+.calexp .ht b{font-size:14.5px}
+.calexp ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink)}
+.calexp ul li{margin:1px 0}
+.calexp ul li span{color:var(--muted)}
+#cal-daynote{min-height:70px;font-family:var(--sans);font-size:14px}
+@media (min-width:1000px){#tab-cal{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(340px,1fr);gap:16px;align-items:start}#tab-cal>.row{grid-column:1/-1}#tab-cal[hidden]{display:none}#tab-cal .calcard{position:sticky;top:76px}.calgrid .dy{min-height:56px}}
 /* ===== desktop layout ===== */
 @media (min-width:1000px){
   body{padding-left:224px}
@@ -761,7 +787,7 @@ nav.tabs button{position:relative}
 
   <!-- HOME -->
   <section class="tab" id="tab-home">
-    <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h2>Experiments</h2><div class="row" style="gap:8px;flex-wrap:nowrap"><button class="themebtn" id="home-qbtn" type="button" aria-label="Search experiments" title="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></button><button class="btn primary" id="home-new">+ New</button></div></div>
+    <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h2>Experiments</h2><div class="row" style="gap:8px;flex-wrap:nowrap"><button class="themebtn" id="home-calbtn" type="button" aria-label="Calendar: what I did each day" title="Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></button><button class="themebtn" id="home-qbtn" type="button" aria-label="Search experiments" title="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></button><button class="btn primary" id="home-new">+ New</button></div></div>
     <div class="card" id="tpl-card" hidden>
       <div class="row" style="justify-content:space-between"><b>Choose a method</b><button class="btn sm ghost" id="tpl-cancel">Cancel</button></div>
       <p class="note" style="margin:0" id="tpl-where"></p>
@@ -1204,6 +1230,16 @@ nav.tabs button{position:relative}
       <div class="tmlist" id="al-list"></div>
       <p class="note" style="margin:0" id="al-note">Alarms ring while Lab Rat is open (it can be in the background). If you allow notifications you also get a notification. On a phone, keep the app open, as it may not ring once the phone has closed it.</p>
     </div>
+  </section>
+
+  <!-- CALENDAR (what I did each day) -->
+  <section class="tab" id="tab-cal" hidden>
+    <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><button class="back" id="cal-back" type="button">‹ Experiments</button><button class="btn sm" id="cal-today">Today</button></div>
+    <div class="card calcard">
+      <div class="calhead"><button class="themebtn" id="cal-prev" aria-label="Previous month">‹</button><b id="cal-title"></b><button class="themebtn" id="cal-next" aria-label="Next month">›</button></div>
+      <div class="calgrid" id="cal-grid"></div>
+    </div>
+    <div class="card" id="cal-day"></div>
   </section>
 
   <!-- STORAGE (shared with the lab) -->
@@ -1725,8 +1761,8 @@ function maybeBoot(){
   renderHome();
   const last=lsGet("bb.proto",null),lastTab=BOOT_TAB||"home";
   const p=(last&&Store.data.protocols[last])||null;
-  if(p&&!["home","lib","sol","calc","clock","notes","inv"].includes(lastTab)){synced=true;openProtocol(clone(p),lastTab)}
-  else{const q=p||protList()[0];synced=true;if(q)openProtocol(clone(q));showTab(["sol","calc","clock","notes","inv"].includes(lastTab)?lastTab:"home")}
+  if(p&&!["home","lib","sol","calc","clock","notes","inv","cal"].includes(lastTab)){synced=true;openProtocol(clone(p),lastTab)}
+  else{const q=p||protList()[0];synced=true;if(q)openProtocol(clone(q));showTab(["sol","calc","clock","notes","inv","cal"].includes(lastTab)?lastTab:"home")}
 }
 function onData(kind,first){
   if(!booted){if(first)setTimeout(maybeBoot,0);return}
@@ -1744,7 +1780,8 @@ function onData(kind,first){
     renderHome();renderPbar();if(S.tab==="img"&&!dirty.protocols&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#img-list")))renderImages();
   }else if(kind==="imgdata"){
     if(S.tab==="img")renderImages();
-  }else if(kind==="notes"){
+  }if(S.tab==="cal"&&["protocols","notes","assays","experiments","records"].includes(kind)&&!(document.activeElement&&document.activeElement.id==="cal-daynote"))renderCal();
+  if(kind==="notes"){
     if(S.tab==="notes"&&!noteDirty.size&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#note-list")))renderNotes();
   }else if(kind==="templates"){
     if(isTpl()&&S.prot&&Store.data.templates[S.prot.id]&&!dirty.protocols&&(Store.data.templates[S.prot.id].updatedAt||0)>(S.prot.updatedAt||0)){S.prot=clone(Store.data.templates[S.prot.id]);if(!S.editSteps){fillProtForm();renderSteps()}}
@@ -1764,7 +1801,11 @@ function onData(kind,first){
 }
 const clone=o=>JSON.parse(JSON.stringify(o));
 const dirty={gels:false,protocols:false,assays:false,experiments:false,solutions:false,records:false};const saveT={};
+const dkey=ms=>{const d=new Date(ms);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+function markWorked(){const p=S.prot;if(!p||isTpl()||p.draft)return false;const k=dkey(Date.now());if(!Array.isArray(p.days))p.days=[];if(p.days.includes(k))return false;p.days.push(k);if(p.days.length>400)p.days=p.days.slice(-400);return true}
+function logStep(id,on){const p=S.prot;if(!p)return;if(!Array.isArray(p.stepLog))p.stepLog=[];if(on){p.stepLog.push([id,Date.now()]);if(p.stepLog.length>600)p.stepLog=p.stepLog.slice(-600)}else{for(let i=p.stepLog.length-1;i>=0;i--){if(p.stepLog[i][0]===id&&Date.now()-p.stepLog[i][1]<6*3600e3){p.stepLog.splice(i,1);break}}}}
 function queueSave(kind){
+  if(kind!=="protocols"&&kind!=="solutions"&&kind!=="records"&&markWorked())queueSave("protocols");else if(kind==="protocols")markWorked();
   const obj=kind==="gels"?S.gel:kind==="experiments"?S.exp:kind==="protocols"?S.prot:kind==="solutions"?S.sol:kind==="records"?S.rec:S.assay;if(!obj)return;
   if(kind==="gels"&&S.exp.draft){delete S.exp.draft;Store.save("experiments",S.exp)}
   const wasExample=obj.draft;
@@ -1823,12 +1864,12 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMenus()});
 /* ---------- tabs ---------- */
 function showTab(t){
   const inside=["prot","assay","smp","qset","qres","gel","img","quant","psol","hist"].includes(t);if(inside&&!S.prot)t="home";if(t==="lib"&&isTpl()===false){}
-  if(["home","lib","sol","calc","clock","notes","inv"].includes(t)){flushProt()}if(t!=="notes")flushNotes();
+  if(["home","lib","sol","calc","clock","notes","inv","cal"].includes(t)){flushProt()}if(t!=="notes")flushNotes();
   if(!["sol","psol"].includes(t))flushSol();
   S.tab=t;lsSet("bb.tab",t);navRec(t);
-  const navKey=inside?(isTpl()?"lib":"home"):t;$$("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===navKey)));
+  const navKey=inside?(isTpl()?"lib":"home"):t==="cal"?"home":t;$$("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===navKey)));
   $("#pbar").hidden=!inside;
-  $("#tab-home").hidden=t!=="home";$("#tab-lib").hidden=t!=="lib";if(t==="lib"){$("#lib-tpl").hidden=true;renderLib()}$("#tab-gel").hidden=t!=="gel";$("#tab-prot").hidden=t!=="prot";$("#tab-calc").hidden=t!=="calc";$("#tab-clock").hidden=t!=="clock";if(t==="clock")renderClock();$("#tab-notes").hidden=t!=="notes";$("#tab-inv").hidden=t!=="inv";if(t==="inv")Inv.open();if(t==="notes")renderNotes();$("#tab-assay").hidden=t!=="assay";$("#tab-sol").hidden=!(t==="sol"||t==="psol");$("#tab-hist").hidden=t!=="hist";$("#tab-img").hidden=t!=="img";$("#tab-smp").hidden=t!=="smp";if(t==="smp")renderSamples();
+  $("#tab-home").hidden=t!=="home";$("#tab-lib").hidden=t!=="lib";if(t==="lib"){$("#lib-tpl").hidden=true;renderLib()}$("#tab-gel").hidden=t!=="gel";$("#tab-prot").hidden=t!=="prot";$("#tab-calc").hidden=t!=="calc";$("#tab-clock").hidden=t!=="clock";if(t==="clock")renderClock();$("#tab-notes").hidden=t!=="notes";$("#tab-inv").hidden=t!=="inv";if(t==="inv")Inv.open();$("#tab-cal").hidden=t!=="cal";if(t==="cal")renderCal();if(t==="notes")renderNotes();$("#tab-assay").hidden=t!=="assay";$("#tab-sol").hidden=!(t==="sol"||t==="psol");$("#tab-hist").hidden=t!=="hist";$("#tab-img").hidden=t!=="img";$("#tab-smp").hidden=t!=="smp";if(t==="smp")renderSamples();
   $("#tab-qset").hidden=t!=="qset";$("#tab-qres").hidden=t!=="qres";$("#tab-quant").hidden=t!=="quant";if(t==="quant")renderQuant();
   if(t==="qset"){S.plateCtx="qpcr";S.plSel=new Set();$("#qp-plate-slot").appendChild($("#plate-card"));$("#plate-card").hidden=false;$("#pl-auto").textContent="Fill from setup";renderQSetup();renderPlate()}
   else if(S.plateCtx==="qpcr"){S.plateCtx="assay";S.plSel=new Set();$("#plate-home").after($("#plate-card"));$("#pl-auto").textContent="Fill from tables"}
@@ -2558,8 +2599,8 @@ $("#prot-steps").addEventListener("click",e=>{const row=e.target.closest(".sedit
   if(b.dataset.ins){const cur=S.prot.steps[i];S.prot.steps.splice(i,0,{id:uid(),phase:cur?cur.phase:"",t:"",d:"",min:null,rep:0});renderSteps();queueSave("protocols");const t=$$("#prot-steps .sedit input[data-k='t']")[i];t&&t.focus();return}
   if(b.dataset.del){S.prot.steps.splice(i,1)}else if(b.dataset.mv){const j=i+ +b.dataset.mv;if(j<0||j>=S.prot.steps.length)return;const t=S.prot.steps[i];S.prot.steps[i]=S.prot.steps[j];S.prot.steps[j]=t}
   renderSteps();queueSave("protocols")});
-$("#prot-steps").addEventListener("change",e=>{const k=e.target.dataset.check;if(k==null)return;const arr=new Set(S.prot.done||[]);e.target.checked?arr.add(k):arr.delete(k);S.prot.done=[...arr];queueSave("protocols");e.target.closest(".step").classList.toggle("done",e.target.checked);renderSteps()});
-$("#prot-next").addEventListener("click",e=>{const d=e.target.closest("[data-ndone]");if(d){const arr=new Set(S.prot.done||[]);arr.add(d.dataset.ndone);S.prot.done=[...arr];queueSave("protocols");renderSteps();try{navigator.vibrate&&navigator.vibrate(15)}catch(_){}return}
+$("#prot-steps").addEventListener("change",e=>{const k=e.target.dataset.check;if(k==null)return;const arr=new Set(S.prot.done||[]);e.target.checked?arr.add(k):arr.delete(k);logStep(k,e.target.checked);S.prot.done=[...arr];queueSave("protocols");e.target.closest(".step").classList.toggle("done",e.target.checked);renderSteps()});
+$("#prot-next").addEventListener("click",e=>{const d=e.target.closest("[data-ndone]");if(d){const arr=new Set(S.prot.done||[]);arr.add(d.dataset.ndone);logStep(d.dataset.ndone,true);S.prot.done=[...arr];queueSave("protocols");renderSteps();try{navigator.vibrate&&navigator.vibrate(15)}catch(_){}return}
   const b=e.target.closest("[data-timer]");if(b)stepTimerClick(b)});
 let audio;function beepOnce(force){const snd=force||lsGet("bb.snd",true),vib=force||lsGet("bb.vib",true),vol=({low:.1,mid:.35,high:.9})[lsGet("bb.vol","mid")]||.35;
   if(snd)try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume&&audio.resume();[0,.3,.6,.9].forEach(t=>{const o=audio.createOscillator(),g=audio.createGain();o.type="square";o.frequency.value=t===.9?1175:880;o.connect(g);g.connect(audio.destination);g.gain.setValueAtTime(.0001,audio.currentTime+t);g.gain.exponentialRampToValueAtTime(vol,audio.currentTime+t+.02);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+t+.24);o.start(audio.currentTime+t);o.stop(audio.currentTime+t+.26)})}catch(e){}if(vib)try{navigator.vibrate&&navigator.vibrate([400,150,400,150,400])}catch(e){}}
@@ -3643,6 +3684,57 @@ function renderTimers(){
 }
 
 
+
+/* ================= CALENDAR (what I did each day) ================= */
+const CAL={y:new Date().getFullYear(),m:new Date().getMonth(),sel:null};
+function calActivities(){const A={};const add=(day,pid,txt,kind)=>{if(!day)return;(A[day]=A[day]||[]).push({pid,txt,kind})};
+  const isD=s=>/^\d{4}-\d{2}-\d{2}$/.test(String(s||""));
+  Object.values(Store.data.protocols).filter(p=>!p.draft).forEach(p=>{const pid=p.id;const stepById=new Map((p.steps||[]).map(x=>[x.id,x]));
+    if(p.created)add(dkey(p.created),pid,"Started the experiment","start");
+    if(p.completed)add(dkey(p.completed),pid,"Marked as done","done");
+    const byDay={};(p.stepLog||[]).forEach(([id,ms])=>{const st=stepById.get(id);if(!st)return;(byDay[dkey(ms)]=byDay[dkey(ms)]||[]).push(st.t||"step")});
+    Object.entries(byDay).forEach(([d,L])=>add(d,pid,`Steps done: ${[...new Set(L)].join(", ")}`,"steps"));
+    (Array.isArray(p.sols)?p.sols:[]).forEach(e=>{if(isD(e.prepared)){const r=Store.data.solutions[e.id];add(e.prepared,pid,`Prepared ${r?r.name:"a solution"}`,"sol")}});
+    (p.imgs||[]).forEach(sc=>{const by={};(sc.images||[]).forEach(im=>{if(im.added){const d=dkey(im.added);by[d]=(by[d]||0)+1}});Object.entries(by).forEach(([d,n])=>add(d,pid,`Added ${n} image${n>1?"s":""}${sc.title?" to "+sc.title:""}`,"img"))});
+    (p.days||[]).forEach(d=>add(d,pid,"Worked on it","worked"))});
+  Object.values(Store.data.assays).filter(a=>!a.draft&&a.protoId).forEach(a=>{const n=(a.samples||[]).filter(x=>x.name||(x.r||[]).length).length;add(isD(a.date)?a.date:a.created?dkey(a.created):null,a.protoId,`Protein concentration: ${a.name||"assay"}${n?` (${n} samples)`:""}`,"assay")});
+  Object.values(Store.data.experiments).filter(x=>!x.draft&&x.protoId).forEach(x=>{const gs=gelsOf(x.id).filter(g=>!g.draft);if(!gs.length)return;const ns=gs.reduce((t,g)=>t+g.lanes.filter(l=>l.type==="sample").length,0);add(isD(x.date)?x.date:null,x.protoId,`Gels: ${x.name||"gel run"} · ${gs.length} gel${gs.length>1?"s":""}, ${ns} samples`,"gel")});
+  Object.values(Store.data.records||{}).forEach(r=>{if(r.created)add(dkey(r.created),r.protoId,`Saved a run: ${r.name||""}`,"rec")});
+  Object.values(Store.data.notes||{}).forEach(n=>{const d=n.day||(n.created?dkey(n.created):null);if(d&&String(n.text||"").trim())add(d,n.exp||null,String(n.text).trim().split("\n")[0].slice(0,140),n.calNote?"daynote":"note")});
+  // a plain "worked on it" only when nothing more specific happened that day
+  Object.keys(A).forEach(d=>{const L=A[d];A[d]=L.filter(x=>x.kind!=="worked"||!L.some(y=>y.pid===x.pid&&y.kind!=="worked"))});
+  return A}
+function renderCal(){const A=calActivities();const y=CAL.y,m=CAL.m;const first=new Date(y,m,1);const start=new Date(y,m,1-((first.getDay()+6)%7));const tk=dkey(Date.now());
+  if(!CAL.sel)CAL.sel=tk;
+  $("#cal-title").textContent=first.toLocaleDateString("en-GB",{month:"long",year:"numeric"});
+  let h=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(w=>`<div class="wd">${w}</div>`).join("");
+  for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);if(i>=35&&d.getMonth()!==m)break;const k=dkey(d.getTime());const L=A[k]||[];
+    const pids=[...new Set(L.map(x=>x.pid||"__note"))];const dots=pids.slice(0,4).map(pid=>{const p=Store.data.protocols[pid];return `<i style="--mc:${p?MCOL[catOfExp(p)]||MCOL.other:"var(--muted)"}"></i>`}).join("");
+    h+=`<button class="dy${d.getMonth()!==m?" out":""}${k===tk?" today":""}${k===CAL.sel?" sel":""}" data-day="${k}" aria-label="${d.toDateString()}${L.length?`, ${pids.length} item${pids.length>1?"s":""}`:""}"><span>${d.getDate()}</span>${L.length?`<span class="dots">${dots}</span>`:""}</button>`}
+  $("#cal-grid").innerHTML=h;renderCalDay(A)}
+function renderCalDay(A){A=A||calActivities();const k=CAL.sel;const L=(A[k]||[]).filter(x=>x.kind!=="daynote");const d=new Date(k+"T12:00");
+  const groups=new Map();L.forEach(x=>{const g=x.pid||"__none";if(!groups.has(g))groups.set(g,[]);groups.get(g).push(x)});
+  let h=`<div class="calday-h"><b>${d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</b><span class="note">${(()=>{const n=[...groups.keys()].filter(g=>Store.data.protocols[g]).length;return n?`${n} experiment${n>1?"s":""}`:""})()}</span></div>`;
+  [...groups.entries()].forEach(([pid,items])=>{const p=Store.data.protocols[pid];
+    if(!p){h+=`<div class="calexp" style="cursor:default"><div class="ht"><b>Notes</b></div><ul>${items.map(x=>`<li>${esc(x.txt)}</li>`).join("")}</ul></div>`;return}
+    const tab=items.some(x=>x.kind==="gel")?"gel":items.some(x=>x.kind==="assay")?(p.method==="wb"?"smp":"assay"):items.some(x=>x.kind==="sol")?"psol":items.some(x=>x.kind==="img")?"img":"prot";
+    h+=`<button class="calexp" data-calp="${esc(pid)}" data-calt="${tab}"><div class="ht">${micon(catOfExp(p),1)}<b>${esc(p.name||"Untitled")}</b></div><ul>${items.map(x=>`<li>${esc(x.txt)}</li>`).join("")}</ul></button>`});
+  if(!L.length)h+=`<p class="note" style="margin:0">${k>dkey(Date.now())?"Nothing planned. Write a note below to plan this day.":"Nothing recorded on this day."}</p>`;
+  const dn=Object.values(Store.data.notes||{}).find(n=>n.day===k&&n.calNote);
+  h+=`<label class="f">Note for this day<textarea id="cal-daynote" placeholder="What you did, what's planned, anything to remember…">${esc(dn?dn.text:"")}</textarea></label>`;
+  $("#cal-day").innerHTML=h}
+let calNoteT=0;
+$("#cal-day").addEventListener("input",e=>{if(e.target.id!=="cal-daynote")return;clearTimeout(calNoteT);const k=CAL.sel,v=e.target.value;calNoteT=setTimeout(()=>{let n=Object.values(Store.data.notes||{}).find(n=>n.day===k&&n.calNote);
+  if(n){n=clone(n);n.text=v}else{if(!v.trim())return;n={id:uid(),text:v,created:Date.now(),exp:null,pin:false,day:k,calNote:true}}
+  if(!v.trim()&&n.id)Store.remove("notes",n.id);else Store.save("notes",n);const A=calActivities();const sel=$("#cal-grid .dy.sel");if(sel){const L=A[k]||[];}renderCalGridOnly()},600)});
+function renderCalGridOnly(){const keep=document.activeElement&&document.activeElement.id==="cal-daynote";if(keep){const ta=$("#cal-daynote"),pos=ta.selectionStart;const day=$("#cal-day");const html=day.innerHTML;renderCal();const t2=$("#cal-daynote");if(t2){t2.focus();try{t2.setSelectionRange(pos,pos)}catch(_){}}}else renderCal()}
+$("#cal-grid").addEventListener("click",e=>{const b=e.target.closest("[data-day]");if(!b)return;CAL.sel=b.dataset.day;const d=new Date(CAL.sel+"T12:00");if(d.getMonth()!==CAL.m){CAL.m=d.getMonth();CAL.y=d.getFullYear()}renderCal();if(window.innerWidth<1000)$("#cal-day").scrollIntoView({block:"start",behavior:"smooth"})});
+$("#cal-day").addEventListener("click",e=>{const b=e.target.closest("[data-calp]");if(!b)return;const p=Store.data.protocols[b.dataset.calp];if(p)openProtocol(clone(p),b.dataset.calt)});
+$("#cal-prev").addEventListener("click",()=>{CAL.m--;if(CAL.m<0){CAL.m=11;CAL.y--}renderCal()});
+$("#cal-next").addEventListener("click",()=>{CAL.m++;if(CAL.m>11){CAL.m=0;CAL.y++}renderCal()});
+$("#cal-today").addEventListener("click",()=>{const n=new Date();CAL.y=n.getFullYear();CAL.m=n.getMonth();CAL.sel=dkey(Date.now());renderCal()});
+$("#cal-back").addEventListener("click",()=>showTab("home"));
+$("#home-calbtn").addEventListener("click",()=>{CAL.sel=CAL.sel||dkey(Date.now());showTab("cal")});
 /* ================= BENCH SHEET (print) ================= */
 function benchOpen(focus){if(!S.prot)return;flushProt();try{flushGel()}catch(e){}
   const p=S.prot,t=p.tools||{};const gs=t.gel&&S.exp?gelsOf(S.exp.id).filter(g=>!g.draft).map(g=>g.id===(S.gel&&S.gel.id)?S.gel:g):[];const ss=expSols(p);
