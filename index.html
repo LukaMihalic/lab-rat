@@ -1322,6 +1322,7 @@ function newGel(expId,from){
 function draftGel(expId){const g=newGel(expId);g.draft=true;return g}
 
 /* ---------- app state ---------- */
+const BOOT_TAB=lsGet("bb.tab","home");
 const S={tab:"home",sol:null,editSteps:false,gel:null,prot:null,lane:0,checks:lsGet("bb.checks",{}),timers:{}};
 
 let synced=false;
@@ -1353,7 +1354,7 @@ function maybeBoot(){
   if(!Object.keys(Store.data.templates).length&&!lsGet("bb.tplSeeded",false)){const seen=new Set();Object.values(Store.data.protocols).forEach(p=>{const nm=String(p.name||"").replace(/ · \d{2}\/\d{2}\/\d{4}$/,"").replace(/ \(copy\)$/,"");if(!nm||seen.has(nm))return;seen.add(nm);
     Store.save("templates",{id:uid(),name:nm,method:p.method,assayMethod:p.assayMethod,tools:Object.assign({},p.tools),steps:freshSteps(p.steps),notes:p.notes||"",created:p.created||Date.now()})});lsSet("bb.tplSeeded",true)}
   renderHome();
-  const last=lsGet("bb.proto",null),lastTab=lsGet("bb.tab","home");
+  const last=lsGet("bb.proto",null),lastTab=BOOT_TAB||"home";
   const p=(last&&Store.data.protocols[last])||null;
   if(p&&!["home","lib","sol","calc","clock","notes"].includes(lastTab)){synced=true;openProtocol(clone(p),lastTab)}
   else{const q=p||protList()[0];synced=true;if(q)openProtocol(clone(q));showTab(["sol","calc","clock","notes"].includes(lastTab)?lastTab:"home")}
@@ -1404,12 +1405,48 @@ function queueSave(kind){
   saveT[kind]=setTimeout(async()=>{await Store.save(realKind,obj);dirty[kind]=false;kind==="gels"||kind==="experiments"?renderGelSelect():kind==="protocols"?(isTpl()?renderLib():renderProtSelect()):kind==="solutions"||kind==="records"?null:renderAssaySelect()},wasExample?50:700);
 }
 
+
+/* ---------- phone back button ---------- */
+const NAV=[];let navCur=null,navLock=0;
+function navRec(t){const now={t,pid:S.prot&&S.prot.id,kind:S.protKind||"protocols"};
+  if(!navLock&&booted&&navCur&&(navCur.t!==now.t||navCur.pid!==now.pid)){if(now.t==="home")NAV.length=0;else{NAV.push(navCur);if(NAV.length>60)NAV.shift()}}
+  navCur=now;if(typeof navArm==="function")navArm()}
+const INSIDE=["prot","assay","smp","qset","qres","gel","img","quant","psol","hist"];
+function navGo(e){navLock++;try{
+  if(INSIDE.includes(e.t)){
+    if(!S.prot||S.prot.id!==e.pid){const src=e.kind==="templates"?Store.data.templates:Store.data.protocols;const p=src[e.pid];if(!p)return false;
+      if(e.kind==="templates"){openTemplate(clone(p));showTab(e.t)}else openProtocol(clone(p),e.t)}
+    else showTab(e.t)}
+  else showTab(e.t);return true}finally{navLock--}}
+function vis(sel){const el=$(sel);return !!(el&&!el.hidden)}
+function appBack(){
+  if(vis("#img-viewer")){$("#img-vclose").click();return true}
+  if(vis("#set-sheet")){closeSettings();return true}
+  if(vis("#fin-sheet")){closeFinish();return true}
+  if(vis("#sheet")){closeLane();return true}
+  if(S.loadMode){S.loadMode=false;renderGel();fsOff();if(typeof wakeOff==="function")wakeOff();return true}
+  if(S.plFill){S.plFill=false;renderPlate();fsOff();return true}
+  for(const [box,btn] of [["#pl-imp-box","#pl-imp-x"],["#tpl-card","#tpl-cancel"],["#home-mk","#mk-cancel"],["#lib-tpl","#lib-tpl-cancel"],["#sol-tpl","#sol-tpl-cancel"],["#img-pick","#img-pick-cancel"]]){
+    const b=$(box);if(b&&!b.hidden&&b.closest("section.tab")&&!b.closest("section.tab").hidden){$(btn).click();return true}}
+  if(S.tab==="home"){const n=hNav();if(n.f){const i=n.f.lastIndexOf("/");setNav({p:n.p,f:i>0?n.f.slice(0,i):null});return true}if(n.p){setNav({p:null,f:null});return true}return false}
+  while(NAV.length){const e=NAV.pop();if(navGo(e))return true}
+  if(INSIDE.includes(S.tab)&&isTpl()){$("#p-back").click();return true}
+  navLock++;try{if(INSIDE.includes(S.tab))$("#p-back").click();else showTab("home")}finally{navLock--}NAV.length=0;return true}
+let navArm=null;
+(function(){let top=false;try{top=window.top===window}catch(e){}if(!top||!window.history||!history.pushState)return;
+  let exitT=0;
+  navArm=()=>{try{if(!history.state||history.state.lr!=="top")history.pushState({lr:"top"},"")}catch(e){}};
+  try{history.replaceState({lr:"base"},"");history.pushState({lr:"top"},"")}catch(e){return}
+  window.addEventListener("popstate",()=>{let done=false;try{done=appBack()}catch(e){done=false}
+    if(done){navArm();return}
+    setStatus("Press back again to exit");clearTimeout(exitT);exitT=setTimeout(navArm,2500)});
+})();
 /* ---------- tabs ---------- */
 function showTab(t){
   const inside=["prot","assay","smp","qset","qres","gel","img","quant","psol","hist"].includes(t);if(inside&&!S.prot)t="home";if(t==="lib"&&isTpl()===false){}
   if(["home","lib","sol","calc","clock","notes"].includes(t)){flushProt()}if(t!=="notes")flushNotes();
   if(!["sol","psol"].includes(t))flushSol();
-  S.tab=t;lsSet("bb.tab",t);
+  S.tab=t;lsSet("bb.tab",t);navRec(t);
   const navKey=inside?(isTpl()?"lib":"home"):t;$$("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===navKey)));
   $("#pbar").hidden=!inside;
   $("#tab-home").hidden=t!=="home";$("#tab-lib").hidden=t!=="lib";if(t==="lib"){$("#lib-tpl").hidden=true;renderLib()}$("#tab-gel").hidden=t!=="gel";$("#tab-prot").hidden=t!=="prot";$("#tab-calc").hidden=t!=="calc";$("#tab-clock").hidden=t!=="clock";if(t==="clock")renderClock();$("#tab-notes").hidden=t!=="notes";if(t==="notes")renderNotes();$("#tab-assay").hidden=t!=="assay";$("#tab-sol").hidden=!(t==="sol"||t==="psol");$("#tab-hist").hidden=t!=="hist";$("#tab-img").hidden=t!=="img";$("#tab-smp").hidden=t!=="smp";if(t==="smp")renderSamples();
