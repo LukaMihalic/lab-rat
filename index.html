@@ -897,7 +897,7 @@ nav.tabs button{position:relative}
       <div class="calcline" id="r-out"></div>
       <label class="f">Notes<textarea id="r-notes" style="min-height:60px;font-family:var(--sans);font-size:14px"></textarea></label>
       <textarea class="copyarea" id="r-copyarea" hidden readonly></textarea>
-      <div class="row" style="justify-content:flex-end"><button class="btn sm" id="r-savetpl">Save to my recipes</button><button class="btn sm" id="r-copy">Copy recipe</button><button class="btn danger sm" id="sol-del">Delete recipe</button></div>
+      <div class="row" style="justify-content:flex-end"><button class="btn sm" id="r-savetpl">Duplicate</button><button class="btn sm" id="r-copy">Copy recipe</button><button class="btn danger sm" id="sol-del">Delete recipe</button></div>
     </div>
   </section>
 
@@ -1348,6 +1348,7 @@ function maybeBoot(){
   Object.values(Store.data.solutions).filter(r=>!r.isTpl&&r.protoId).forEach(r=>{const p=Store.data.protocols[r.protoId];
     if(p){const c=clone(p);if(!Array.isArray(c.sols))c.sols=[];if(!c.sols.some(e=>e.id===r.id)){c.sols.push({id:r.id,prepared:r.prepared||null,done:(r.comps||[]).map((x,i)=>x.done?i:-1).filter(i=>i>=0)});Store.save("protocols",c)}}
     const rc=clone(r);rc.protoId=null;delete rc.prepared;(rc.comps||[]).forEach(x=>delete x.done);Store.save("solutions",rc)});
+  seedRecipes();
   let wb=protList().find(p=>p.method==="wb");
   const orphX=Object.values(Store.data.experiments).filter(x=>!x.protoId||!Store.data.protocols[x.protoId]);
   const orphA=Object.values(Store.data.assays).filter(x=>!x.protoId||!Store.data.protocols[x.protoId]);
@@ -2662,13 +2663,22 @@ $("#r-table").addEventListener("click",e=>{const b=e.target.closest("[data-rm]")
 $("#r-add").addEventListener("click",()=>{const n0=S.sol.comps.length;for(let k=0,K=Math.max(1,Math.min(200,parseInt($("#r-add-n").value)||1));k<K;k++)S.sol.comps.push(c_("","M","","mM",""));renderSolRows();renderSolOut();queueSave("solutions");const e=$(`#rc-${n0}-n`);e&&e.focus()});
 [["#r-name","name"],["#r-vol","vol"],["#r-vunit","vunit"],["#r-notes","notes"],["#r-dil","diluent"],["#r-proto","protoId"]].forEach(([sel,k])=>$(sel).addEventListener("input",e=>{S.sol[k]=k==="protoId"?(e.target.value||null):e.target.value;renderSolOut();queueSave("solutions");if(k==="name"||k==="protoId")setTimeout(renderSolSelect,760)}));
 $("#sol-select").addEventListener("change",e=>{const r=Store.data.solutions[e.target.value];if(r){flushSol();S.sol=clone(r);fillSol();renderSolCheck()}});
-$("#sol-new").addEventListener("click",()=>{$("#sol-tpl").hidden=false});
+$("#sol-new").addEventListener("click",()=>{flushSol();S.sol=newSol(null,null);S.sol.name="New recipe";Store.save("solutions",S.sol);solAddCur();renderSolSelect();const n=$("#r-name");n.focus();n.select();setStatus("New recipe: give it a name and add components")});
 $("#sol-tpl-cancel").addEventListener("click",()=>{$("#sol-tpl").hidden=true});
+function solSlug(n){return "solbi-"+String(n||"").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,48)}
+function seedRecipes(){const key=s=>String(s||"").trim().toLowerCase();
+  undoMute++;try{
+    // saved "my recipes" become normal recipes
+    Object.values(Store.data.solutions).filter(r=>r.isTpl).forEach(t=>{const dup=Object.values(Store.data.solutions).some(r=>!r.isTpl&&r.id!==t.id&&key(r.name)===key(t.name));
+      if(dup)Store.remove("solutions",t.id);else{const c=clone(t);delete c.isTpl;c.protoId=null;Store.save("solutions",c)}});
+    // the built-in recipes join the library once per device
+    if(!lsGet("bb.solSeeded",false)){const have=new Set(Object.values(Store.data.solutions).map(r=>key(r.name)));
+      SOL_TPL.forEach(t=>{if(have.has(key(t.name)))return;const id=solSlug(t.name);if(Store.data.solutions[id])return;Store.save("solutions",Object.assign(clone(t),{id,protoId:null}))});
+      lsSet("bb.solSeeded",true)}
+  }finally{undoMute--}}
 function solAddCur(){if(solScope()&&S.sol&&!psEntry(S.sol.id)){psList().push({id:S.sol.id,prepared:null,done:[]});queueSave("protocols")}}
 function recipeFrom(r){const t=clone(r);["id","protoId","isTpl","prepared","updatedAt","fresh","draft"].forEach(k=>delete t[k]);(t.comps||[]).forEach(c=>delete c.done);return t}
-$("#r-savetpl").addEventListener("click",()=>{if(!S.sol)return;flushSol();const base=recipeFrom(S.sol);const name=(base.name||"").trim()||"My recipe";
-  const ex=myRecipes().find(t=>String(t.name).trim().toLowerCase()===name.toLowerCase());
-  Store.save("solutions",Object.assign(base,{id:ex?ex.id:uid(),isTpl:true,protoId:null,name}));renderSolSelect();setStatus(ex?`Updated "${name}" in My recipes`:`Saved "${name}" to My recipes`)});
+$("#r-savetpl").addEventListener("click",()=>{if(!S.sol)return;flushSol();const c=recipeFrom(S.sol);c.name=(c.name||"Recipe")+" (copy)";S.sol=newSol(c,null);Store.save("solutions",S.sol);solAddCur();renderSolSelect();const n=$("#r-name");n.focus();n.select();setStatus("Copy made: rename it and change what you need")});
 $("#sol-tpl-list").addEventListener("click",e=>{const del=e.target.closest("[data-mtdel]");
   if(del){if(!del.classList.contains("armed")){del.classList.add("armed");del.textContent="Tap again";setTimeout(()=>{del.classList.remove("armed");del.textContent="Remove"},4000);return}
     Store.remove("solutions",del.dataset.mtdel);setTimeout(renderSolSelect,50);setStatus("Removed from My recipes");return}
