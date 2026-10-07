@@ -418,6 +418,17 @@ table.xl tr.dup input.wl,table.xl tr.dup select.gs{border-color:var(--bad)}
 .lcard.warn .lv b{color:var(--warn)}
 .lcard.loaded{opacity:.5}.lcard.loaded .wn{background:var(--ok);color:#fff}
 .lcard .rm{background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 6px;flex:none}
+.minicard{padding:4px;gap:0}
+#home-list.minilist{display:flex!important;flex-direction:column;align-items:stretch!important}
+@media (max-width:620px){.minirow .prog{width:34px}}
+.minirow{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-radius:9px;padding:9px 10px;cursor:pointer;text-align:left;font:inherit;color:var(--ink)}
+.minirow+.minirow{border-top:1px solid var(--line);border-radius:0}
+.minirow:hover{background:var(--surface-2)}
+.minirow .mn{flex:1;min-width:0;font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.minirow .mp{flex:none;display:flex;align-items:center;gap:6px}
+.minirow .prog{display:block;width:56px;height:5px;border-radius:3px;background:var(--line);overflow:hidden}
+.minirow .prog i{display:block;height:100%;background:var(--accent)}
+.minirow .mc{font:600 11.5px var(--mono);color:var(--muted);min-width:34px;text-align:right}
 .pcard .prog{display:block;height:5px;border-radius:3px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden;margin-top:2px}
 .pcard .prog i{display:block;height:100%;background:var(--accent);border-radius:3px}
 .pcard .prog.full i{background:var(--ok)}
@@ -586,6 +597,13 @@ nav.tabs button{position:relative}
 .pcard .pcopy:hover{color:var(--accent)}
 .ghead{font:700 12px var(--sans);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:6px 2px -2px;display:flex;justify-content:space-between}
 .tag.done{background:transparent;border:1px solid var(--ok);color:var(--ok)}
+.tag.fail{background:transparent;border:1px solid var(--bad);color:var(--bad)}
+.chip.fail{border-color:var(--bad);color:var(--bad)}
+.outseg{grid-template-columns:1fr 1fr 1fr}
+.outseg button[data-o=ok][aria-pressed=true]{background:var(--ok);border-color:var(--ok);color:#fff}
+.outseg button[data-o=fail][aria-pressed=true]{background:var(--bad);border-color:var(--bad);color:#fff}
+.replinks{display:flex;flex-direction:column;gap:4px;font-size:14px}.replinks:empty{display:none}
+.pcard .usedin{color:var(--accent);font-weight:600}
 .tag.act{background:transparent;border:1px solid var(--accent)}
 .chip.done{border-color:var(--ok);color:var(--ok)}
 .tplh{grid-column:1 / -1;font:700 11.5px var(--sans);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-top:4px}
@@ -1139,8 +1157,10 @@ nav.tabs button{position:relative}
       <div class="row" style="justify-content:space-between"><h2>Report</h2><span class="chip" id="rep-status"></span></div>
       <div class="row" style="justify-content:space-between">
         <div class="row"><select id="rep-fmt" style="width:auto"><option value="pdf">PDF</option><option value="docx">Word (.docx)</option><option value="xlsx">Excel (.xlsx)</option><option value="csv">CSV (tables)</option><option value="txt">Text (.txt)</option></select><button class="btn sm" id="rep-export">Export</button><button class="btn sm ghost" id="rep-copy">Copy</button></div>
-        <div class="row"><button class="btn sm" data-bench="all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;vertical-align:-2px;margin-right:4px"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Bench sheet</button><button class="btn sm primary" id="rep-done">Mark as done</button></div>
+        <div class="row"><button class="btn sm" data-bench="all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;vertical-align:-2px;margin-right:4px"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Bench sheet</button><button class="btn sm primary" id="rep-done" hidden>Mark as done</button></div>
       </div>
+      <div class="f"><span>Outcome</span><div class="seg outseg" id="rep-out"><button data-o="active">In progress</button><button data-o="ok">✓ Worked</button><button data-o="fail">✗ Didn't work</button></div></div>
+      <div class="replinks" id="rep-links"></div>
       <label class="f">Results and notes<textarea id="rep-results" style="min-height:90px;font-family:var(--sans);font-size:14px" placeholder="What worked, band intensities, image file names…"></textarea></label>
       <div id="rep-body" class="report"></div>
       <textarea class="copyarea" id="rep-copyarea" hidden readonly></textarea>
@@ -2247,6 +2267,11 @@ function methodLabel(p){return p.method==="qpcr"?"qPCR":p.method==="elisa"?"ELIS
 /* ---- Experiments list (home) ---- */
 const isTpl=()=>S.protKind==="templates";
 const expDone=p=>p.status==="done";
+const expFailed=p=>p.status==="done"&&p.outcome==="fail";
+function usedIn(pid){const as=new Set(Object.values(Store.data.assays).filter(a=>a.protoId===pid).map(a=>a.id));if(!as.size)return [];return Object.values(Store.data.protocols).filter(q=>q.id!==pid&&q.smp&&as.has(q.smp.src))}
+function sourceOf(q){const a=q&&q.smp&&Store.data.assays[q.smp.src];if(!a)return null;const p=Store.data.protocols[a.protoId];return p&&p.id!==q.id?{p,a}:null}
+function outcomeTag(p){return expDone(p)?(expFailed(p)?`<span class="tag fail">✗ Didn't work</span>`:`<span class="tag done">✓ Worked</span>`):""}
+function setOutcome(p,o){if(o==="active"){p.status="active";delete p.completed;delete p.outcome}else{if(p.status!=="done")p.completed=Date.now();p.status="done";p.outcome=o}}
 const CATS=[["prep","Sample preparation"],["protein","Protein concentration"],["wb","Western blot"],["elisa","ELISA"],["qpcr","qPCR"],["ihc","Immunohistochemistry"],["other","Other"]];
 function catOfTpl(k,T){return k==="homog"?"prep":k==="ihc"?"ihc":T.method==="protein"?"protein":T.method==="wb"?"wb":T.method==="elisa"?"elisa":T.method==="qpcr"?"qpcr":"other"}
 function catOfExp(p){if(p.cat)return p.cat;if(p.method==="custom"&&/lysate|homogen/i.test((p.templateName||"")+" "+(p.name||"")))return "prep";return ({protein:"protein",wb:"wb",elisa:"elisa",qpcr:"qpcr"})[p.method]||"other"}
@@ -2299,18 +2324,22 @@ function renderHome(){
   const root=!q&&n.p==null;
   let f=lsGet("bb.hstatus","all");let so=lsGet("bb.hsort","used");if(so==="project")so="used";$("#home-sort").value=so;
   const na=base.filter(p=>!expDone(p)).length,nd=base.length-na;
-  $("#home-filter").innerHTML=`<option value="all">Any status (${base.length})</option><option value="active">In progress (${na})</option><option value="done">Done (${nd})</option>`;$("#home-filter").value=f;
-  let L=root?base.slice():base.filter(p=>f==="all"||(f==="done"?expDone(p):!expDone(p)));
+  const nf=base.filter(expFailed).length;
+  $("#home-filter").innerHTML=`<option value="all">Any status (${base.length})</option><option value="active">In progress (${na})</option><option value="done">Worked (${nd-nf})</option>${nf?`<option value="fail">Didn't work (${nf})</option>`:""}`;if(f==="fail"&&!nf)f="all";$("#home-filter").value=f;
+  let L=root?base.slice():base.filter(p=>f==="all"||(f==="done"?expDone(p)&&!expFailed(p):f==="fail"?expFailed(p):!expDone(p)));
   const crd=p=>p.created||p.updatedAt||0;
   L.sort(root?(a,b)=>(b.updatedAt||0)-(a.updatedAt||0):so==="new"?(a,b)=>crd(b)-crd(a):so==="old"?(a,b)=>crd(a)-crd(b):so==="name"?(a,b)=>String(a.name).localeCompare(String(b.name)):(a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
-  if(root)L=L.slice(0,5);
+  if(root)L=L.filter(p=>!expDone(p)).slice(0,4);
   $("#home-filter").hidden=root;$("#home-sort").hidden=root;
   const card=p=>{const nG=Object.values(Store.data.experiments).filter(x=>x.protoId===p.id).reduce((n,x)=>n+gelsOf(x.id).filter(g=>!g.draft).length,0),nA=Object.values(Store.data.assays).filter(x=>x.protoId===p.id).length;
     const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const where=[pj(p),showPath(pf(p))].filter(Boolean).join(" › ");
-    const cat=catOfExp(p);return `<div class="pcard"><button class="pmain" data-p="${esc(p.id)}"><span class="th">${micon(cat)}<span class="t">${esc(p.name||"Untitled")}</span></span><span class="m">${expDone(p)?`<span class="tag done">Done</span>`:""}<span class="tag mt" style="--mc:${MCOL[cat]||MCOL.other}">${esc(methodLabel(p))}</span>${(q||root)&&where?`<span class="tag" style="background:var(--surface-2);color:var(--ink)">${esc(where)}</span>`:""}</span>${steps.length?`<span class="prog${expDone(p)||dn===steps.length?" full":""}" role="img" aria-label="${dn} of ${steps.length} steps done"><i style="width:${Math.round(100*dn/steps.length)}%"></i></span>`:""}<span class="m">${[steps.length?`${dn}/${steps.length} steps`:"no steps",nA?`${nA} assay${nA>1?"s":""}`:"",nG?`${nG} gel${nG>1?"s":""}`:"",expDone(p)&&p.completed?`done ${shortD(p.completed)}`:p.created?`started ${shortD(p.created)}`:""].filter(Boolean).join(" · ")}</span></button><span class="mwrap"><button class="pm" data-menu aria-label="More actions">⋯</button><div class="menu" hidden><button data-copy="${esc(p.id)}">Copy experiment</button><button class="danger" data-del="${esc(p.id)}">Delete</button></div></span></div>`};
+    const cat=catOfExp(p);return `<div class="pcard"><button class="pmain" data-p="${esc(p.id)}"><span class="th">${micon(cat)}<span class="t">${esc(p.name||"Untitled")}</span></span><span class="m">${outcomeTag(p)}<span class="tag mt" style="--mc:${MCOL[cat]||MCOL.other}">${esc(methodLabel(p))}</span>${(q||root)&&where?`<span class="tag" style="background:var(--surface-2);color:var(--ink)">${esc(where)}</span>`:""}</span>${steps.length?`<span class="prog${expDone(p)||dn===steps.length?" full":""}" role="img" aria-label="${dn} of ${steps.length} steps done"><i style="width:${Math.round(100*dn/steps.length)}%"></i></span>`:""}<span class="m">${[steps.length?`${dn}/${steps.length} steps`:"no steps",nA?`${nA} assay${nA>1?"s":""}`:"",nG?`${nG} gel${nG>1?"s":""}`:"",expDone(p)&&p.completed?`${expFailed(p)?"failed":"done"} ${shortD(p.completed)}`:p.created?`started ${shortD(p.created)}`:""].filter(Boolean).join(" · ")}</span>${(()=>{const u=usedIn(p.id);return u.length?`<span class="m usedin">→ used in ${u.map(q=>esc(q.name)).join(", ")}</span>`:""})()}</button><span class="mwrap"><button class="pm" data-menu aria-label="More actions">⋯</button><div class="menu" hidden><button data-copy="${esc(p.id)}">Copy experiment</button>${expDone(p)?`<button data-setout="active" data-sp="${esc(p.id)}">Back to in progress</button>`:""}${!expDone(p)||expFailed(p)?`<button data-setout="ok" data-sp="${esc(p.id)}">✓ Mark as worked</button>`:""}${!expFailed(p)?`<button data-setout="fail" data-sp="${esc(p.id)}">✗ Mark as didn't work</button>`:""}<button class="danger" data-del="${esc(p.id)}">Delete</button></div></span></div>`};
   const lh=$("#home-lhead");lh.hidden=!(root&&L.length)&&!(n.p!=null&&n.p!=="__none"&&folders.length&&L.length&&!q);
-  lh.innerHTML=root?`<span>Recently used</span><span></span>`:`<span>${n.f?"In this folder":"Not in a folder"}</span><span>${L.length}</span>`;
-  $("#home-list").innerHTML=L.length?L.map(card).join(""):(tiles&&!q?"":`<div class="card"><p class="note" style="margin:0">${q?"No experiments match your search.":every.length?(base.length?"No experiments match this filter.":"Nothing here yet."):"No experiments yet. Tap <b>+ New experiment</b> and pick a method."}</p></div>`);
+  lh.innerHTML=root?`<span>Continue</span><span></span>`:`<span>${n.f?"In this folder":"Not in a folder"}</span><span>${L.length}</span>`;
+  const mini=p=>{const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const cat=catOfExp(p);
+    return `<button class="minirow pmain" data-p="${esc(p.id)}">${micon(cat,1)}<span class="mn">${esc(p.name||"Untitled")}</span>${steps.length?`<span class="mp"><span class="prog"><i style="width:${Math.round(100*dn/steps.length)}%"></i></span><span class="mc">${dn}/${steps.length}</span></span>`:""}</button>`};
+  $("#home-list").classList.toggle("minilist",root);
+  $("#home-list").innerHTML=root&&L.length?`<div class="card minicard">${L.map(mini).join("")}</div>`:L.length?L.map(card).join(""):(tiles&&!q?"":`<div class="card"><p class="note" style="margin:0">${q?"No experiments match your search.":every.length?(base.length?"No experiments match this filter.":"Nothing here yet."):"No experiments yet. Tap <b>+ New experiment</b> and pick a method."}</p></div>`);
   // actions
   let acts="";
   if(!q){if(n.p==null)acts="";
@@ -2371,7 +2400,7 @@ $("#home-folders").addEventListener("click",e=>{const b=e.target.closest("[data-
     if(e.clientY<70)window.scrollBy(0,-12);else if(e.clientY>window.innerHeight-90)window.scrollBy(0,12)};
   const up=()=>end(true),cc=()=>end(false);
   list.addEventListener("pointerdown",e=>{if(e.button>0)return;const b=e.target.closest(".pmain[data-p]");if(!b)return;
-    st={id:b.dataset.p,card:b.closest(".pcard"),x0:e.clientX,y0:e.clientY,x:e.clientX,y:e.clientY,on:false,mouse:e.pointerType==="mouse"};
+    st={id:b.dataset.p,card:b.closest(".pcard")||b,x0:e.clientX,y0:e.clientY,x:e.clientX,y:e.clientY,on:false,mouse:e.pointerType==="mouse"};
     if(!st.mouse)st.t=setTimeout(begin,350);
     window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);window.addEventListener("pointercancel",cc)});
   list.addEventListener("touchmove",e=>{if(st&&st.on)e.preventDefault()},{passive:false});
@@ -2430,7 +2459,8 @@ function expFromTemplate(src,builtinKey){
   const p={id:uid(),name:`${builtinKey==="custom"?"New experiment":t.name} · ${new Date().toLocaleDateString("en-GB")}`,method:t.method,elisaType:t.elisaType,assayMethod:t.assayMethod||"lowry",tools:Object.assign({},t.tools),steps:src?freshSteps(src.steps):b.steps,notes:t.notes||"",done:[],status:"active",created:Date.now(),templateId:src?src.id:null,templateName:src?src.name:(builtinKey==="custom"?"":TEMPLATES[builtinKey].name)};if(src&&Array.isArray(src.sols))p.sols=src.sols.filter(e=>Store.data.solutions[e.id]).map(e=>({id:e.id,prepared:null,done:[]}));
   const n=hNav();if(n.p&&n.p!=="__none"){p.group=n.p;if(n.f)p.folder=n.f}if(builtinKey)p.cat=catOfTpl(builtinKey,TEMPLATES[builtinKey]||{});else if(src)p.cat=catOfExp(src);return p;
 }
-$("#home-list").addEventListener("click",async e=>{const cp=e.target.closest("[data-copy]");
+$("#home-list").addEventListener("click",async e=>{const so=e.target.closest("[data-setout]");if(so){const p0=Store.data.protocols[so.dataset.sp];if(!p0)return;const c=clone(p0);setOutcome(c,so.dataset.setout);Store.save("protocols",c);closeMenus();renderHome();setStatus(so.dataset.setout==="ok"?"Marked as worked":so.dataset.setout==="fail"?"Marked as didn't work":"Back in progress");return}
+  const cp=e.target.closest("[data-copy]");
   if(cp){const src=Store.data.protocols[cp.dataset.copy];if(!src)return;const c=copyProtocol(src);openProtocol(clone(c));$("#prot-params").open=true;$("#p-name").focus();$("#p-name").select();setStatus("Copy created with the same steps; rename it");return}
   const d=e.target.closest("[data-del]");
   if(d){const p=Store.data.protocols[d.dataset.del];if(!p)return;
@@ -2510,7 +2540,7 @@ function tabsFade(scroll){const el=$("#pbar-tabs");if(!el)return;const upd=()=>{
   if(scroll){const a=el.querySelector('[aria-selected="true"]');if(a&&el.scrollWidth>el.clientWidth){const x=a.offsetLeft-(el.clientWidth-a.offsetWidth)/2;el.scrollLeft=Math.max(0,x)}}requestAnimationFrame(upd)}
 $("#pbar-tabs").addEventListener("scroll",()=>tabsFade(false),{passive:true});window.addEventListener("resize",()=>tabsFade(false));
 function renderPbar(){
-  if(!S.prot)return;$("#pbar-name").innerHTML=(isTpl()?`<span class="tag">Protocol</span>`:expDone(S.prot)?`<span class="tag done">Done</span>`:"")+micon(catOfExp(S.prot),1)+`<span style="overflow:hidden;text-overflow:ellipsis">${esc(S.prot.name||"Untitled")}</span>`;$("#p-back").textContent=isTpl()?"‹ Protocols":"‹ Experiments";
+  if(!S.prot)return;$("#pbar-name").innerHTML=(isTpl()?`<span class="tag">Protocol</span>`:outcomeTag(S.prot))+micon(catOfExp(S.prot),1)+`<span style="overflow:hidden;text-overflow:ellipsis">${esc(S.prot.name||"Untitled")}</span>`;$("#p-back").textContent=isTpl()?"‹ Protocols":"‹ Experiments";
   $("#pbar-tabs").innerHTML=protTabs().map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${S.tab===k}" title="${esc(l)}">${TICON[k]||""}<span>${esc(TSHORT[l]||l)}</span></button>`).join("");tabsFade(true);
 }
 $("#pbar-tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b)showTab(b.dataset.tab)});
@@ -3312,12 +3342,18 @@ function buildLive(){
   return rec;
 }
 function renderReport(){
-  const p=S.prot;if(!p||isTpl())return;const d=expDone(p);
-  $("#rep-status").textContent=d?`Done${p.completed?" · "+new Date(p.completed).toLocaleDateString("en-GB"):""}`:"In progress";$("#rep-status").classList.toggle("done",d);
+  const p=S.prot;if(!p||isTpl())return;const d=expDone(p);const fl=expFailed(p);
+  $("#rep-status").textContent=d?`${fl?"Didn't work":"Worked"}${p.completed?" · "+new Date(p.completed).toLocaleDateString("en-GB"):""}`:"In progress";$("#rep-status").classList.toggle("done",d&&!fl);$("#rep-status").classList.toggle("fail",fl);
+  const ov=d?(fl?"fail":"ok"):"active";$$("#rep-out button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.o===ov)));
+  const ui=usedIn(p.id),src=sourceOf(p);
+  $("#rep-links").innerHTML=(src?`<div><span class="note">Concentrations from</span> <button class="linkbtn" data-goexp="${esc(src.p.id)}">${esc(src.p.name)}</button>${src.a.name?` <span class="note">· ${esc(src.a.name)}</span>`:""}${expFailed(src.p)?` <span class="tag fail">✗ marked as didn't work</span>`:""}</div>`:"")+
+    (ui.length?`<div><span class="note">Used in</span> ${ui.map(q=>`<button class="linkbtn" data-goexp="${esc(q.id)}">${esc(q.name)}</button>`).join(", ")}</div>`:"");
   $("#rep-done").textContent=d?"Reopen":"Mark as done";$("#rep-done").classList.toggle("primary",!d);
   if(document.activeElement!==$("#rep-results"))$("#rep-results").value=p.results||"";
   $("#rep-body").innerHTML=recHTML(buildLive()).replace(/<div><div style="font-weight:700;font-size:18px">.*?<\/div><div class="note">.*?<\/div><\/div>/,"");
 }
+$("#rep-out").addEventListener("click",e=>{const b=e.target.closest("[data-o]");if(!b)return;const p=S.prot;setOutcome(p,b.dataset.o);queueSave("protocols");renderReport();renderPbar();setStatus(b.dataset.o==="ok"?"Marked as worked":b.dataset.o==="fail"?"Marked as didn't work. It stays in your records":"Back in progress")});
+$("#rep-links").addEventListener("click",e=>{const b=e.target.closest("[data-goexp]");if(!b)return;const q=Store.data.protocols[b.dataset.goexp];if(q)openProtocol(clone(q),"hist")});
 $("#rep-done").addEventListener("click",()=>{const p=S.prot;if(expDone(p)){p.status="active";delete p.completed}else{p.status="done";p.completed=Date.now()}queueSave("protocols");renderReport();renderPbar();setStatus(expDone(p)?"Experiment marked as done":"Experiment reopened")});
 $("#rep-results").addEventListener("input",e=>{S.prot.results=e.target.value;queueSave("protocols")});
 $("#rep-export").addEventListener("click",()=>{flushProt();exportRecord(buildLive(),$("#rep-fmt").value)});
@@ -3691,7 +3727,7 @@ function calActivities(){const A={};const add=(day,pid,txt,kind)=>{if(!day)retur
   const isD=s=>/^\d{4}-\d{2}-\d{2}$/.test(String(s||""));
   Object.values(Store.data.protocols).filter(p=>!p.draft).forEach(p=>{const pid=p.id;const stepById=new Map((p.steps||[]).map(x=>[x.id,x]));
     if(p.created)add(dkey(p.created),pid,"Started the experiment","start");
-    if(p.completed)add(dkey(p.completed),pid,"Marked as done","done");
+    if(p.completed)add(dkey(p.completed),pid,expFailed(p)?"Marked as didn't work":"Marked as worked","done");
     const byDay={};(p.stepLog||[]).forEach(([id,ms])=>{const st=stepById.get(id);if(!st)return;(byDay[dkey(ms)]=byDay[dkey(ms)]||[]).push(st.t||"step")});
     Object.entries(byDay).forEach(([d,L])=>add(d,pid,`Steps done: ${[...new Set(L)].join(", ")}`,"steps"));
     (Array.isArray(p.sols)?p.sols:[]).forEach(e=>{if(isD(e.prepared)){const r=Store.data.solutions[e.id];add(e.prepared,pid,`Prepared ${r?r.name:"a solution"}`,"sol")}});
@@ -4085,7 +4121,7 @@ $("#q-copy").addEventListener("click",async()=>{const R=qCalc();const L=[["Sampl
   const ta=$("#q-copyarea");try{await navigator.clipboard.writeText(L);setStatus("Results copied");ta.hidden=true}catch(er){ta.value=L;ta.hidden=false;ta.style.minHeight="160px";ta.focus();ta.select()}});
 
 /* ================= WB SAMPLES (link to protein concentration) ================= */
-function srcAssays(){const cur=S.prot.id;return Object.values(Store.data.assays).filter(a=>{const p=Store.data.protocols[a.protoId];return p&&a.method!=="elisa"&&p.method!=="elisa"&&(p.method==="protein"||a.protoId===cur||(p.tools||{}).protein&&p.method!=="wb")}).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))}
+function srcAssays(){const cur=S.prot.id;return Object.values(Store.data.assays).filter(a=>{const p=Store.data.protocols[a.protoId];return p&&a.method!=="elisa"&&p.method!=="elisa"&&(p.method==="protein"||a.protoId===cur||(p.tools||{}).protein&&p.method!=="wb")}).sort((a,b)=>{const fa=expFailed(Store.data.protocols[a.protoId]||{}),fb=expFailed(Store.data.protocols[b.protoId]||{});return (fa-fb)||(b.updatedAt||0)-(a.updatedAt||0)})}
 function smState(){const p=S.prot;if(!p.smp||typeof p.smp!=="object")p.smp={src:"",picks:{},manual:[]};p.smp.picks=p.smp.picks||{};p.smp.manual=p.smp.manual||[];
   if(!p.smp.src){const L=srcAssays();if(L.length)p.smp.src=L[0].id}return p.smp}
 function smRows(){const st=smState();const rows=[];const A0=Store.data.assays[st.src];
@@ -4096,7 +4132,7 @@ function onGelNames(){const n=new Set();(S.exp?gelsOf(S.exp.id):[]).map(g=>g.id=
 function visRows(){const st=smState();const rows=smRows().filter(r=>!(r.src&&(st.picks[r.k]||{}).removed));if(!st.hideSent)return rows;const on=onGelNames();return rows.filter(r=>!(r.name&&on.has(r.name)))}
 function renderSamples(){
   if(!S.prot||(S.prot.method!=="wb"&&!(S.prot.smp&&S.prot.smp.src)))return;const st=smState();const gl=hasGelTool();const L=srcAssays();$("#sm-hide").checked=!!st.hideSent;
-  $("#sm-src").innerHTML=(L.length?"":`<option value="">No protein measurements yet</option>`)+L.map(a=>{const p=Store.data.protocols[a.protoId];return `<option value="${esc(a.id)}">${esc(p?p.name:"?")} · ${esc(a.name)}${a.date?" · "+esc(a.date):""}</option>`}).join("")+`<option value="__none">None, enter by hand</option>`;
+  $("#sm-src").innerHTML=(L.length?"":`<option value="">No protein measurements yet</option>`)+L.map(a=>{const p=Store.data.protocols[a.protoId];return `<option value="${esc(a.id)}">${p&&expFailed(p)?"✗ didn't work · ":""}${esc(p?p.name:"?")} · ${esc(a.name)}${a.date?" · "+esc(a.date):""}</option>`}).join("")+`<option value="__none">None, enter by hand</option>`;
   $("#sm-src").value=st.src||"__none";
   const all=smRows(),rows=visRows();const rmd=all.filter(r=>r.src&&(st.picks[r.k]||{}).removed).length,hid=all.length-rows.length-rmd;$("#sm-hidden").hidden=!(hid||rmd);$("#sm-hidden").innerHTML=(hid?`${hid} sample${hid>1?"s are":" is"} already on a gel and hidden. <button class="btn sm ghost" id="sm-showall">Show them</button> `:"")+(rmd?`${rmd} sample${rmd>1?"s":""} removed. <button class="btn sm ghost" id="sm-restore">Restore</button>`:"");
   $("#sm-send").hidden=!gl;$("#sm-copy").hidden=gl;$("#sm-hide").closest("label").hidden=!gl;
