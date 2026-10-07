@@ -311,6 +311,48 @@ table.xl tr.dup input.wl,table.xl tr.dup select.gs{border-color:var(--bad)}
 .crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:14px;color:var(--muted)}
 .crumbs button{background:none;border:0;padding:4px 2px;font:600 14px var(--sans);color:var(--accent);cursor:pointer}
 .crumbs b{color:var(--ink);font-size:17px}
+/* method colours + icons */
+.mic{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;flex:none;color:var(--mc);background:color-mix(in srgb,var(--mc) 15%,transparent)}
+.mic svg{width:18px;height:18px}
+.mic.sm{width:22px;height:22px;border-radius:7px}.mic.sm svg{width:14px;height:14px}
+.tag.mt{background:color-mix(in srgb,var(--mc) 14%,transparent);color:var(--mc)}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .tag.mt,:root:not([data-theme=light]) .mic{color:color-mix(in srgb,var(--mc) 70%,#fff)}}
+:root[data-theme=dark] .tag.mt,:root[data-theme=dark] .mic{color:color-mix(in srgb,var(--mc) 70%,#fff)}
+.pcard .pmain .th{display:flex;gap:10px;align-items:flex-start}
+.pcard .pmain .th .t{flex:1;min-width:0}
+.pbar .pname{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.tph{display:flex;gap:10px;align-items:center}
+/* overflow menus */
+.mwrap{position:relative;display:inline-flex}
+.menu{position:fixed;z-index:60;min-width:190px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);padding:5px;display:flex;flex-direction:column;gap:2px}
+.menu[hidden]{display:none}
+.menu button{background:none;border:0;text-align:left;padding:10px 12px;border-radius:8px;font:600 14px var(--sans);color:var(--ink);cursor:pointer;width:100%}
+.menu button:hover{background:var(--surface-2)}
+.menu button.danger,.menu .danger{color:var(--bad)}
+.menu button.armed{background:var(--bad)!important;color:#fff!important}
+.pcard .pm{background:none;border:0;border-left:1px solid var(--line);color:var(--muted);padding:0 16px;cursor:pointer;font:700 20px var(--sans);line-height:1}
+.pcard .pm:hover{color:var(--accent)}
+.pcard .mwrap{display:flex}
+.btn.more{min-width:38px;font-size:18px;line-height:1;padding-top:4px;padding-bottom:8px}
+/* experiment tabs */
+.ptabs{scroll-behavior:smooth;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 var(--fl,0px),#000 calc(100% - var(--fr,0px)),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 var(--fl,0px),#000 calc(100% - var(--fr,0px)),transparent 100%)}
+.ptabs::-webkit-scrollbar{display:none}
+.ptabs button{display:flex;align-items:center;justify-content:center;gap:6px}
+.ptabs button svg{width:16px;height:16px;flex:none}
+@media (max-width:620px){.ptabs{gap:2px}.ptabs button{flex:1 1 0;flex-direction:column;gap:3px;padding:6px 2px 5px;font-size:10.5px;min-width:46px}.ptabs button svg{width:18px;height:18px}}
+/* gel look */
+.gel{background:linear-gradient(180deg,color-mix(in srgb,var(--gel) 82%,#fff) 0,var(--gel) 22%,color-mix(in srgb,var(--gel) 92%,var(--gel-edge)) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -8px 16px -10px rgba(0,0,0,.18)}
+.well .slot{box-shadow:inset 0 2px 3px rgba(0,0,0,.18)}
+.well.sample .slot{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 65%,#fff),var(--accent))}
+.well .lane .b{background:linear-gradient(90deg,transparent 0,var(--bc,var(--band)) 14%,var(--bc,var(--band)) 86%,transparent 100%)!important;filter:blur(.35px);height:4px}
+.well.ladder .lane .b{height:3px}
+.well.next .slot{animation:wpulse 1.4s ease-in-out infinite}
+@keyframes wpulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 0%,transparent)}}
+.well.justloaded .slot{animation:wpop .45s cubic-bezier(.3,1.6,.5,1)}
+.well.justloaded .slot::after{animation:wtick .45s ease-out}
+@keyframes wpop{0%{transform:scale(.6)}100%{transform:scale(1)}}
+@keyframes wtick{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.35)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.well.next .slot,.well.justloaded .slot,.well.justloaded .slot::after{animation:none}}
 .fcolors{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .fcolors .lb{font-size:13px;color:var(--muted);width:100%}
 .fcolors button.sw{width:34px;height:34px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
@@ -337,7 +379,7 @@ body.dragging-exp{cursor:grabbing;user-select:none}
 .tcat{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-top:8px}
 .tcat>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-weight:700}
 .tcat>summary::-webkit-details-marker{display:none}
-.tcat>summary span{font-weight:500;font-size:13px;color:var(--muted)}
+.tcat>summary>span:last-child{font-weight:500;font-size:13px;color:var(--muted)}
 .tcat[open]>summary{border-bottom:1px solid var(--line)}
 .tcat>.tpls{padding:10px}
 #tpl-list>.tpls{margin-top:8px}
@@ -1435,6 +1477,7 @@ function navGo(e){navLock++;try{
   else showTab(e.t);return true}finally{navLock--}}
 function vis(sel){const el=$(sel);return !!(el&&!el.hidden)}
 function appBack(){
+  if($(".menu:not([hidden])")){closeMenus();return true}
   if(vis("#img-viewer")){$("#img-vclose").click();return true}
   if(vis("#set-sheet")){closeSettings();return true}
   if(vis("#fin-sheet")){closeFinish();return true}
@@ -1456,6 +1499,14 @@ let navArm=null;
     if(done){navArm();return}
     setStatus("Press back again to exit");clearTimeout(exitT);exitT=setTimeout(navArm,2500)});
 })();
+/* ---------- overflow menus ---------- */
+function closeMenus(){$$(".menu:not([hidden])").forEach(m=>{m.hidden=true;m.querySelectorAll(".armed").forEach(b=>{b.classList.remove("armed")})})}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-menu]");
+  if(t){e.preventDefault();e.stopPropagation();const m=t.parentElement.querySelector(".menu");const was=!m.hidden;closeMenus();if(was)return;m.hidden=false;
+    const r=t.getBoundingClientRect(),mw=m.offsetWidth,mh=m.offsetHeight;let left=Math.min(window.innerWidth-mw-8,Math.max(8,r.right-mw));let top=r.bottom+4;if(top+mh>window.innerHeight-8)top=Math.max(8,r.top-mh-4);m.style.left=left+"px";m.style.top=top+"px";return}
+  if(!e.target.closest(".menu"))closeMenus()},true);
+window.addEventListener("scroll",()=>{if($(".menu:not([hidden])"))closeMenus()},{passive:true,capture:true});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMenus()});
 /* ---------- tabs ---------- */
 function showTab(t){
   const inside=["prot","assay","smp","qset","qres","gel","img","quant","psol","hist"].includes(t);if(inside&&!S.prot)t="home";if(t==="lib"&&isTpl()===false){}
@@ -1508,7 +1559,7 @@ function fillGelForm(){
   $("#g-ladder").value=g.ladderUl;$("#g-note").value=g.note||"";$("#gel-del").classList.remove("armed");$("#gel-del").textContent="Delete gel";$("#gel-del2").classList.remove("armed");$("#gel-del2").textContent="Delete gel";$("#gel-clear").classList.remove("armed");$("#gel-clear").textContent="Clear samples";$("#exp-del").classList.remove("armed");$("#exp-del").textContent="Delete experiment";
 }
 function ladderBands(){const pos=[8,17,27,38,50,64,80,96,110];const cols=["var(--l4)","var(--l1)","var(--l1)","var(--l2)","var(--l1)","var(--l3)","var(--l1)","var(--l1)","var(--l1)"];
-  return pos.map((p,i)=>`<span class="b" style="top:${(p/120*100).toFixed(1)}%;background:${cols[i]}"></span>`).join("")}
+  return pos.map((p,i)=>`<span class="b" style="top:${(p/120*100).toFixed(1)}%;--bc:${cols[i]}"></span>`).join("")}
 function renderGel(){
   const g=S.gel;if(!g)return;resizeLanes(g);
   $("#gel-title").textContent=g.name||"Untitled";
@@ -1526,11 +1577,11 @@ function renderGel(){
   const vis=$("#gel-vis");vis.style.setProperty("--n",g.wells);
   let nLb=0,nS=0,nW=0,nB=0,lbTot=0,ugMin=Infinity;
   vis.innerHTML=g.lanes.map((l,i)=>{
-    const c=laneCalc(g,l);let cls=l.type,ul="";if(l.loaded&&l.type!=="empty")cls+=" loaded";if(S.loadMode&&i===nextIdx)cls+=" next";
+    const c=laneCalc(g,l);let cls=l.type,ul="";if(l.loaded&&l.type!=="empty")cls+=" loaded"+(S.justLoaded===i?" justloaded":"");if(S.loadMode&&i===nextIdx)cls+=" next";
     if(c){nS++;if(Number.isFinite(c.lb)&&c.lb>0){lbTot+=c.lb;nLb++}if(c.bad){cls+=" bad";nB++}else if(c.warn){cls+=" warnl";nW++}ul=Number.isFinite(c.s)?fmt(c.premix?c.load:c.s):"?"}
     if(l.type==="ladder")ul=fmt(num(g.ladderUl));
     if(i===S.lane&&!$("#sheet").hidden)cls+=" sel";
-    const lane=l.type==="ladder"?ladderBands():l.type==="sample"?`<span class="b" style="top:48%;background:var(--band);opacity:.8"></span><span class="b" style="top:63%;background:var(--band);opacity:.35"></span>`:"";
+    const lane=l.type==="ladder"?ladderBands():l.type==="sample"?`<span class="b" style="top:48%;opacity:.85;height:5px"></span><span class="b" style="top:63%;opacity:.35"></span>`:"";
     return `<button class="well ${cls}" data-i="${i}" aria-label="Well ${i+1}: ${esc(l.name||({empty:"empty",ladder:"ladder",sample:"sample"})[l.type])}">
       <span class="no">${i+1}</span><span class="ul">${ul}</span><span class="nm">${esc(l.type==="empty"?"":(l.name||(l.type==="ladder"?"Ladder":"?")))}</span><span class="slot"></span><span class="lane">${lane}</span></button>`}).join("");
   const V=num(g.finalUl),mx=num(g.wellMax);const chips=[`<span class="chip">Samples <b>${nS}</b></span>`,`<span class="chip">Target <b>${fmt(num(g.targetUg),0)} µg</b>${(g.mode||"premix")==="premix"?"":` in <b>${fmt(V,0)} µL</b>`}</span>`];
@@ -1578,7 +1629,7 @@ function gelText(){
     else{const c=laneCalc(g,l);L.push(c.premix?`${n}  ${l.name||"?"}: load ${fmt(c.load)} µL of mix (${fmt(c.s)} µL lysate + ${fmt(c.lb)} µL Laemmli)${c.warn?"  [!] "+c.warn:""}`:`${n}  ${l.name||"?"}: sample ${fmt(c.s)} µL + buffer ${fmt(c.lb)} µL + water ${fmt(c.w)} µL${c.warn?"  [!] "+c.warn:""}`)}});
   return L.join("\n");
 }
-function wellTap(i){if(S.loadMode){const l=S.gel.lanes[i];if(l.type==="empty")return;l.loaded=!l.loaded;renderGel();queueSave("gels");try{navigator.vibrate&&navigator.vibrate(15)}catch(e){}}else openLane(i)}
+function wellTap(i){if(S.loadMode){const l=S.gel.lanes[i];if(l.type==="empty")return;l.loaded=!l.loaded;S.justLoaded=l.loaded?i:-1;renderGel();S.justLoaded=-1;queueSave("gels");try{navigator.vibrate&&navigator.vibrate(15)}catch(e){}}else openLane(i)}
 let suppressClick=false;
 $("#gel-vis").addEventListener("click",e=>{if(suppressClick){suppressClick=false;return}const b=e.target.closest(".well");if(b)wellTap(+b.dataset.i)});
 $("#gel-vis").addEventListener("contextmenu",e=>{if(e.target.closest(".well"))e.preventDefault()});
@@ -1797,6 +1848,15 @@ function migrateProt(p){ // old parameter-based western blot protocol → editab
 }
 function protList(){return Object.values(Store.data.protocols).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))}
 const ELISA_T={kit:"sandwich kit",sandwich:"sandwich",direct:"direct",indirect:"indirect",competitive:"competitive"};
+const MICON={
+  wb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M7 8h3M14 8h3M7 12.5h3M14 14h3M7 17h3"/></svg>',
+  protein:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L5.2 18.2A1.8 1.8 0 0 0 6.8 21h10.4a1.8 1.8 0 0 0 1.6-2.8L14 9.5V3"/><path d="M7.5 15h9"/></svg>',
+  elisa:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><circle cx="7" cy="9.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="9.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="17" cy="9.5" r="1.4"/><circle cx="7" cy="14.5" r="1.4"/><circle cx="12" cy="14.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="17" cy="14.5" r="1.4"/></svg>',
+  qpcr:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M6 17c4 0 5-.5 7-5s3-6 7-6"/></svg>',
+  prep:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5h8M9.5 2.5V17a2.5 2.5 0 0 0 5 0V2.5"/><path d="M9.5 11h5"/></svg>',
+  other:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>'};
+const MCOL={wb:"#4F5BD5",protein:"#0E8A9A",elisa:"#C2570C",qpcr:"#2F8A4E",prep:"#A86A12",other:"#6B7489"};
+function micon(cat,sm){cat=MICON[cat]?cat:"other";return `<span class="mic${sm?" sm":""}" style="--mc:${MCOL[cat]}" aria-hidden="true">${MICON[cat]}</span>`}
 function methodLabel(p){return p.method==="qpcr"?"qPCR":p.method==="elisa"?"ELISA"+(p.elisaType?" · "+ELISA_T[p.elisaType]:""):p.method==="wb"?"Western blot":p.method==="protein"?({lowry:"Protein concentration · Lowry",bca:"Protein concentration · BCA",bradford:"Protein concentration · Bradford",direct:"Protein concentration · direct reading"})[p.assayMethod]||"Protein concentration":"Custom"}
 /* ---- Experiments list (home) ---- */
 const isTpl=()=>S.protKind==="templates";
@@ -1861,15 +1921,15 @@ function renderHome(){
   $("#home-filter").hidden=root;$("#home-sort").hidden=root;
   const card=p=>{const nG=Object.values(Store.data.experiments).filter(x=>x.protoId===p.id).reduce((n,x)=>n+gelsOf(x.id).filter(g=>!g.draft).length,0),nA=Object.values(Store.data.assays).filter(x=>x.protoId===p.id).length;
     const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const where=[pj(p),showPath(pf(p))].filter(Boolean).join(" › ");
-    return `<div class="pcard"><button class="pmain" data-p="${esc(p.id)}"><span class="t">${esc(p.name||"Untitled")}</span><span class="m"><span class="tag ${expDone(p)?"done":"act"}">${expDone(p)?"Done":"In progress"}</span><span class="tag">${esc(methodLabel(p))}</span>${(q||root)&&where?`<span class="tag" style="background:var(--surface-2);color:var(--ink)">${esc(where)}</span>`:""}Started ${p.created?new Date(p.created).toLocaleDateString("en-GB"):"—"}${expDone(p)&&p.completed?` · finished ${new Date(p.completed).toLocaleDateString("en-GB")}`:""}</span><span class="m">${steps.length?`${dn}/${steps.length} steps`:"no steps"}${nA?` · ${nA} protein assay${nA>1?"s":""}`:""}${nG?` · ${nG} gel${nG>1?"s":""}`:""}</span></button><button class="pcopy" data-copy="${esc(p.id)}">Copy</button><button class="pdel" data-del="${esc(p.id)}">Delete</button></div>`};
+    const cat=catOfExp(p);return `<div class="pcard"><button class="pmain" data-p="${esc(p.id)}"><span class="th">${micon(cat)}<span class="t">${esc(p.name||"Untitled")}</span></span><span class="m"><span class="tag ${expDone(p)?"done":"act"}">${expDone(p)?"Done":"In progress"}</span><span class="tag mt" style="--mc:${MCOL[cat]||MCOL.other}">${esc(methodLabel(p))}</span>${(q||root)&&where?`<span class="tag" style="background:var(--surface-2);color:var(--ink)">${esc(where)}</span>`:""}Started ${p.created?new Date(p.created).toLocaleDateString("en-GB"):"—"}${expDone(p)&&p.completed?` · finished ${new Date(p.completed).toLocaleDateString("en-GB")}`:""}</span><span class="m">${steps.length?`${dn}/${steps.length} steps`:"no steps"}${nA?` · ${nA} protein assay${nA>1?"s":""}`:""}${nG?` · ${nG} gel${nG>1?"s":""}`:""}</span></button><span class="mwrap"><button class="pm" data-menu aria-label="More actions">⋯</button><div class="menu" hidden><button data-copy="${esc(p.id)}">Copy experiment</button><button class="danger" data-del="${esc(p.id)}">Delete</button></div></span></div>`};
   const lh=$("#home-lhead");lh.hidden=!(root&&L.length)&&!(n.p!=null&&n.p!=="__none"&&folders.length&&L.length&&!q);
   lh.innerHTML=root?`<span>Recently used</span><span></span>`:`<span>${n.f?"In this folder":"Not in a folder"}</span><span>${L.length}</span>`;
   $("#home-list").innerHTML=L.length?L.map(card).join(""):(tiles&&!q?"":`<div class="card"><p class="note" style="margin:0">${q?"No experiments match your search.":every.length?(base.length?"No experiments match this filter.":"Nothing here yet."):"No experiments yet. Tap <b>+ New experiment</b> and pick a method."}</p></div>`);
   // actions
   let acts="";
   if(!q){if(n.p==null)acts=`<button class="btn sm" data-act="newproj">+ Project</button>`;
-    else if(n.f==null&&n.p!=="__none")acts=`<button class="btn sm" data-act="newfolder">+ Folder</button><button class="btn sm ghost" data-act="add">Add experiments</button><button class="btn sm ghost" data-act="color">Color</button><button class="btn sm ghost" data-act="renproj">Rename</button><button class="btn sm ghost danger" data-act="rmproj">Remove project</button>`;
-    else if(n.f!=null)acts=`<button class="btn sm" data-act="newfolder">+ Folder</button><button class="btn sm ghost" data-act="add">Add experiments</button><button class="btn sm ghost" data-act="color">Color</button><button class="btn sm ghost" data-act="renfolder">Rename</button><button class="btn sm ghost danger" data-act="rmfolder">Remove folder</button>`}
+    else if(n.f==null&&n.p!=="__none")acts=`<button class="btn sm" data-act="newfolder">+ Folder</button><button class="btn sm ghost" data-act="add">Add experiments</button><span class="mwrap"><button class="btn sm ghost more" data-menu aria-label="More">⋯</button><div class="menu" hidden><button data-act="color">Folder color</button><button data-act="renproj">Rename project</button><button class="danger" data-act="rmproj">Remove project</button></div></span>`;
+    else if(n.f!=null)acts=`<button class="btn sm" data-act="newfolder">+ Folder</button><button class="btn sm ghost" data-act="add">Add experiments</button><span class="mwrap"><button class="btn sm ghost more" data-menu aria-label="More">⋯</button><div class="menu" hidden><button data-act="color">Folder color</button><button data-act="renfolder">Rename folder</button><button class="danger" data-act="rmfolder">Remove folder</button></div></span>`}
   $("#home-acts").innerHTML=acts;
   const hc=$("#home-color");if(!(S.colorOpen&&!q&&n.p&&n.p!=="__none"&&S.colorOpen===n.p+"\u0001"+(n.f||""))){hc.hidden=true;S.colorOpen=null}else{hc.hidden=false;
     const own=(fdocs().find(d=>d.project===n.p&&(d.path||"")===(n.f||""))||{}).color,eff=folderColor(n.p,n.f);
@@ -1879,15 +1939,15 @@ function renderHome(){
 function renderTplList(){
   const n=hNav();$("#tpl-where").textContent=n.p&&n.p!=="__none"?`It will go into ${n.p}${n.f?" › "+showPath(n.f):""}.`:"";
   const q=($("#tpl-q").value||"").trim().toLowerCase();const mine=protList();
-  const tb=([k,T])=>`<button class="tpl" data-tpl="${k}"><b>${esc(k==="custom"?"Blank experiment":T.name)}</b><span>${esc(T.desc)}</span></button>`;
-  const eb=t=>`<button class="tpl" data-ce="${esc(t.id)}"><b>${esc(t.name)}</b><span>${esc(methodLabel(t))} · ${(t.steps||[]).length} steps${t.group?" · "+esc([pj(t),pf(t)].filter(Boolean).join(" › ")):""}</span></button>`;
+  const tb=([k,T])=>`<button class="tpl" data-tpl="${k}"><span class="tph">${micon(k==="custom"?"other":catOfTpl(k,T),1)}<b>${esc(k==="custom"?"Blank experiment":T.name)}</b></span><span>${esc(T.desc)}</span></button>`;
+  const eb=t=>`<button class="tpl" data-ce="${esc(t.id)}"><span class="tph">${micon(catOfExp(t),1)}<b>${esc(t.name)}</b></span><span>${esc(methodLabel(t))} · ${(t.steps||[]).length} steps${t.group?" · "+esc([pj(t),pf(t)].filter(Boolean).join(" › ")):""}</span></button>`;
   const ents=Object.entries(TEMPLATES).filter(([k])=>k!=="custom");
   if(q){const m=ents.filter(([k,T])=>(T.name+" "+T.desc+" "+(T.label||"")).toLowerCase().includes(q)),e=mine.filter(t=>[t.name,t.group,t.folder,methodLabel(t)].join(" ").toLowerCase().includes(q));
     $("#tpl-list").innerHTML=(m.length?`<div class="tpls">${m.map(tb).join("")}</div>`:"")+(e.length?`<div class="tplh" style="margin-top:10px">Copy the steps of an earlier experiment</div><div class="tpls">${e.map(eb).join("")}</div>`:"")||`<p class="note">Nothing found.</p>`;return}
   const open=S.tplOpen||"";
   let h=`<div class="tpls">${tb(["custom",TEMPLATES.custom])}</div>`;
   CATS.forEach(([c,label])=>{const items=ents.filter(([k,T])=>catOfTpl(k,T)===c);if(!items.length)return;
-    h+=`<details class="tcat" data-cat="${c}"${open===c?" open":""}><summary>${label}<span>${items.length}</span></summary><div class="tpls">${items.map(tb).join("")}</div></details>`});
+    h+=`<details class="tcat" data-cat="${c}"${open===c?" open":""}><summary><span class="tph">${micon(c,1)}${label}</span><span>${items.length}</span></summary><div class="tpls">${items.map(tb).join("")}</div></details>`});
   if(mine.length){let inner="";CATS.forEach(([c,label])=>{const it=mine.filter(t=>catOfExp(t)===c);if(it.length)inner+=`<div class="tplh">${label}</div>`+it.map(eb).join("")});
     h+=`<details class="tcat" data-cat="__mine"${open==="__mine"?" open":""}><summary>Copy an earlier experiment<span>${mine.length}</span></summary><div class="tpls">${inner}</div></details>`}
   $("#tpl-list").innerHTML=h}
@@ -1998,7 +2058,7 @@ $("#tpl-list").addEventListener("click",e=>{const b=e.target.closest("[data-tpl]
 function renderLib(){
   const L=tplList();
   $("#lib-list").innerHTML=L.length?L.map(t=>{const n=Object.values(Store.data.protocols).filter(p=>p.templateId===t.id).length;
-    return `<div class="pcard"><button class="pmain" data-t="${esc(t.id)}"><span class="t">${esc(t.name||"Untitled")}</span><span class="m"><span class="tag">${esc(methodLabel(t))}</span>${(t.steps||[]).length} steps · created ${t.created?new Date(t.created).toLocaleDateString("en-GB"):"—"}${n?` · used in ${n} experiment${n>1?"s":""}`:""}</span></button><button class="pcopy" data-start="${esc(t.id)}">Start</button><button class="pcopy" data-tcopy="${esc(t.id)}">Copy</button><button class="pdel" data-tdel="${esc(t.id)}">Delete</button></div>`}).join(""):
+    return `<div class="pcard"><button class="pmain" data-t="${esc(t.id)}"><span class="t">${esc(t.name||"Untitled")}</span><span class="m"><span class="tag mt" style="--mc:${MCOL[catOfExp(t)]||MCOL.other}">${esc(methodLabel(t))}</span>${(t.steps||[]).length} steps · created ${t.created?new Date(t.created).toLocaleDateString("en-GB"):"—"}${n?` · used in ${n} experiment${n>1?"s":""}`:""}</span></button><button class="pcopy" data-start="${esc(t.id)}">Start</button><span class="mwrap"><button class="pm" data-menu aria-label="More actions">⋯</button><div class="menu" hidden><button data-tcopy="${esc(t.id)}">Copy protocol</button><button class="danger" data-tdel="${esc(t.id)}">Delete</button></div></span></div>`}).join(""):
     `<div class="card"><p class="note" style="margin:0">No saved protocols yet. Tap <b>+ New protocol</b> to start from a built-in one, or use <b>Save as protocol</b> inside an experiment.</p></div>`;
   $("#lib-tpl-list").innerHTML=Object.entries(TEMPLATES).map(([k,T])=>`<button class="tpl" data-tpl="${k}"><b>${esc(k==="custom"?"Blank protocol":T.name)}</b><span>${esc(T.desc)}</span></button>`).join("");
 }
@@ -2019,9 +2079,17 @@ $("#prot-savetpl").addEventListener("click",()=>{flushProt();const p=S.prot;cons
 
 function hasQuant(p){const t=(p&&p.tools)||{};return t.quant===undefined?p&&p.method==="wb":!!t.quant}
 function protTabs(){if(isTpl())return [["prot","Steps"]];const t=S.prot.tools||{};const linkedSmp=S.prot.method!=="wb"&&S.prot.smp&&S.prot.smp.src;return [["prot","Steps"],linkedSmp&&["smp","Samples"],t.protein&&(S.prot.method==="wb"?["smp","Samples"]:["assay",S.prot.method==="elisa"?"Assay":"Protein concentration"]),t.qpcr&&["qset","Setup"],t.qpcr&&["qres","Results"],t.gel&&["gel","Gel"],t.images&&["img","Images"],hasQuant(S.prot)&&["quant","Quant"],t.solutions&&["psol","Solutions"],["hist","Report"]].filter(Boolean)}
+const TI=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const TICON={prot:TI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/>'),smp:TI('<path d="M9 2.5h6M10 2.5V18a2 2 0 0 0 4 0V2.5"/><path d="M10 10h4"/>'),assay:MICON.protein.replace('stroke-width="2"','stroke-width="2"'),
+  qset:TI('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M8 5v14"/>'),qres:TI('<path d="M3 3v18h18"/><path d="M6 17c4 0 5-.5 7-5s3-6 7-6"/>'),gel:TI('<rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M7 8h3M14 8h3M7 12.5h3M14 14h3M7 17h3"/>'),
+  img:TI('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>'),quant:TI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),psol:TI('<path d="M9 3h6M10 3v6.5L5.2 18.2A1.8 1.8 0 0 0 6.8 21h10.4a1.8 1.8 0 0 0 1.6-2.8L14 9.5V3"/>'),hist:TI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')};
+const TSHORT={"Protein concentration":"Protein"};
+function tabsFade(scroll){const el=$("#pbar-tabs");if(!el)return;const upd=()=>{const l=el.scrollLeft>2,r=el.scrollLeft+el.clientWidth<el.scrollWidth-2;el.style.setProperty("--fl",l?"28px":"0px");el.style.setProperty("--fr",r?"28px":"0px")};
+  if(scroll){const a=el.querySelector('[aria-selected="true"]');if(a&&el.scrollWidth>el.clientWidth){const x=a.offsetLeft-(el.clientWidth-a.offsetWidth)/2;el.scrollLeft=Math.max(0,x)}}requestAnimationFrame(upd)}
+$("#pbar-tabs").addEventListener("scroll",()=>tabsFade(false),{passive:true});window.addEventListener("resize",()=>tabsFade(false));
 function renderPbar(){
-  if(!S.prot)return;$("#pbar-name").innerHTML=(isTpl()?`<span class="tag">Protocol</span>`:expDone(S.prot)?`<span class="tag done">Done</span>`:"")+esc(S.prot.name||"Untitled");$("#p-back").textContent=isTpl()?"‹ Protocols":"‹ Experiments";
-  $("#pbar-tabs").innerHTML=protTabs().map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}</button>`).join("");
+  if(!S.prot)return;$("#pbar-name").innerHTML=(isTpl()?`<span class="tag">Protocol</span>`:expDone(S.prot)?`<span class="tag done">Done</span>`:"")+micon(catOfExp(S.prot),1)+`<span style="overflow:hidden;text-overflow:ellipsis">${esc(S.prot.name||"Untitled")}</span>`;$("#p-back").textContent=isTpl()?"‹ Protocols":"‹ Experiments";
+  $("#pbar-tabs").innerHTML=protTabs().map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${S.tab===k}" title="${esc(l)}">${TICON[k]||""}<span>${esc(TSHORT[l]||l)}</span></button>`).join("");tabsFade(true);
 }
 $("#pbar-tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b)showTab(b.dataset.tab)});
 $("#p-back").addEventListener("click",()=>{flushProt();const t=isTpl();if(t){S.protKind="protocols";const q=lsGet("bb.proto",null);if(q&&Store.data.protocols[q])S.prot=clone(Store.data.protocols[q]);else S.prot=draftProt();fillProtForm()}showTab(t?"lib":"home")});
