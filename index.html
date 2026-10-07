@@ -675,6 +675,40 @@ nav.tabs button{position:relative}
 :root[data-theme=dark] .ivrow .ic{filter:brightness(.75) saturate(1.2)}
 @media (max-width:999px){nav.tabs{grid-template-columns:repeat(6,1fr)}nav.tabs button{font-size:10.5px;padding-left:2px;padding-right:2px}}
 @media (min-width:1000px){.invlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:10px}.invlist .ivh{grid-column:1/-1}}
+/* bench sheet */
+#print-area{display:none}
+@media print{
+  @page{size:A4;margin:12mm}
+  html,body{background:#fff!important;padding:0!important}
+  body>*:not(#print-area){display:none!important}
+  #print-area{display:block!important}
+}
+#print-area,.bsheet{color:#000;font:10.5pt/1.35 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.bsheet h1{font-size:15pt;margin:0 0 2px}
+.bsheet .bs-sub{font-size:9.5pt;color:#444;margin-bottom:8px}
+.bsheet .bs-fill{display:flex;gap:18px;font-size:9.5pt;margin:4px 0 10px}.bsheet .bs-fill span{flex:1;border-bottom:1px solid #888;padding-bottom:2px}
+.bsheet h2,.bsheet h3{break-after:avoid}
+.bsheet h2{font-size:11.5pt;margin:12px 0 5px;padding-bottom:2px;border-bottom:1.5px solid #000;text-transform:none;letter-spacing:0;color:#000}
+.bsheet h3{font-size:10pt;margin:8px 0 3px;color:#000}
+.bsheet .bs-ph{font-weight:700;font-size:9pt;text-transform:uppercase;letter-spacing:.05em;margin:7px 0 2px;color:#333}
+.bsheet .bs-stp{display:flex;gap:8px;align-items:flex-start;padding:3px 0;break-inside:avoid;border-bottom:1px dotted #bbb}
+.bsheet .bs-bx{flex:none;width:11px;height:11px;border:1.3px solid #000;border-radius:2px;margin-top:2px;display:inline-block}
+.bsheet .bs-bx.ok{background:#000}
+.bsheet .bs-st{flex:1}.bsheet .bs-st b{font-weight:600}.bsheet .bs-st i{font-style:normal;color:#444;font-size:9.5pt}
+.bsheet .bs-tm{flex:none;font:600 9.5pt ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+.bsheet table{width:100%;border-collapse:collapse;font-size:9.5pt;break-inside:auto;table-layout:fixed}
+.bsheet td,.bsheet th{font-family:inherit;overflow-wrap:anywhere}
+.bsheet td:not(.bs-n),.bsheet th{white-space:normal!important}
+.bsheet th,.bsheet td{border:1px solid #888;padding:3px 5px;text-align:left;vertical-align:top}
+.bsheet th{background:#eee;font-weight:700}
+.bsheet td.bs-n{text-align:right;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+.bsheet td.bs-big{font-weight:700;font-size:10.5pt}
+.bsheet tr{break-inside:avoid}
+.bsheet .bs-lines div{border-bottom:1px solid #999;height:20px}
+.bsheet .bs-warn{color:#000;font-size:9pt}
+.bsheet .bs-sol{break-inside:avoid;margin-bottom:6px}
+
+.bsheet,.bsheet *{color:#000}.bsheet .bs-sub,.bsheet .bs-st i{color:#444}
 /* ===== desktop layout ===== */
 @media (min-width:1000px){
   body{padding-left:224px}
@@ -786,7 +820,7 @@ nav.tabs button{position:relative}
     </div>
 
     <div class="card collapsible" data-ck="plan">
-      <div class="row chead" style="justify-content:space-between"><h2>Loading plan</h2><div class="row"><button class="btn sm" id="gel-copy">Copy as text</button></div></div>
+      <div class="row chead" style="justify-content:space-between"><h2>Loading plan</h2><div class="row"><button class="btn sm" id="gel-copy">Copy as text</button><button class="btn sm" data-bench="gel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;vertical-align:-2px;margin-right:4px"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Print</button></div></div>
       <div class="tablewrap plantab"><table>
         <thead><tr><th>#</th><th>Sample</th><th>c µg/µL</th><th id="gh-3">Sample µL</th><th id="gh-4">Buffer µL</th><th id="gh-5">Water µL</th><th></th></tr></thead>
         <tbody id="gel-table"></tbody>
@@ -943,7 +977,7 @@ nav.tabs button{position:relative}
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <h2>Steps</h2>
-        <div class="row"><button class="btn sm ghost" id="prot-reset">Clear checks</button><button class="btn sm" id="prot-edit">Edit steps</button><button class="btn sm primary" id="prot-finish" hidden>Finish &amp; save</button><button class="btn sm primary" id="tpl-start" hidden>Start experiment</button></div>
+        <div class="row"><button class="btn sm ghost" data-bench="steps" title="Print a bench sheet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;vertical-align:-2px;margin-right:4px"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Print</button><button class="btn sm ghost" id="prot-reset">Clear checks</button><button class="btn sm" id="prot-edit">Edit steps</button><button class="btn sm primary" id="prot-finish" hidden>Finish &amp; save</button><button class="btn sm primary" id="tpl-start" hidden>Start experiment</button></div>
       </div>
       <div class="steps" id="prot-steps"></div>
       <div class="row" id="prot-editbar" hidden><span class="addn"><input class="nrows" id="step-add-n" type="number" min="1" max="200" value="1" aria-label="How many"><button class="btn sm" id="step-add">Add steps</button></span></div>
@@ -1079,7 +1113,7 @@ nav.tabs button{position:relative}
       <div class="row" style="justify-content:space-between"><h2>Report</h2><span class="chip" id="rep-status"></span></div>
       <div class="row" style="justify-content:space-between">
         <div class="row"><select id="rep-fmt" style="width:auto"><option value="pdf">PDF</option><option value="docx">Word (.docx)</option><option value="xlsx">Excel (.xlsx)</option><option value="csv">CSV (tables)</option><option value="txt">Text (.txt)</option></select><button class="btn sm" id="rep-export">Export</button><button class="btn sm ghost" id="rep-copy">Copy</button></div>
-        <button class="btn sm primary" id="rep-done">Mark as done</button>
+        <div class="row"><button class="btn sm" data-bench="all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;vertical-align:-2px;margin-right:4px"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Bench sheet</button><button class="btn sm primary" id="rep-done">Mark as done</button></div>
       </div>
       <label class="f">Results and notes<textarea id="rep-results" style="min-height:90px;font-family:var(--sans);font-size:14px" placeholder="What worked, band intensities, image file names…"></textarea></label>
       <div id="rep-body" class="report"></div>
@@ -1294,6 +1328,14 @@ nav.tabs button{position:relative}
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <div class="locpop" id="locpop" hidden></div>
+<div class="scrim" id="bench-scrim" hidden></div>
+<div class="sheet" id="bench-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="bench-title">
+  <div class="hd"><b id="bench-title">Print a bench sheet</b><button class="btn sm ghost" id="bench-close">Cancel</button></div>
+  <p class="note" style="margin:0">One A4 page (or a few) to keep next to you at the bench, with boxes to tick by hand.</p>
+  <div id="bench-opts" style="display:flex;flex-direction:column;gap:8px"></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn sm ghost" id="bench-file">Save as file</button><button class="btn primary" id="bench-print">Print</button></div>
+</div>
+<div id="print-area"></div>
 <div class="scrim" id="scrim" hidden></div>
 <div class="alarmbar" id="alarm" hidden role="alert"><span id="alarm-t"></span><button class="btn" id="alarm-stop">Stop alarm</button></div>
 <div class="viewer" id="img-viewer" hidden><img id="img-view" alt=""><div class="vbar"><span id="img-vcap"></span><button class="btn" id="img-vclose">Close</button></div></div>
@@ -1749,6 +1791,7 @@ function vis(sel){const el=$(sel);return !!(el&&!el.hidden)}
 function appBack(){
   if($(".menu:not([hidden])")){closeMenus();return true}
   if(vis("#img-viewer")){$("#img-vclose").click();return true}
+  if(vis("#bench-sheet")){benchClose();return true}
   if(vis("#set-sheet")){closeSettings();return true}
   if(vis("#fin-sheet")){closeFinish();return true}
   if(vis("#sheet")){closeLane();return true}
@@ -3599,6 +3642,50 @@ function renderTimers(){
   updateNavDot();
 }
 
+
+/* ================= BENCH SHEET (print) ================= */
+function benchOpen(focus){if(!S.prot)return;flushProt();try{flushGel()}catch(e){}
+  const p=S.prot,t=p.tools||{};const gs=t.gel&&S.exp?gelsOf(S.exp.id).filter(g=>!g.draft).map(g=>g.id===(S.gel&&S.gel.id)?S.gel:g):[];const ss=expSols(p);
+  const opt=(k,label,on,dis)=>`<label class="chk" style="align-self:flex-start${dis?";opacity:.45":""}"><input type="checkbox" data-bo="${k}" ${on&&!dis?"checked":""} ${dis?"disabled":""}> ${label}</label>`;
+  $("#bench-opts").innerHTML=opt("steps",`Steps (${(p.steps||[]).length})`,focus!=="gel",!(p.steps||[]).length)+
+    opt("gel",`Gel loading plan${gs.length?` (${gs.length} gel${gs.length>1?"s":""})`:""}`,focus!=="steps"||!!gs.length,!gs.length)+
+    opt("lae","Laemmli to prepare",!!gs.length,!gs.length)+
+    opt("sol",`Solutions with amounts (${ss.length})`,focus==="all"&&ss.length>0,!ss.length)+
+    opt("notes","Empty lines for notes",true,false);
+  $("#bench-scrim").hidden=false;$("#bench-sheet").hidden=false}
+function benchClose(){$("#bench-scrim").hidden=true;$("#bench-sheet").hidden=true}
+function benchHTML(){const inc=k=>{const i=$(`#bench-opts [data-bo="${k}"]`);return i&&i.checked&&!i.disabled};const p=S.prot,t=p.tools||{};const e=esc;
+  let h=`<div class="bsheet"><h1>${e(p.name||"Experiment")}</h1><div class="bs-sub">${e([methodLabel(p),[pj(p),showPath(pf(p))].filter(Boolean).join(" › "),S.exp&&t.gel?S.exp.name:""].filter(Boolean).join(" · "))}</div>
+    <div class="bs-fill"><span>Date:</span><span>Name:</span><span>Samples / animals:</span></div>`;
+  if(inc("steps")){const done=new Set(p.done||[]);let last="";h+=`<h2>Steps</h2>`;
+    (p.steps||[]).forEach((x,i)=>{if(x.phase&&x.phase!==last){h+=`<div class="bs-ph">${e(x.phase)}</div>`;last=x.phase}
+      const tm=x.min?`${x.rep>1?x.rep+" × ":""}${x.min} min`:"";
+      h+=`<div class="bs-stp"><span class="bs-bx${done.has(x.id)?" ok":""}"></span><span class="bs-st"><b>${i+1}. ${e(x.t||"")}</b>${x.d?`<br><i>${e(x.d)}</i>`:""}</span>${tm?`<span class="bs-tm">${e(tm)}${x.rep>1?" "+"☐".repeat(Math.min(6,x.rep)):""}</span>`:""}</div>`});
+    if(p.notes)h+=`<div class="bs-sub" style="margin-top:6px;white-space:pre-wrap">${e(p.notes)}</div>`}
+  if(inc("gel")&&S.exp){const gs=gelsOf(S.exp.id).filter(g=>!g.draft).map(g=>g.id===(S.gel&&S.gel.id)?S.gel:g);
+    h+=`<h2>Gel loading plan</h2>`;
+    gs.forEach(g=>{const pm=(g.mode||"premix")==="premix";
+      h+=`<h3>${e(g.name||"Gel")} · ${e(g.wells)} wells · ${fmt(num(g.targetUg),0)} µg/well${pm?` · premix with Laemmli ${e(g.mix||"1:1")}`:` · ${fmt(num(g.finalUl),0)} µL total, ${e(g.lbFactor)}× buffer`}${g.note?" · "+e(g.note):""}</h3>
+      <table><colgroup><col style="width:5%"><col style="width:7%"><col style="width:36%"><col style="width:12%"><col style="width:13%"><col style="width:13%"><col style="width:14%"></colgroup><thead><tr><th>✓</th><th>Well</th><th>Sample</th><th>µg/µL</th>${pm?"<th>Lysate µL</th><th>Laemmli µL</th><th>Load µL</th>":"<th>Sample µL</th><th>Buffer µL</th><th>Water µL</th>"}</tr></thead><tbody>`+
+      g.lanes.map((l,i)=>{if(l.type==="empty")return `<tr><td><span class="bs-bx"></span></td><td class="bs-n">${i+1}</td><td style="color:#888">empty</td><td></td><td></td><td></td><td></td></tr>`;
+        if(l.type==="ladder")return `<tr><td><span class="bs-bx"></span></td><td class="bs-n">${i+1}</td><td><b>${e(l.name||"Ladder")}</b></td><td></td><td></td><td></td><td class="bs-n bs-big">${fmt(num(g.ladderUl))}</td></tr>`;
+        const c=laneCalc(g,l);return `<tr><td><span class="bs-bx${l.loaded?" ok":""}"></span></td><td class="bs-n">${i+1}</td><td><b>${e(l.name||"?")}</b>${c.warn?`<br><span class="bs-warn">⚠ ${e(c.warn)}</span>`:""}</td><td class="bs-n">${fmt(num(l.conc),2)}</td>${pm?`<td class="bs-n">${fmt(c.s)}</td><td class="bs-n">${fmt(c.lb)}</td><td class="bs-n bs-big">${fmt(c.load)}</td>`:`<td class="bs-n bs-big">${fmt(c.s)}</td><td class="bs-n">${fmt(c.lb)}</td><td class="bs-n">${fmt(c.w)}</td>`}</tr>`}).join("")+`</tbody></table>`})}
+  if(inc("lae")){const el=$("#g-lbprep");if(el&&el.textContent.trim())h+=`<h2>Laemmli to prepare</h2><div>${el.innerText.replace(/\n+/g," · ").replace(/</g,"&lt;")}</div>`}
+  if(inc("sol")){const ss=expSols(p);const done=new Map(psList(p).map(x=>[x.id,x.prepared]));h+=`<h2>Solutions</h2>`;
+    ss.forEach(r=>{const V=volML(r);const vl=V>=1000?fmt(V/1000,V%1000?2:0)+" L":V>=1?String(parseFloat(V.toFixed(3)))+" mL":fmt(V*1000,0)+" µL";
+      h+=`<div class="bs-sol"><div class="bs-stp" style="border:0"><span class="bs-bx${done.get(r.id)?" ok":""}"></span><span class="bs-st"><b>${e(r.name)}</b> · ${e(vl)}</span></div><table><colgroup><col style="width:5%"><col style="width:65%"><col style="width:30%"></colgroup><tbody>`+
+      (r.comps||[]).filter(c=>(c.name||"").trim()).map(c=>{const a=compAmt(c,V);return `<tr><td style="width:26px"><span class="bs-bx"></span></td><td>${e(c.name)}</td><td class="bs-n bs-big">${a&&!a.err?fmtAmt(a.a,a.u):"?"}</td></tr>`}).join("")+
+      `<tr><td><span class="bs-bx"></span></td><td>${e(r.diluent?r.diluent:"Water")} to</td><td class="bs-n bs-big">${e(vl)}</td></tr></tbody></table>${r.notes?`<div class="bs-sub" style="margin:3px 0 0">${e(r.notes)}</div>`:""}</div>`})}
+  if(inc("notes"))h+=`<h2>Notes</h2><div class="bs-lines">${"<div></div>".repeat(8)}</div>`;
+  h+=`<div class="bs-sub" style="margin-top:10px;color:#777">Lab Rat · printed ${new Date().toLocaleString("en-GB",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div></div>`;return h}
+$("#tab-gel").addEventListener("click",e=>{const b=e.target.closest("[data-bench]");if(b)benchOpen(b.dataset.bench)});
+$("#tab-prot").addEventListener("click",e=>{const b=e.target.closest("[data-bench]");if(b)benchOpen(b.dataset.bench)});
+$("#tab-hist").addEventListener("click",e=>{const b=e.target.closest("[data-bench]");if(b)benchOpen(b.dataset.bench)});
+$("#bench-close").addEventListener("click",benchClose);$("#bench-scrim").addEventListener("click",benchClose);
+$("#bench-print").addEventListener("click",()=>{$("#print-area").innerHTML=benchHTML();benchClose();setTimeout(()=>{try{window.print()}catch(e){setStatus("Printing isn't available here. Use Save as file.",true)}},60)});
+$("#bench-file").addEventListener("click",()=>{const css=[...document.querySelectorAll("style")].map(x=>x.textContent).join("\n").match(/\/\* bench sheet \*\/[\s\S]*?(?=\/\* =====)/);
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>${esc(S.prot.name||"Bench sheet")}</title><style>@page{size:A4;margin:12mm}body{margin:12mm;background:#fff}${css?css[0].replace(/#print-area\{display:none\}/,""):""}</style></head><body>${benchHTML()}<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`;
+  saveFile(`${String(S.prot.name||"bench sheet").replace(/[\\/:*?"<>|]+/g," ").slice(0,60)} - bench sheet.html`,new Blob([html],{type:"text/html"}));benchClose()});
 /* ================= STORAGE (shared with the lab) ================= */
 const TEMP_L={"":"RT","4":"4°","-20":"−20","-80":"−80","ln2":"LN₂","flam":"FL","acid":"A/B","poison":"TOX"};
 const TEMP_N={"":"room temperature","4":"fridge","-20":"freezer −20 °C","-80":"−80 °C","ln2":"liquid nitrogen","flam":"flammables cabinet","acid":"acids / bases cabinet","poison":"toxic, locked"};
