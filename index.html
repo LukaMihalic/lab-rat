@@ -17,6 +17,19 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 </head>
 <body>
+<script>window.__ACC={teal:["#0A6E92","#5BC2E4"],indigo:["#3340A8","#8F9AF2"],blue:["#1F5FD1","#7AA7F5"],green:["#1E7A4C","#6FD39B"],purple:["#6B3FC4","#B79BF5"],rose:["#B8336A","#F08AB5"],orange:["#B5530F","#F4A261"],slate:["#3E4C59","#A9B8C6"]};
+window.__acc=function(v){try{var el=document.getElementById("acc-style");if(!v||v==="teal"){if(el)el.remove();return}
+  function hx(h){h=String(h).replace("#","");if(h.length===3)h=h.split("").map(function(c){return c+c}).join("");var n=parseInt(h,16);return[n>>16&255,n>>8&255,n&255]}
+  function to(c){return"#"+c.map(function(x){return Math.max(0,Math.min(255,Math.round(x))).toString(16).padStart(2,"0")}).join("")}
+  function mix(a,b,t){var A=hx(a),B=hx(b);return to(A.map(function(x,i){return x+(B[i]-x)*t}))}
+  function lum(h){var c=hx(h).map(function(x){x/=255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)});return .2126*c[0]+.7152*c[1]+.0722*c[2]}
+  var P=window.__ACC[v],L,D;if(P){L=P[0];D=P[1]}else if(/^#?[0-9a-f]{3,6}$/i.test(v)){var c=v[0]==="#"?v:"#"+v,y=lum(c);L=y>.28?mix(c,"#000",Math.min(.5,(y-.2)*1.2)):c;D=y<.22?mix(c,"#fff",.45):c}else return;
+  var li=lum(L)>.45?"#111":"#fff",di=lum(D)>.35?"#08141A":"#fff";
+  var css="html:root{--accent:"+L+";--accent-ink:"+li+";--accent-soft:"+mix(L,"#fff",.87)+"}"+
+    "@media (prefers-color-scheme: dark){html:root:not([data-theme=light]){--accent:"+D+";--accent-ink:"+di+";--accent-soft:"+mix(D,"#162026",.78)+"}}"+
+    "html:root[data-theme=dark]{--accent:"+D+";--accent-ink:"+di+";--accent-soft:"+mix(D,"#162026",.78)+"}";
+  if(!el){el=document.createElement("style");el.id="acc-style";(document.head||document.documentElement).appendChild(el)}el.textContent=css}catch(e){}};
+try{window.__acc(JSON.parse(localStorage.getItem("bb.accent")||"null"))}catch(e){}</script>
 <script>try{var __t=JSON.parse(localStorage.getItem("bb.theme")||"null");if(__t==="light"||__t==="dark")document.documentElement.setAttribute("data-theme",__t)}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -62,6 +75,12 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 .themebtn svg{width:18px;height:18px}
 .themebtn:disabled{opacity:.35;cursor:default}
 .setsec{display:flex;flex-direction:column;gap:8px}
+.accpick{display:flex;flex-wrap:wrap;gap:10px}
+.accpick button,.accpick .acccustom{width:38px;height:38px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
+.accpick [aria-pressed=true]{border-color:var(--ink);box-shadow:inset 0 0 0 3px var(--surface)}
+.accpick .acccustom{display:grid;place-items:center;background:conic-gradient(#e74c3c,#f1c40f,#2ecc71,#1abc9c,#3498db,#9b59b6,#e74c3c);overflow:hidden}
+.accpick .acccustom input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border:0;padding:0}
+.accpick .acccustom span{font:700 18px var(--sans);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);pointer-events:none}
 .seth{font:700 12px var(--sans);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
 .ficons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .ficons button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);cursor:pointer;font:600 12.5px var(--sans);color:var(--muted)}
@@ -73,6 +92,13 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 .tpl.mytpl .tplmain{flex:1;min-width:0;background:none;border:0;text-align:left;padding:10px 12px;cursor:pointer;font:inherit;color:var(--ink);display:flex;flex-direction:column;gap:3px}
 .tpl.mytpl .mtdel{background:none;border:0;border-left:1px solid var(--line);color:var(--muted);padding:0 10px;cursor:pointer;font:600 12px var(--sans)}
 .tpl.mytpl .mtdel.armed{background:var(--bad);color:#fff}
+.tpl.mytpl .mtstar{background:none;border:0;border-left:1px solid var(--line);color:var(--muted);padding:0 14px;cursor:pointer;font-size:20px;line-height:1}
+.tpl.mytpl .mtstar[aria-pressed=true]{color:#E0A100}
+.tpl.mytpl.def{border-color:var(--accent);background:var(--accent-soft)}
+.tpl.mytpl .tplmain b{color:var(--ink)}
+.tpl.bitog{background:none;border-style:dashed}
+.tcat .defname{font:600 12px var(--sans);color:var(--accent);margin-left:6px}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);font:600 inherit;cursor:pointer;text-decoration:underline}
 .plin{border-collapse:separate;border-spacing:2px}
 .plin th{font:600 11px var(--mono);color:var(--muted);padding:2px;text-align:center}
 .plin td{padding:0}
@@ -125,6 +151,7 @@ input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);bo
 textarea{min-height:110px;font-family:var(--mono);font-size:13px}
 input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:500}
+div.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:500}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 @media (max-width:380px){.grid3{grid-template-columns:1fr 1fr}}
@@ -324,6 +351,7 @@ table.xl tr.dup input.wl,table.xl tr.dup select.gs{border-color:var(--bad)}
 .ptabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
 .plist{display:flex;flex-direction:column;gap:10px}
 .crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:14px;color:var(--muted)}
+.crumbs button.crumbact{margin-left:auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:6px 10px;font:600 13px var(--sans)}
 .crumbs button{background:none;border:0;padding:4px 2px;font:600 14px var(--sans);color:var(--accent);cursor:pointer}
 .crumbs b{color:var(--ink);font-size:17px}
 /* method colours + icons */
@@ -595,6 +623,36 @@ nav.tabs button{position:relative}
 .invlab .code{font:700 13px var(--mono);background:var(--accent-soft);color:var(--accent);border-radius:7px;padding:4px 8px;letter-spacing:.04em}
 .invlist{display:flex;flex-direction:column;gap:8px}
 #inv-rooms:empty{display:none}
+.cloc:empty{display:none}
+.cloc{margin-top:3px}
+.clocb{display:inline-flex;align-items:center;gap:4px;max-width:100%;background:none;border:0;padding:1px 2px;cursor:pointer;font:600 11.5px var(--sans);color:var(--accent);text-align:left}
+.clocb svg{width:12px;height:12px;flex:none}
+.clocb span:not(.stk):not(.more){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:15rem}
+.clocb .stk{margin-left:2px;vertical-align:0}
+.clocb .more{color:var(--muted);font-weight:600}
+.locpop{position:fixed;z-index:70;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.locpop[hidden]{display:none}
+.locpop .lp-h{display:flex;justify-content:space-between;align-items:center}
+.locpop .lp-i{display:flex;flex-direction:column;gap:1px;border-top:1px solid var(--line);padding-top:7px}
+.locpop .lp-i b{font-size:14px}.locpop .lp-i span{font-size:13px}
+.locpop>.btn{align-self:flex-start}
+#inv-items,#inv-orders{display:flex;flex-direction:column;gap:12px}
+#inv-orders[hidden],#inv-items[hidden]{display:none}
+.ivseg{grid-template-columns:1fr 1fr}
+.ivseg .cnt{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:var(--warn);color:#fff;font:700 11px/18px var(--sans);margin-left:4px}
+.ivseg .cnt:empty{display:none}
+.ivstock{grid-template-columns:repeat(3,1fr)}
+.ivstock button[data-v=low][aria-pressed=true]{background:var(--warn);border-color:var(--warn);color:#fff}
+.ivstock button[data-v=empty][aria-pressed=true]{background:var(--bad);border-color:var(--bad);color:#fff}
+.ivrow.low{border-left:4px solid var(--warn)}.ivrow.empty{border-left:4px solid var(--bad)}
+.stk{display:inline-block;font:700 10.5px var(--sans);text-transform:uppercase;letter-spacing:.05em;border-radius:5px;padding:2px 6px;margin-left:6px;vertical-align:2px}
+.stk.low{background:var(--warn-soft);color:var(--warn)}.stk.empty{background:var(--bad-soft);color:var(--bad)}.stk.ord{background:var(--accent-soft);color:var(--accent)}
+.ordrow{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
+.ordrow.ordered{border-left:4px solid var(--accent)}.ordrow.needed{border-left:4px solid var(--warn)}
+.ordrow .top{display:flex;gap:10px;align-items:baseline;justify-content:space-between}
+.ordrow .top b{font-size:15px}.ordrow .qty{font:600 13px var(--mono);color:var(--ink);white-space:nowrap}
+.ordrow .mt{font-size:12.5px;color:var(--muted)}
+.ordrow .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .ivrow{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 12px;cursor:pointer;text-align:left;font:inherit;color:var(--ink);width:100%}
 .ivrow:hover{border-color:var(--accent)}
 .ivrow .ic{flex:none;width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font:700 11px var(--mono)}
@@ -669,6 +727,7 @@ nav.tabs button{position:relative}
     <div class="card" id="tpl-card" hidden>
       <div class="row" style="justify-content:space-between"><b>Choose a method</b><button class="btn sm ghost" id="tpl-cancel">Cancel</button></div>
       <p class="note" style="margin:0" id="tpl-where"></p>
+      <p class="note" style="margin:0">Tap ☆ on one of your protocols to make it your default. <button class="linkbtn" id="tpl-manage">Manage my protocols</button></p>
       <input id="tpl-q" type="search" placeholder="Search methods and earlier experiments" autocomplete="off">
       <div id="tpl-list"></div>
     </div>
@@ -906,7 +965,7 @@ nav.tabs button{position:relative}
         </div>
       </div>
       <label class="f">Notes<textarea id="p-notes" style="min-height:70px;font-family:var(--sans);font-size:14px"></textarea></label>
-      <div class="row" style="justify-content:flex-end"><button class="btn sm" id="prot-savetpl" hidden>Save as protocol</button><button class="btn sm" id="prot-dup">Duplicate</button><button class="btn danger sm" id="prot-del">Delete</button></div>
+      <div class="row" style="justify-content:flex-end"><button class="btn sm" id="prot-savetpl" hidden>Save as my protocol</button><button class="btn sm" id="prot-dup">Duplicate</button><button class="btn danger sm" id="prot-del">Delete</button></div>
     </details>
   </section>
 
@@ -1114,6 +1173,7 @@ nav.tabs button{position:relative}
     <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h2>Storage</h2><button class="btn primary" id="inv-add">+ Add</button></div>
     <div class="invlab" id="inv-labbar"></div>
     <div class="card" id="inv-setup" hidden></div>
+    <div class="seg ivseg" id="inv-view"><button data-v="items" aria-pressed="true">Items</button><button data-v="order" aria-pressed="false">To order <span class="cnt" id="inv-ocnt"></span></button></div>
     <div class="card" id="inv-form" hidden>
       <div class="row" style="justify-content:space-between"><b id="inv-form-t">New item</b><button class="btn sm ghost" id="inv-cancel">Cancel</button></div>
       <div class="grid2">
@@ -1124,13 +1184,31 @@ nav.tabs button{position:relative}
         <label class="f">Amount<input id="iv-amt" type="text" placeholder="e.g. 500 g, 2 bottles"></label>
         <label class="f">Storage<select id="iv-temp"><option value="">Room temperature</option><option value="4">Fridge (4 °C)</option><option value="-20">Freezer (−20 °C)</option><option value="-80">−80 °C</option><option value="ln2">Liquid nitrogen</option><option value="flam">Flammables cabinet</option><option value="acid">Acids / bases cabinet</option><option value="poison">Toxic (locked)</option></select></label>
       </div>
+      <div class="f"><span>Stock</span><div class="seg ivstock" id="iv-stock"><button data-v="ok" aria-pressed="true">OK</button><button data-v="low" aria-pressed="false">Running low</button><button data-v="empty" aria-pressed="false">Empty</button></div></div>
       <label class="f">Note<input id="iv-note" type="text" placeholder="e.g. opened 10/2026, ask Ana before using"></label>
       <datalist id="iv-rooms"></datalist><datalist id="iv-places"></datalist>
       <div class="row" style="justify-content:space-between;align-items:center"><span class="note" id="iv-meta"></span><div class="row"><button class="btn sm ghost danger" id="iv-del" hidden>Delete</button><button class="btn primary" id="iv-save">Save</button></div></div>
     </div>
-    <input id="inv-q" type="search" placeholder="Search chemicals, rooms, places…" autocomplete="off">
-    <div class="chips" id="inv-rooms"></div>
-    <div class="invlist" id="inv-list"></div>
+    <div class="card" id="ord-form" hidden>
+      <div class="row" style="justify-content:space-between"><b id="ord-form-t">Add to the order list</b><button class="btn sm ghost" id="ord-cancel">Cancel</button></div>
+      <div class="grid2">
+        <label class="f">What to order<input id="or-name" type="text" placeholder="e.g. PVDF membrane" autocomplete="off" list="or-names"></label>
+        <label class="f">How much<input id="or-qty" type="text" placeholder="e.g. 2 × 500 g"></label>
+        <label class="f">Supplier / cat. no.<input id="or-sup" type="text" placeholder="e.g. Sigma T1503"></label>
+        <label class="f">Note<input id="or-note" type="text" placeholder="e.g. urgent, for the HRZZ project"></label>
+      </div>
+      <datalist id="or-names"></datalist>
+      <div class="row" style="justify-content:flex-end"><button class="btn primary" id="or-save">Add to list</button></div>
+    </div>
+    <div id="inv-items">
+      <input id="inv-q" type="search" placeholder="Search chemicals, rooms, places…" autocomplete="off">
+      <div class="chips" id="inv-rooms"></div>
+      <div class="invlist" id="inv-list"></div>
+    </div>
+    <div id="inv-orders" hidden>
+      <div class="row" style="justify-content:space-between;align-items:center"><span class="note" id="ord-sum"></span><div class="row"><button class="btn sm ghost" id="ord-copy">Copy list</button><button class="btn sm" id="ord-add">+ Add</button></div></div>
+      <div class="invlist" id="ord-list"></div>
+    </div>
   </section>
 
   <!-- NOTES -->
@@ -1211,6 +1289,7 @@ nav.tabs button{position:relative}
 </nav>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="locpop" id="locpop" hidden></div>
 <div class="scrim" id="scrim" hidden></div>
 <div class="alarmbar" id="alarm" hidden role="alert"><span id="alarm-t"></span><button class="btn" id="alarm-stop">Stop alarm</button></div>
 <div class="viewer" id="img-viewer" hidden><img id="img-view" alt=""><div class="vbar"><span id="img-vcap"></span><button class="btn" id="img-vclose">Close</button></div></div>
@@ -1229,6 +1308,7 @@ nav.tabs button{position:relative}
   <div class="hd"><b id="set-title">Settings</b><button class="btn sm ghost" id="set-close">Done</button></div>
   <div class="setsec" id="set-acc-sec"><div class="seth">Account and sync</div><div id="set-account" style="display:flex;flex-direction:column;gap:10px"><p class="note" style="margin:0">In this version your data is saved in Claude. Sign-in, sync between phone and laptop and backups are in the Lab Rat app (lukamihalic.github.io/lab-rat).</p></div></div>
   <div class="setsec"><div class="seth">Theme</div><div class="seg" id="set-theme"><button data-v="auto">Automatic</button><button data-v="light">Light</button><button data-v="dark">Dark</button></div><p class="note" style="margin:0">Automatic follows your phone or computer.</p></div>
+  <div class="setsec"><div class="seth">Accent colour</div><div class="accpick" id="set-acc"></div><p class="note" style="margin:0">Buttons, tabs and highlights. The last swatch lets you pick any colour.</p></div>
   <div class="setsec"><div class="seth">Background</div><div class="bgpick" id="set-bg"></div></div>
   <div class="setsec"><div class="seth">Folder icon</div><div class="ficons" id="set-ficon"></div></div>
   <div class="setsec"><div class="seth">Timers and alarms</div>
@@ -1328,7 +1408,10 @@ function setStatus(t,sticky){t=String(t||"");
   if(/^(Saving|Syncing|Synced|Loading|Connecting|Offline|Not signed in|Sync problem|Saved on this device)/.test(t)||t===Store.label()){setSyncIcon(t);return}
   showToast(t,sticky)}
 applyTheme(lsGet("bb.theme","auto"));
-function renderSettings(){const t=lsGet("bb.theme","auto");$$("#set-theme button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===t)));
+function renderAccPick(){const cur=lsGet("bb.accent","teal")||"teal";const P=window.__ACC||{};const custom=!P[cur];
+  $("#set-acc").innerHTML=Object.entries(P).map(([k,c])=>`<button data-acc="${k}" aria-pressed="${cur===k}" title="${k[0].toUpperCase()+k.slice(1)}" aria-label="${k}" style="background:linear-gradient(135deg,${c[0]} 50%,${c[1]} 50%)"></button>`).join("")+
+    `<label class="acccustom" title="Pick any colour" aria-pressed="${custom}" style="${custom?`background:${cur}`:""}"><input type="color" id="set-acc-c" value="${custom&&/^#[0-9a-f]{6}$/i.test(cur)?cur:"#0A6E92"}" aria-label="Custom colour"><span>${custom?"":"+"}</span></label>`}
+function renderSettings(){renderAccPick();const t=lsGet("bb.theme","auto");$$("#set-theme button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===t)));
   const bgk=lsGet("bb.bg","none");$("#set-bg").innerHTML=BG_LIST.map(([k,l])=>{const c=bgCss(k);return `<button data-bg="${k}" aria-pressed="${k===bgk}"><i style="${c?`background-image:${c.img.replace(/"/g,"'")};background-size:${k==="rats"?"110px 110px":c.size}`:""}"></i>${l}</button>`}).join("");
   const f=lsGet("bb.ficon","C");$("#set-ficon").innerHTML=[["A","Solid"],["B","Outline"],["C","Classic"]].map(([k,l])=>`<button data-f="${k}" aria-pressed="${k===f}">${folderIcon(k,false)}${l}</button>`).join("");
   $("#set-collapse").checked=!!lsGet("bb.collapseOnOpen",true);$("#set-snd").checked=!!lsGet("bb.snd",true);$("#set-vib").checked=!!lsGet("bb.vib",true);$("#set-ring").value=lsGet("bb.ring","60");
@@ -1337,6 +1420,8 @@ function openSettings(){renderSettings();if(typeof renderSyncSheet==="function")
 function closeSettings(){$("#set-scrim").hidden=true;$("#set-sheet").hidden=true}
 $("#set-btn").addEventListener("click",openSettings);$("#status").addEventListener("click",openSettings);$("#undo-btn").addEventListener("click",()=>doUndo());$("#set-close").addEventListener("click",closeSettings);$("#set-scrim").addEventListener("click",closeSettings);
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#set-sheet").hidden)closeSettings()});
+$("#set-acc").addEventListener("click",e=>{const b=e.target.closest("[data-acc]");if(!b)return;lsSet("bb.accent",b.dataset.acc);window.__acc&&window.__acc(b.dataset.acc);renderAccPick()});
+$("#set-acc").addEventListener("input",e=>{if(e.target.id!=="set-acc-c")return;const v=e.target.value;lsSet("bb.accent",v);window.__acc&&window.__acc(v);const l=e.target.closest("label");l.style.background=v;l.setAttribute("aria-pressed","true");l.querySelector("span").textContent="";$$("#set-acc [data-acc]").forEach(b=>b.setAttribute("aria-pressed","false"))});
 $("#set-theme").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;lsSet("bb.theme",b.dataset.v);applyTheme(b.dataset.v);renderSettings()});
 $("#set-bg").addEventListener("click",e=>{const b=e.target.closest("[data-bg]");if(!b)return;lsSet("bb.bg",b.dataset.bg);applyBg();renderSettings()});
 $("#set-ficon").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(!b)return;lsSet("bb.ficon",b.dataset.f);renderSettings();if(S.tab==="home")renderHome()});
@@ -1703,7 +1788,7 @@ function showTab(t){
   else if(S.plateCtx==="qpcr"){S.plateCtx="assay";S.plSel=new Set();$("#plate-home").after($("#plate-card"));$("#pl-auto").textContent="Fill from tables"}
   if(t==="qres")renderQRes();if(t==="img"){$("#img-pick").hidden=true;renderImages()}if(t==="hist"){S.rec=null;renderReport();renderHist()}
   if(t==="assay"){renderAssayRows();renderAssay()}
-  if(t==="sol"||t==="psol"){$("#sol-tpl").hidden=true;renderSolSelect()}
+  if(t==="sol"||t==="psol"){$("#sol-tpl").hidden=true;renderSolSelect();try{Inv.ensure()}catch(e){}}
   if(t==="home")renderHome();
   if(inside)renderPbar();
   window.scrollTo(0,0)}
@@ -2091,7 +2176,7 @@ function renderHome(){
   else{cr.push(n.p==null?`<b>Projects</b>`:`<button data-nav="root">Projects</button>`);
     if(n.p!=null){cr.push("›");const pn=n.p==="__none"?"No project":n.p;cr.push(n.f==null?`<b>${esc(pn)}</b>`:`<button data-nav="proj">${esc(pn)}</button>`)}
     if(n.f!=null){const segs=n.f.split("/");segs.forEach((sg,i)=>{cr.push("›");cr.push(i===segs.length-1?`<b>${esc(sg)}</b>`:`<button data-nav="f" data-path="${esc(segs.slice(0,i+1).join("/"))}">${esc(sg)}</button>`)})}}
-  $("#home-crumbs").innerHTML=cr.join(" ");
+  $("#home-crumbs").innerHTML=cr.join(" ")+(!q&&n.p==null?`<button class="btn sm crumbact" data-act="newproj">+ Project</button>`:"");
   const cnt=L=>{if(!L.length)return "Empty";const a=L.filter(p=>!expDone(p)).length;return `${L.length} experiment${L.length===1?"":"s"}${a?` · ${a} in progress`:""}`};
   const tile=(label,nav,L,none)=>`<button class="ftile${none?" none":""}" data-go='${esc(JSON.stringify(nav))}'><span class="ic">${folderIcon(lsGet("bb.ficon","C"),none,none?null:folderColor(nav.p,nav.f))}</span><span class="tx"><b lang="en">${esc(label)}</b><span>${cnt(L)}</span></span></button>`;
   let tiles="";
@@ -2117,10 +2202,10 @@ function renderHome(){
   $("#home-list").innerHTML=L.length?L.map(card).join(""):(tiles&&!q?"":`<div class="card"><p class="note" style="margin:0">${q?"No experiments match your search.":every.length?(base.length?"No experiments match this filter.":"Nothing here yet."):"No experiments yet. Tap <b>+ New experiment</b> and pick a method."}</p></div>`);
   // actions
   let acts="";
-  if(!q){if(n.p==null)acts=`<button class="btn sm" data-act="newproj">+ Project</button>`;
+  if(!q){if(n.p==null)acts="";
     else if(n.f==null&&n.p!=="__none")acts=`<button class="btn sm" data-act="newfolder">+ Folder</button><button class="btn sm ghost" data-act="add">Add experiments</button><span class="mwrap"><button class="btn sm ghost more" data-menu aria-label="More">⋯</button><div class="menu" hidden><button data-act="color">Folder color</button><button data-act="renproj">Rename project</button><button class="danger" data-act="rmproj">Remove project</button></div></span>`;
     else if(n.f!=null)acts=`<button class="btn sm" data-act="newfolder">+ Folder</button><button class="btn sm ghost" data-act="add">Add experiments</button><span class="mwrap"><button class="btn sm ghost more" data-menu aria-label="More">⋯</button><div class="menu" hidden><button data-act="color">Folder color</button><button data-act="renfolder">Rename folder</button><button class="danger" data-act="rmfolder">Remove folder</button></div></span>`}
-  $("#home-acts").innerHTML=acts;
+  $("#home-acts").innerHTML=acts;$("#home-bar").hidden=!q&&n.p==null;
   const hc=$("#home-color");if(!(S.colorOpen&&!q&&n.p&&n.p!=="__none"&&S.colorOpen===n.p+"\u0001"+(n.f||""))){hc.hidden=true;S.colorOpen=null}else{hc.hidden=false;
     const own=(fdocs().find(d=>d.project===n.p&&(d.path||"")===(n.f||""))||{}).color,eff=folderColor(n.p,n.f);
     hc.innerHTML=`<span class="lb">${n.f?`Color of this folder (folders inside it follow it)`:`Color of the project's folders`}</span>`+Object.entries(FCOL).map(([k,c])=>`<button class="sw" data-col="${k}" aria-label="${k}" aria-pressed="${eff===k}" style="background:linear-gradient(${c[0]},${c[1]})"></button>`).join("")+`<button class="def" data-col="">${n.f&&!own&&eff?"Same as parent":"Default"}</button><button class="def" data-col="__close">Done</button>`}
@@ -2131,23 +2216,27 @@ function renderTplList(){
   const q=($("#tpl-q").value||"").trim().toLowerCase();const mine=protList();
   const tb=([k,T])=>`<button class="tpl" data-tpl="${k}"><span class="tph">${micon(k==="custom"?"other":catOfTpl(k,T),1)}<b>${esc(k==="custom"?"Blank experiment":T.name)}</b></span><span>${esc(T.desc)}</span></button>`;
   const eb=t=>`<button class="tpl" data-ce="${esc(t.id)}"><span class="tph">${micon(catOfExp(t),1)}<b>${esc(t.name)}</b></span><span>${esc(methodLabel(t))} · ${(t.steps||[]).length} steps${t.group?" · "+esc([pj(t),pf(t)].filter(Boolean).join(" › ")):""}</span></button>`;
-  const ents=Object.entries(TEMPLATES).filter(([k])=>k!=="custom");
-  if(q){const m=ents.filter(([k,T])=>(T.name+" "+T.desc+" "+(T.label||"")).toLowerCase().includes(q)),e=mine.filter(t=>[t.name,t.group,t.folder,methodLabel(t)].join(" ").toLowerCase().includes(q));
-    $("#tpl-list").innerHTML=(m.length?`<div class="tpls">${m.map(tb).join("")}</div>`:"")+(e.length?`<div class="tplh" style="margin-top:10px">Copy the steps of an earlier experiment</div><div class="tpls">${e.map(eb).join("")}</div>`:"")||`<p class="note">Nothing found.</p>`;return}
+  const ents=Object.entries(TEMPLATES).filter(([k])=>k!=="custom");const myT=tplList();
+  const mb=t=>`<div class="tpl mytpl${t.isDefault?" def":""}"><button class="tplmain" data-mt="${esc(t.id)}"><span class="tph">${micon(catOfExp(t),1)}<b>${esc(t.name||"Untitled")}</b></span><span>${t.isDefault?"★ Your default · ":"Your protocol · "}${(t.steps||[]).length} steps</span></button><button class="mtstar" data-star="${esc(t.id)}" aria-pressed="${!!t.isDefault}" title="${t.isDefault?"Your default for this method (tap to undo)":"Make this your default for this method"}" aria-label="Default">${t.isDefault?"★":"☆"}</button></div>`;
+  if(q){const m=ents.filter(([k,T])=>(T.name+" "+T.desc+" "+(T.label||"")).toLowerCase().includes(q)),e=mine.filter(t=>[t.name,t.group,t.folder,methodLabel(t)].join(" ").toLowerCase().includes(q)),mt=myT.filter(t=>[t.name,methodLabel(t),t.notes].join(" ").toLowerCase().includes(q));
+    $("#tpl-list").innerHTML=(mt.length?`<div class="tplh" style="margin-top:4px">Your protocols</div><div class="tpls">${mt.map(mb).join("")}</div>`:"")+(m.length?`<div class="tpls">${m.map(tb).join("")}</div>`:"")+(e.length?`<div class="tplh" style="margin-top:10px">Copy the steps of an earlier experiment</div><div class="tpls">${e.map(eb).join("")}</div>`:"")||`<p class="note">Nothing found.</p>`;return}
   const open=S.tplOpen||"";
   let h=`<div class="tpls">${tb(["custom",TEMPLATES.custom])}</div>`;
-  CATS.forEach(([c,label])=>{const items=ents.filter(([k,T])=>catOfTpl(k,T)===c);if(!items.length)return;
-    h+=`<details class="tcat" data-cat="${c}"${open===c?" open":""}><summary><span class="tph">${micon(c,1)}${label}</span><span>${items.length}</span></summary><div class="tpls">${items.map(tb).join("")}</div></details>`});
+  CATS.forEach(([c,label])=>{const items=ents.filter(([k,T])=>catOfTpl(k,T)===c);const mine2=myT.filter(t=>catOfExp(t)===c).sort((a,b)=>(!!b.isDefault-!!a.isDefault)||String(a.name).localeCompare(String(b.name)));if(!items.length&&!mine2.length)return;
+    const def=mine2.find(t=>t.isDefault);
+    const inner=(mine2.length?mine2.map(mb).join(""):"")+(def&&items.length?`<button class="tpl bitog" data-bi="${c}"><b>${S.biOpen===c?"Hide":"Show"} built-in protocols (${items.length})</b><span>Kept for reference and for new users</span></button>`+(S.biOpen===c?items.map(tb).join(""):""):items.map(tb).join(""));
+    h+=`<details class="tcat" data-cat="${c}"${open===c?" open":""}><summary><span class="tph">${micon(c,1)}${label}${def?` <span class="defname">★ ${esc(def.name)}</span>`:""}</span><span>${items.length+mine2.length}</span></summary><div class="tpls">${inner}</div></details>`});
   if(mine.length){let inner="";CATS.forEach(([c,label])=>{const it=mine.filter(t=>catOfExp(t)===c);if(it.length)inner+=`<div class="tplh">${label}</div>`+it.map(eb).join("")});
     h+=`<details class="tcat" data-cat="__mine"${open==="__mine"?" open":""}><summary>Copy an earlier experiment<span>${mine.length}</span></summary><div class="tpls">${inner}</div></details>`}
   $("#tpl-list").innerHTML=h}
 $("#tpl-list").addEventListener("toggle",e=>{const d=e.target;if(!d.classList||!d.classList.contains("tcat"))return;if(d.open){S.tplOpen=d.dataset.cat;$$("#tpl-list .tcat").forEach(x=>{if(x!==d)x.open=false})}else if(S.tplOpen===d.dataset.cat)S.tplOpen=""},true);
 $("#tpl-q").addEventListener("input",renderTplList);
+$("#tpl-manage").addEventListener("click",()=>{$("#tpl-card").hidden=true;showTab("lib")});
 $("#home-q").addEventListener("input",()=>{renderHome()});
 $("#home-qbtn").addEventListener("click",()=>{const q=$("#home-q");if(q.hidden){q.hidden=false;q.focus()}else if(!q.value){q.hidden=true}else{q.value="";renderHome();q.focus()}});
 $("#home-q").addEventListener("blur",e=>{setTimeout(()=>{const q=$("#home-q");if(!q.value&&document.activeElement!==q)q.hidden=true},150)});
 $("#home-q").addEventListener("keydown",e=>{if(e.key==="Escape"){e.target.value="";renderHome();e.target.blur()}});
-$("#home-crumbs").addEventListener("click",e=>{const b=e.target.closest("[data-nav]");if(!b)return;$("#home-q").value="";const n=hNav();setNav(b.dataset.nav==="root"?{p:null,f:null}:b.dataset.nav==="f"?{p:n.p,f:b.dataset.path}:{p:n.p,f:null})});
+$("#home-crumbs").addEventListener("click",e=>{const a=e.target.closest("[data-act]");if(a){const t=document.createElement("button");t.dataset.act=a.dataset.act;t.hidden=true;$("#home-acts").appendChild(t);t.click();t.remove();return}const b=e.target.closest("[data-nav]");if(!b)return;$("#home-q").value="";const n=hNav();setNav(b.dataset.nav==="root"?{p:null,f:null}:b.dataset.nav==="f"?{p:n.p,f:b.dataset.path}:{p:n.p,f:null})});
 $("#home-folders").addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(!b)return;try{setNav(JSON.parse(b.dataset.go))}catch(_){}});
 // drag experiments into folders
 (function expDrag(){const list=$("#home-list");let st=null,sup=false;const ghost=document.createElement("div");ghost.className="dragghost";
@@ -2241,10 +2330,16 @@ async function deleteProtocol(id){
 }
 $("#home-new").addEventListener("click",()=>{$("#tpl-q").value="";renderHome();$("#tpl-card").hidden=false;$("#tpl-card").scrollIntoView({block:"nearest"})});
 $("#tpl-cancel").addEventListener("click",()=>{$("#tpl-card").hidden=true});
-$("#tpl-list").addEventListener("click",e=>{const b=e.target.closest("[data-tpl],[data-ce]");if(!b)return;
+$("#tpl-list").addEventListener("click",e=>{
+  const st=e.target.closest("[data-star]");if(st){const t=Store.data.templates[st.dataset.star];if(!t)return;const on=!t.isDefault;const c=catOfExp(t);
+    tplList().filter(x=>x.id!==t.id&&x.isDefault&&catOfExp(x)===c).forEach(x=>{const y=clone(x);delete y.isDefault;Store.save("templates",y)});
+    const y=clone(t);if(on)y.isDefault=true;else delete y.isDefault;Store.save("templates",y);renderTplList();setStatus(on?`“${t.name}” is now your default`:"Default removed: built-in protocols are back on top");return}
+  const bi=e.target.closest("[data-bi]");if(bi){S.biOpen=S.biOpen===bi.dataset.bi?null:bi.dataset.bi;renderTplList();return}
+  const mt=e.target.closest("[data-mt]");if(mt){const t=Store.data.templates[mt.dataset.mt];if(!t)return;const p=expFromTemplate(t);Store.save("protocols",p);$("#tpl-card").hidden=true;openProtocol(clone(p));$("#prot-params").open=true;$("#p-name").focus();$("#p-name").select();return}
+  const b=e.target.closest("[data-tpl],[data-ce]");if(!b)return;
   const p=b.dataset.ce?expFromTemplate(Store.data.protocols[b.dataset.ce]):expFromTemplate(null,b.dataset.tpl);if(b.dataset.ce){const src=Store.data.protocols[b.dataset.ce];p.name=`${String(src.name).replace(/ · \d{2}\/\d{2}\/\d{4}$/,"")} · ${new Date().toLocaleDateString("en-GB")}`;if(!p.group){p.group=src.group||"";p.folder=src.folder||""}p.templateName=src.name;p.templateId=null}
   Store.save("protocols",p);
-  const T=!b.dataset.ce&&TEMPLATES[b.dataset.tpl];if(T&&T.sols)T.sols.forEach(n=>{const tp=SOL_TPL.find(x=>x.name===n);if(tp)Store.save("solutions",newSol(tp,p.id))});
+  const T=!b.dataset.ce&&TEMPLATES[b.dataset.tpl];if(T&&T.sols){p.sols=p.sols||[];T.sols.forEach(n=>{let r=allRecipes().find(x=>String(x.name).trim().toLowerCase()===String(n).trim().toLowerCase());if(!r){const tp=SOL_TPL.find(x=>x.name===n);if(!tp)return;r=newSol(tp,null);Store.save("solutions",r)}if(!p.sols.some(e=>e.id===r.id))p.sols.push({id:r.id,prepared:null,done:[]})});Store.save("protocols",p)}
   $("#tpl-card").hidden=true;openProtocol(clone(p));$("#prot-params").open=true;$("#p-name").focus();$("#p-name").select()});
 
 /* ---- Protocol library ---- */
@@ -2268,7 +2363,11 @@ $("#lib-list").addEventListener("click",async e=>{const b=e.target.closest("butt
     b.classList.add("armed");b.textContent="Tap again";b._t=setTimeout(()=>{b.classList.remove("armed");b.textContent="Delete"},4000)}});
 $("#tpl-start").addEventListener("click",()=>{flushProt();const t=Store.data.templates[S.prot.id]||S.prot;const p=expFromTemplate(t);Store.save("protocols",p);openProtocol(clone(p));setStatus("Experiment started")});
 $("#prot-savetpl").addEventListener("click",()=>{flushProt();const p=S.prot;const t={id:uid(),name:p.templateName&&!/\(copy\)/.test(p.name)?p.templateName:String(p.name).replace(/ · \d{2}\/\d{2}\/\d{4}$/,""),method:p.method,assayMethod:p.assayMethod,tools:Object.assign({},p.tools),steps:freshSteps(p.steps),notes:p.notes||"",created:Date.now(),sols:psList(p).map(e=>({id:e.id,prepared:null,done:[]}))};
-  if(Object.values(Store.data.templates).some(x=>x.name===t.name))t.name+=" (from experiment)";Store.save("templates",t);setStatus(`Saved as protocol “${t.name}”`)});
+  const nm=prompt("Name for your protocol:",`My ${String(p.templateName||p.name||"protocol").replace(/ · \d{2}\/\d{2}\/\d{4}\.?$/,"").replace(/^My /,"")}`);if(nm===null)return;t.name=nm.trim()||t.name;
+  if(Object.values(Store.data.templates).some(x=>x.name===t.name))t.name+=" (2)";t.cat=catOfExp(p);
+  const lab=(CATS.find(c=>c[0]===t.cat)||[,"this method"])[1];
+  if(confirm(`Saved as your protocol “${t.name}”.\n\nMake it your default for ${lab}? It will be at the top when you start a new experiment; the built-in one stays available.`)){tplList().filter(x=>x.isDefault&&catOfExp(x)===t.cat).forEach(x=>{const y=clone(x);delete y.isDefault;Store.save("templates",y)});t.isDefault=true}
+  Store.save("templates",t);setStatus(t.isDefault?`“${t.name}” is now your default for ${lab}`:`Saved as protocol “${t.name}”`)});
 
 function hasQuant(p){const t=(p&&p.tools)||{};return t.quant===undefined?p&&p.method==="wb":!!t.quant}
 function protTabs(){if(isTpl())return [["prot","Steps"]];const t=S.prot.tools||{};const linkedSmp=S.prot.method!=="wb"&&S.prot.smp&&S.prot.smp.src;return [["prot","Steps"],linkedSmp&&["smp","Samples"],t.protein&&(S.prot.method==="wb"?["smp","Samples"]:["assay",S.prot.method==="elisa"?"Assay":"Protein concentration"]),t.qpcr&&["qset","Setup"],t.qpcr&&["qres","Results"],t.gel&&["gel","Gel"],t.images&&["img","Images"],hasQuant(S.prot)&&["quant","Quant"],t.solutions&&["psol","Solutions"],["hist","Report"]].filter(Boolean)}
@@ -2942,7 +3041,7 @@ function renderSolRows(){
     r.comps.map((c,i)=>{const un=c.type==="M"?Object.keys(MUN):c.type==="stock"?SUN:null;
       const unitCell=un?`<select class="un" id="rc-${i}-u" data-k="unit">${un.map(u=>`<option ${u===c.unit?"selected":""}>${u}</option>`).join("")}</select>`:`<span class="note">${({wv:"%",vv:"%",gl:"g/L",mll:"mL/L",mgml:"mg/mL",tab:"mL per tablet"})[c.type]||""}</span>`;
       const ex=c.type==="M"?`<input id="rc-${i}-x" data-k="extra" type="text" inputmode="decimal" value="${esc(c.extra)}" placeholder="g/mol">`:c.type==="stock"?`<input id="rc-${i}-x" data-k="extra" type="text" inputmode="decimal" value="${esc(c.extra)}" placeholder="stock">`:"";
-      const dn=compDone(i);return `<tr data-i="${i}"${dn?' class="ticked"':""}><td><input type="checkbox" class="ctick" data-tick="${i}"${dn?" checked":""} aria-label="Added"></td><td><input class="nm" id="rc-${i}-n" data-k="name" type="text" value="${esc(c.name)}" placeholder="e.g. NaCl"></td>
+      const dn=compDone(i);return `<tr data-i="${i}"${dn?' class="ticked"':""}><td><input type="checkbox" class="ctick" data-tick="${i}"${dn?" checked":""} aria-label="Added"></td><td><input class="nm" id="rc-${i}-n" data-k="name" type="text" value="${esc(c.name)}" placeholder="e.g. NaCl"><div class="cloc" id="rc-${i}-loc">${compLocHtml(c.name)}</div></td>
         <td><select class="ty" id="rc-${i}-t" data-k="type">${Object.entries(CT).map(([k,l])=>`<option value="${k}" ${k===c.type?"selected":""}>${l}</option>`).join("")}</select></td>
         <td><input id="rc-${i}-v" data-k="val" type="text" inputmode="decimal" value="${esc(c.val)}"></td><td>${unitCell}</td><td>${ex}</td>
         <td class="o amt" id="rc-${i}-a"></td><td><button class="rm" data-rm="${i}" aria-label="Remove component">×</button></td></tr>`}).join("")+`</tbody>`;
@@ -2956,7 +3055,7 @@ function renderSolOut(){
   $("#r-out").innerHTML=V>0?`Dissolve in about 80% of the volume, then top up with ${esc(r.diluent||"water")} to <b>${vl}</b>.${liq>0?` <span class="muted">Liquids above add up to ${fmtAmt(liq,"mL")}.</span>`:""}${liq>V?`<div style="color:var(--bad);margin-top:4px">The liquid components exceed the final volume. Check the values.</div>`:""}`:"Enter the volume to make.";
   S._solText=[`${r.name} (${vl})`,...lines,`${r.diluent?r.diluent[0].toUpperCase()+r.diluent.slice(1):"Water"} to ${vl}`,r.notes?`Note: ${r.notes}`:""].filter(Boolean).join("\n");
 }
-$("#r-table").addEventListener("input",e=>{const tr=e.target.closest("tr[data-i]"),k=e.target.dataset.k;if(!tr||!k)return;const c=S.sol.comps[+tr.dataset.i];c[k]=e.target.value;
+$("#r-table").addEventListener("input",e=>{const tr=e.target.closest("tr[data-i]"),k=e.target.dataset.k;if(!tr||!k)return;const c=S.sol.comps[+tr.dataset.i];c[k]=e.target.value;if(k==="name"){const l=$(`#rc-${tr.dataset.i}-loc`);if(l)l.innerHTML=compLocHtml(c.name)}
   if(k==="type"){c.unit=c.type==="M"?"mM":c.type==="stock"?"×":"";c.extra="";renderSolRows()}renderSolOut();queueSave("solutions")});
 $("#r-table").addEventListener("click",e=>{const b=e.target.closest("[data-rm]");if(!b)return;S.sol.comps.splice(+b.dataset.rm,1);renderSolRows();renderSolOut();queueSave("solutions")});
 $("#r-add").addEventListener("click",()=>{const n0=S.sol.comps.length;for(let k=0,K=Math.max(1,Math.min(200,parseInt($("#r-add-n").value)||1));k<K;k++)S.sol.comps.push(c_("","M","","mM",""));renderSolRows();renderSolOut();queueSave("solutions");const e=$(`#rc-${n0}-n`);e&&e.focus()});
@@ -3428,13 +3527,25 @@ function renderTimers(){
 /* ================= STORAGE (shared with the lab) ================= */
 const TEMP_L={"":"RT","4":"4°","-20":"−20","-80":"−80","ln2":"LN₂","flam":"FL","acid":"A/B","poison":"TOX"};
 const TEMP_N={"":"room temperature","4":"fridge","-20":"freezer −20 °C","-80":"−80 °C","ln2":"liquid nitrogen","flam":"flammables cabinet","acid":"acids / bases cabinet","poison":"toxic, locked"};
+/* chemicals in the recipe ↔ where they are in Storage */
+const SUBD={"₀":"0","₁":"1","₂":"2","₃":"3","₄":"4","₅":"5","₆":"6","₇":"7","₈":"8","₉":"9"};
+function chemKey(n){return String(n||"").toLowerCase().replace(/[₀-₉]/g,c=>SUBD[c]).replace(/·/g,"").replace(/\(.*?\)/g," ").replace(/[^a-z0-9α-ω]+/g,"")}
+function storageFor(name){const k=chemKey(name);if(k.length<2)return [];let items;try{items=Inv.items}catch(e){return []}const all=Object.values(items||{}).filter(x=>!x.onlyOrder);
+  const ex=all.filter(x=>chemKey(x.name)===k);if(ex.length)return ex;
+  if(k.length<3)return [];return all.filter(x=>{const j=chemKey(x.name);return j.length>=3&&(j.startsWith(k)||k.startsWith(j)||j.includes(k))}).slice(0,3)}
+function compLocHtml(name){const L=storageFor(name);if(!L.length)return "";const x=L[0];
+  const where=[x.room,x.place].filter(Boolean).join(" · ")||"no place set";
+  const st=x.stock==="empty"?`<span class="stk empty">Empty</span>`:x.stock==="low"?`<span class="stk low">Low</span>`:"";
+  return `<button type="button" class="clocb" data-loc="${esc(x.id)}" title="Where it is in Storage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span>${esc(where)}</span>${st}${L.length>1?`<span class="more">+${L.length-1}</span>`:""}</button>`}
+function refreshCompLocs(){if(!S.sol||!$("#r-table"))return;S.sol.comps.forEach((c,i)=>{const l=$(`#rc-${i}-loc`);if(l)l.innerHTML=compLocHtml(c.name)})}
 const Inv={
   items:{},lab:null,labs:[],members:[],chan:null,editing:null,room:"",loaded:false,busy:false,
   remote(){return typeof Sync!=="undefined"&&!!Sync.sb&&!!Sync.user},
   me(){return this.remote()?(Sync.user.email||""):"you"},
   cacheKey(){return "bb.inv."+(this.lab||"local")},
   loadCache(){this.items=lsGet(this.cacheKey(),{})||{}},
-  saveCache(){lsSet(this.cacheKey(),this.items)},
+  saveCache(){lsSet(this.cacheKey(),this.items);if(S.tab==="sol"||S.tab==="psol")refreshCompLocs()},
+  async ensure(){if(this.remote()&&!this.loaded){this.lab=lsGet("bb.inv.lab",null);this.loadCache();await this.loadLabs();this.loaded=true}if(this.remote()&&this.lab&&Date.now()-(this._fetched||0)>120000){this._fetched=Date.now();await this.fetch();this.live()}refreshCompLocs()},
   async open(){if(!this.remote()){this.lab=null;this.loadCache();this.render();return}
     if(!this.loaded){this.lab=lsGet("bb.inv.lab",null);this.loadCache();this.render();await this.loadLabs();this.loaded=true}
     if(this.lab){await this.fetch();this.live()}this.render()},
@@ -3442,7 +3553,7 @@ const Inv={
       this.labs=(data||[]).map(r=>({code:r.lab_code,name:(r.labs&&r.labs.name)||r.lab_code}));
       if(this.lab&&!this.labs.some(l=>l.code===this.lab))this.lab=null;if(!this.lab&&this.labs.length)this.lab=this.labs[0].code;lsSet("bb.inv.lab",this.lab);this.loadCache();this.err="";
     }catch(e){this.err=/relation|does not exist|schema cache/i.test(e.message||"")?"setup":(e.message||String(e))}},
-  async fetch(){if(!this.remote()||!this.lab||!navigator.onLine)return;await this.flush();
+  async fetch(){if(!this.remote()||!this.lab||!navigator.onLine)return;this._fetched=Date.now();await this.flush();
     try{const {data,error}=await Sync.sb.from("inventory").select("id,data,deleted,updated_ms,updated_email,server_ts").eq("lab_code",this.lab).limit(5000);if(error)throw error;
       const m={};(data||[]).forEach(r=>{if(!r.deleted&&r.data)m[r.id]=Object.assign({},r.data,{id:r.id,updatedAt:Number(r.updated_ms),by:r.updated_email||r.data.by})});
       const pend=lsGet("bb.inv.pend",{});Object.values(pend).forEach(x=>{if(x.lab!==this.lab)return;if(x.body)m[x.id]=x.body;else delete m[x.id]});
@@ -3480,25 +3591,83 @@ const Inv={
     $("#inv-add").disabled=rem&&!this.lab;
     this.renderList()},
   renderList(){const all=Object.values(this.items);const q=($("#inv-q").value||"").trim().toLowerCase();
-    const rooms=[...new Set(all.map(x=>(x.room||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));if(this.room&&!rooms.includes(this.room))this.room="";
+    const rooms=[...new Set(all.map(x=>(x.room||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));if(this.room&&this.room!=="__low"&&!rooms.includes(this.room))this.room="";
     $("#iv-rooms").innerHTML=rooms.map(r=>`<option value="${esc(r)}"></option>`).join("");$("#iv-places").innerHTML=[...new Set(all.map(x=>x.place).filter(Boolean))].map(r=>`<option value="${esc(r)}"></option>`).join("");
     $("#inv-rooms").innerHTML=rooms.length>1?[`<button data-room="" aria-pressed="${!this.room}">All rooms</button>`,...rooms.map(r=>`<button data-room="${esc(r)}" aria-pressed="${this.room===r}">${esc(r)}</button>`)].join(""):"";
-    let L=all.filter(x=>(!this.room||(x.room||"").trim()===this.room)&&(!q||[x.name,x.cat,x.room,x.place,x.note,x.amt,TEMP_N[x.temp||""]].join(" ").toLowerCase().includes(q)));
+    const nLow=all.filter(x=>!x.onlyOrder&&(x.stock==="low"||x.stock==="empty")).length;
+    if(rooms.length>1||nLow)$("#inv-rooms").innerHTML=[`<button data-room="" aria-pressed="${!this.room}">All${rooms.length>1?" rooms":""}</button>`,nLow?`<button data-room="__low" aria-pressed="${this.room==="__low"}">Running low (${nLow})</button>`:"",...(rooms.length>1?rooms.map(r=>`<button data-room="${esc(r)}" aria-pressed="${this.room===r}">${esc(r)}</button>`):[])].join("");
+    let L=all.filter(x=>!x.onlyOrder&&(this.room==="__low"?(x.stock==="low"||x.stock==="empty"):(!this.room||(x.room||"").trim()===this.room)&&(!q||[x.name,x.cat,x.room,x.place,x.note,x.amt,TEMP_N[x.temp||""]].join(" ").toLowerCase().includes(q))));
     L.sort((a,b)=>String(a.room||"~").localeCompare(String(b.room||"~"))||String(a.name).localeCompare(String(b.name)));
-    const row=x=>`<button class="ivrow" data-iv-id="${esc(x.id)}"><span class="ic t${esc(x.temp||"")}" title="${esc(TEMP_N[x.temp||""])}">${TEMP_L[x.temp||""]||"RT"}</span><span class="bd"><b>${esc(x.name||"Unnamed")}</b><span class="loc">${x.room?`<i>${esc(x.room)}</i>`:""}${x.room&&x.place?" · ":""}${esc(x.place||(x.room?"":"No place yet"))}</span>${x.note?`<span class="mt">${esc(x.note)}</span>`:""}<span class="mt">${x.cat?esc(x.cat)+" · ":""}${x.by&&x.by!=="you"?"by "+esc(String(x.by).split("@")[0])+" · ":""}${x.updatedAt?shortD(x.updatedAt):""}</span></span>${x.amt?`<span class="am">${esc(x.amt)}</span>`:""}</button>`;
-    let h="",last=null;const grp=!this.room&&!q&&rooms.length>1;
+    const row=x=>`<button class="ivrow${x.stock==="low"?" low":x.stock==="empty"?" empty":""}" data-iv-id="${esc(x.id)}"><span class="ic t${esc(x.temp||"")}" title="${esc(TEMP_N[x.temp||""])}">${TEMP_L[x.temp||""]||"RT"}</span><span class="bd"><b>${esc(x.name||"Unnamed")}${x.stock==="low"?`<span class="stk low">Low</span>`:x.stock==="empty"?`<span class="stk empty">Empty</span>`:""}${x.order?`<span class="stk ord">${x.order.state==="ordered"?"Ordered":"To order"}</span>`:""}</b><span class="loc">${x.room?`<i>${esc(x.room)}</i>`:""}${x.room&&x.place?" · ":""}${esc(x.place||(x.room?"":"No place yet"))}</span>${x.note?`<span class="mt">${esc(x.note)}</span>`:""}<span class="mt">${x.cat?esc(x.cat)+" · ":""}${x.by&&x.by!=="you"?"by "+esc(String(x.by).split("@")[0])+" · ":""}${x.updatedAt?shortD(x.updatedAt):""}</span></span>${x.amt?`<span class="am">${esc(x.amt)}</span>`:""}</button>`;
+    let h="",last=null;const grp=!this.room&&!q&&rooms.length>1;this.renderOrders();
     L.forEach(x=>{const r=(x.room||"").trim()||"No room";if(grp&&r!==last){h+=`<div class="ivh">${esc(r)}</div>`;last=r}h+=row(x)});
     $("#inv-list").innerHTML=h||`<div class="card"><p class="note" style="margin:0">${q||this.room?"Nothing matches.":this.remote()&&!this.lab?"Create or join a lab to start the shared list.":"No items yet. Tap <b>+ Add</b> and write where a chemical is kept."}</p></div>`},
   edit(id){const x=id?this.items[id]:null;this.editing=x?x.id:"__new";$("#inv-form").hidden=false;$("#inv-form-t").textContent=x?"Edit item":"New item";
     $("#iv-name").value=x?x.name||"":"";$("#iv-cat").value=x?x.cat||"":"";$("#iv-room").value=x?x.room||"":(this.room||lsGet("bb.inv.lastRoom",""));$("#iv-place").value=x?x.place||"":"";$("#iv-amt").value=x?x.amt||"":"";$("#iv-temp").value=x?x.temp||"":"";$("#iv-note").value=x?x.note||"":"";
-    $("#iv-del").hidden=!x;$("#iv-del").classList.remove("armed");$("#iv-del").textContent="Delete";$("#iv-meta").textContent=x&&x.updatedAt?`Last change ${x.by&&x.by!=="you"?"by "+x.by+" ":""}${new Date(x.updatedAt).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}`:"";
+    this.setStock(x?x.stock||"ok":"ok");$("#iv-del").hidden=!x;$("#iv-del").classList.remove("armed");$("#iv-del").textContent="Delete";$("#iv-meta").textContent=x&&x.updatedAt?`Last change ${x.by&&x.by!=="you"?"by "+x.by+" ":""}${new Date(x.updatedAt).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}`:"";
     $("#inv-form").scrollIntoView({block:"start",behavior:"smooth"});setTimeout(()=>$("#iv-name").focus(),50)},
   close(){this.editing=null;$("#inv-form").hidden=true;this.renderList()},
   save(){const name=$("#iv-name").value.trim();if(!name){setStatus("Write what the item is",true);$("#iv-name").focus();return}
-    const old=this.editing&&this.editing!=="__new"?this.items[this.editing]:null;const x=Object.assign({},old||{id:uid(),created:Date.now()},{name,cat:$("#iv-cat").value.trim(),room:$("#iv-room").value.trim(),place:$("#iv-place").value.trim(),amt:$("#iv-amt").value.trim(),temp:$("#iv-temp").value,note:$("#iv-note").value.trim()});
-    if(x.room)lsSet("bb.inv.lastRoom",x.room);this.put(x);this.close();setStatus(old?"Item updated":"Item added")}
+    const old=this.editing&&this.editing!=="__new"?this.items[this.editing]:null;const x=Object.assign({},old||{id:uid(),created:Date.now()},{name,cat:$("#iv-cat").value.trim(),room:$("#iv-room").value.trim(),place:$("#iv-place").value.trim(),amt:$("#iv-amt").value.trim(),temp:$("#iv-temp").value,note:$("#iv-note").value.trim(),stock:this.formStock||"ok"});
+    let msg=old?"Item updated":"Item added";
+    if((x.stock==="low"||x.stock==="empty")&&!x.order){x.order={state:"needed",qty:"",by:this.me(),at:Date.now()};msg+=" and put on the order list"}
+    if(x.stock==="ok"&&old&&(old.stock==="low"||old.stock==="empty")&&x.order&&x.order.state==="needed")delete x.order;
+    if(x.room)lsSet("bb.inv.lastRoom",x.room);this.put(x);this.close();setStatus(msg)},
+  setStock(v){this.formStock=v;$$("#iv-stock button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===v)))},
+  view:"items",
+  setView(v){this.view=v;$$("#inv-view button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===v)));$("#inv-items").hidden=v!=="items";$("#inv-orders").hidden=v!=="order";$("#inv-add").hidden=v!=="items";if(v!=="items")$("#inv-form").hidden=true;if(v!=="order")$("#ord-form").hidden=true;this.renderOrders()},
+  orders(){return Object.values(this.items).filter(x=>x.order)},
+  renderOrders(){const O=this.orders();const need=O.filter(x=>x.order.state!=="ordered"),ord=O.filter(x=>x.order.state==="ordered");
+    $("#inv-ocnt").textContent=need.length||"";
+    if(this.view!=="order")return;
+    const who=e=>e&&e!=="you"?String(e).split("@")[0]:"you";
+    const card=x=>{const o=x.order;return `<div class="ordrow ${o.state==="ordered"?"ordered":"needed"}" data-or="${esc(x.id)}"><div class="top"><b>${esc(x.name||"Unnamed")}${x.onlyOrder?`<span class="stk ord">New</span>`:x.stock==="empty"?`<span class="stk empty">Empty</span>`:x.stock==="low"?`<span class="stk low">Low</span>`:""}</b><span class="qty">${esc(o.qty||"")}</span></div>
+      <span class="mt">${[o.sup||x.cat,x.room&&!x.onlyOrder?x.room+(x.place?" · "+x.place:""):"",o.note].filter(Boolean).map(esc).join(" · ")}</span>
+      <span class="mt">${o.state==="ordered"?`Ordered by ${esc(who(o.orderedBy))} · ${shortD(o.orderedAt)}`:`Requested by ${esc(who(o.by))} · ${shortD(o.at)}`}</span>
+      <div class="acts"><button class="btn sm ghost" data-oa="edit">Edit</button><button class="btn sm ghost danger" data-oa="rm">Remove</button>${o.state==="ordered"?`<button class="btn sm ghost" data-oa="undo">Not ordered</button><button class="btn sm primary" data-oa="arrived">Arrived</button>`:`<button class="btn sm primary" data-oa="ordered">Ordered</button>`}</div></div>`};
+    $("#ord-sum").textContent=O.length?`${need.length} to order · ${ord.length} on the way`:"";
+    $("#ord-list").innerHTML=(need.length?`<div class="ivh">To order</div>`+need.sort((a,b)=>(a.order.at||0)-(b.order.at||0)).map(card).join(""):"")+(ord.length?`<div class="ivh">Ordered, waiting</div>`+ord.sort((a,b)=>(a.order.orderedAt||0)-(b.order.orderedAt||0)).map(card).join(""):"")||`<div class="card"><p class="note" style="margin:0">Nothing to order. Mark an item as <b>Running low</b> or <b>Empty</b>, or tap <b>+ Add</b>.</p></div>`;
+    $("#or-names").innerHTML=Object.values(this.items).filter(x=>!x.order).map(x=>`<option value="${esc(x.name)}"></option>`).join("")},
+  ordEditing:null,
+  ordEdit(id){const x=id?this.items[id]:null;this.ordEditing=id||null;$("#ord-form").hidden=false;$("#ord-form-t").textContent=x?"Edit order":"Add to the order list";$("#or-save").textContent=x?"Save":"Add to list";
+    $("#or-name").value=x?x.name:"";$("#or-name").disabled=!!x;$("#or-qty").value=x&&x.order?x.order.qty||"":"";$("#or-sup").value=x&&x.order?x.order.sup||x.cat||"":"";$("#or-note").value=x&&x.order?x.order.note||"":"";
+    $("#ord-form").scrollIntoView({block:"start",behavior:"smooth"});setTimeout(()=>(x?$("#or-qty"):$("#or-name")).focus(),50)},
+  ordSave(){const qty=$("#or-qty").value.trim(),sup=$("#or-sup").value.trim(),note=$("#or-note").value.trim();
+    if(this.ordEditing){const x=Object.assign({},this.items[this.ordEditing]);x.order=Object.assign({},x.order||{state:"needed",by:this.me(),at:Date.now()},{qty,sup,note});this.put(x)}
+    else{const name=$("#or-name").value.trim();if(!name){setStatus("Write what to order",true);return}
+      const ex=Object.values(this.items).find(x=>String(x.name).trim().toLowerCase()===name.toLowerCase());
+      if(ex){const x=Object.assign({},ex);x.order=Object.assign({state:"needed",by:this.me(),at:Date.now()},x.order||{},{qty,sup,note});this.put(x)}
+      else this.put({id:uid(),created:Date.now(),name,cat:sup,onlyOrder:true,stock:"empty",order:{state:"needed",qty,sup,note,by:this.me(),at:Date.now()}})}
+    $("#ord-form").hidden=true;this.ordEditing=null;this.renderList();setStatus("Order list updated")},
+  ordAction(id,a){const x0=this.items[id];if(!x0)return;const x=Object.assign({},x0,{order:Object.assign({},x0.order)});
+    if(a==="edit"){this.ordEdit(id);return}
+    if(a==="ordered"){x.order.state="ordered";x.order.orderedBy=this.me();x.order.orderedAt=Date.now();this.put(x);setStatus(`${x.name}: marked as ordered`)}
+    else if(a==="undo"){x.order.state="needed";delete x.order.orderedBy;delete x.order.orderedAt;this.put(x)}
+    else if(a==="rm"){if(x.onlyOrder){this.del(id)}else{delete x.order;this.put(x)}setStatus("Removed from the order list")}
+    else if(a==="arrived"){const isNew=!!x.onlyOrder;delete x.order;delete x.onlyOrder;x.stock="ok";this.put(x);
+      if(isNew){this.setView("items");this.edit(id);setStatus("Arrived. Write where you put it")}else setStatus(`${x.name} arrived, stock set to OK`)}
+    this.renderList()},
+  copyOrders(){const O=this.orders().filter(x=>x.order.state!=="ordered");if(!O.length){setStatus("Nothing to order");return}
+    const t=["Order list"+(this.labName()?" · "+this.labName():"")+" · "+new Date().toLocaleDateString("en-GB"),...O.map(x=>`- ${x.name}${x.order.qty?" · "+x.order.qty:""}${x.order.sup||x.cat?" · "+(x.order.sup||x.cat):""}${x.order.note?" ("+x.order.note+")":""}`)].join("\n");
+    navigator.clipboard.writeText(t).then(()=>setStatus("Order list copied")).catch(()=>setStatus("Couldn't copy",true))}
 };
 $("#inv-add").addEventListener("click",()=>Inv.edit(null));
+$("#r-table").addEventListener("click",e=>{const b=e.target.closest("[data-loc]");if(!b)return;e.preventDefault();const tr=b.closest("tr[data-i]");const c=S.sol&&S.sol.comps[+tr.dataset.i];const L=storageFor(c?c.name:"");
+  const pop=$("#locpop");pop.innerHTML=`<div class="lp-h"><b>In storage</b><button class="btn sm ghost" data-lpx>Close</button></div>`+L.map(x=>`<div class="lp-i"><b>${esc(x.name)}${x.stock==="empty"?`<span class="stk empty">Empty</span>`:x.stock==="low"?`<span class="stk low">Low</span>`:""}</b><span>${esc([x.room,x.place].filter(Boolean).join(" · ")||"No place set")}</span><span class="note">${esc([x.amt,TEMP_N[x.temp||""],x.cat,x.note].filter(Boolean).join(" · "))}</span></div>`).join("")+`<button class="btn sm" data-lpgo>Open Storage</button>`;
+  pop.hidden=false;const r=b.getBoundingClientRect();const w=Math.min(320,window.innerWidth-16);pop.style.width=w+"px";pop.style.left=Math.max(8,Math.min(window.innerWidth-w-8,r.left))+"px";const h=pop.offsetHeight;pop.style.top=(r.bottom+6+h>window.innerHeight-8?Math.max(8,r.top-h-6):r.bottom+6)+"px"});
+document.addEventListener("click",e=>{const pop=$("#locpop");if(!pop||pop.hidden)return;if(e.target.closest("[data-lpgo]")){pop.hidden=true;$("#inv-q").value=($("#locpop .lp-i b")||{}).firstChild?$("#locpop .lp-i b").firstChild.textContent:"";showTab("inv");Inv.renderList();return}
+  if(e.target.closest("[data-lpx]")||(!e.target.closest("#locpop")&&!e.target.closest("[data-loc]")))pop.hidden=true},true);
+window.addEventListener("scroll",()=>{const pop=$("#locpop");if(pop&&!pop.hidden)pop.hidden=true},{passive:true,capture:true});
+$("#inv-view").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b)Inv.setView(b.dataset.v)});
+$("#iv-stock").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b)Inv.setStock(b.dataset.v)});
+$("#ord-add").addEventListener("click",()=>Inv.ordEdit(null));
+$("#ord-cancel").addEventListener("click",()=>{$("#ord-form").hidden=true;Inv.ordEditing=null});
+$("#or-save").addEventListener("click",()=>Inv.ordSave());
+$("#ord-form").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.tagName==="INPUT"){e.preventDefault();Inv.ordSave()}});
+$("#ord-copy").addEventListener("click",()=>Inv.copyOrders());
+$("#ord-list").addEventListener("click",e=>{const b=e.target.closest("[data-oa]");if(!b)return;const r=b.closest("[data-or]");
+  if(b.dataset.oa==="rm"&&!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Tap again";setTimeout(()=>{b.classList.remove("armed");b.textContent="Remove"},3000);return}
+  Inv.ordAction(r.dataset.or,b.dataset.oa)});
 $("#inv-cancel").addEventListener("click",()=>Inv.close());
 $("#iv-save").addEventListener("click",()=>Inv.save());
 $("#inv-form").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.tagName==="INPUT"){e.preventDefault();Inv.save()}if(e.key==="Escape")Inv.close()});
@@ -3516,6 +3685,7 @@ $("#tab-inv").addEventListener("click",async e=>{const b=e.target.closest("[data
   else if(a==="members")setStatus(Inv.members.length?"In this lab: "+Inv.members.map(m=>m.split("@")[0]).join(", "):"No members loaded yet",true);
   else if(a==="copy"){const t=`Join our lab storage list in Lab Rat (https://lukamihalic.github.io/lab-rat/): Storage → Join → code ${Inv.lab}`;try{await navigator.clipboard.writeText(t);setStatus("Invite copied")}catch(_){setStatus("Lab code: "+Inv.lab,true)}}});
 window.addEventListener("online",()=>{if(Inv.remote())Inv.flush()});
+Inv.lab=lsGet("bb.inv.lab",null);Inv.loadCache();
 /* ---- date & time in the header ---- */
 function tickNow(){const el=$("#nowclk");if(!el)return;const d=new Date();const t=d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})+" · "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");if(el.textContent!==t){el.textContent=t;el.dateTime=d.toISOString()}}
 tickNow();setInterval(tickNow,5000);
