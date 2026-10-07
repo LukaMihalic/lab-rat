@@ -678,7 +678,7 @@ nav.tabs button{position:relative}
       <p class="note" style="margin:0" id="a-gelnote">Pick a <b>Gel</b> and <b>Well</b> for any sample to place it exactly. Samples left on Auto fill the free wells in order.</p>
       <div class="row" style="justify-content:space-between">
         <div class="row"><span class="addn"><input class="nrows" id="a-smp-add-n" type="number" min="1" max="200" value="5" aria-label="How many"><button class="btn sm ghost" id="a-smp-add">Add rows</button></span><button class="btn sm ghost" id="a-rep-add">+ Replicate column</button></div>
-        <button class="btn sm ghost danger" id="a-smp-clear">Clear samples</button>
+        <div class="row" style="gap:6px"><select class="xfmt" id="a-xfmt" style="width:auto" aria-label="Export format"><option value="xlsx">Excel (.xlsx)</option><option value="csv">CSV</option><option value="pdf">PDF</option><option value="docx">Word (.docx)</option></select><button class="btn sm" id="a-export">Export</button><button class="btn sm ghost danger" id="a-smp-clear">Clear samples</button></div>
       </div>
       <textarea class="copyarea" id="a-copyarea" hidden readonly></textarea>
       <p class="note" style="margin:0">Concentration is for the original sample, multiplied by the dilution. Change units under the curve. Leave a row's dilution empty to use the default.</p>
@@ -785,7 +785,7 @@ nav.tabs button{position:relative}
       <p class="note" style="margin:0" id="sm-hidden" hidden></p>
       <div class="row" style="justify-content:space-between">
         <div class="row"><button class="btn sm ghost" id="sm-all">Select all</button><button class="btn sm ghost" id="sm-none">Select none</button><span class="addn"><input class="nrows" id="sm-add-n" type="number" min="1" max="200" value="1" aria-label="How many"><button class="btn sm ghost" id="sm-add">Add samples by hand</button></span></div>
-        <button class="btn primary" id="sm-send">Send to gel</button><button class="btn" id="sm-copy" hidden>Copy</button>
+        <div class="row"><span class="row" style="gap:6px"><select class="xfmt" id="sm-xfmt" style="width:auto" aria-label="Export format"><option value="xlsx">Excel (.xlsx)</option><option value="csv">CSV</option><option value="pdf">PDF</option><option value="docx">Word (.docx)</option></select><button class="btn sm" id="sm-export">Export</button></span><button class="btn primary" id="sm-send">Send to gel</button><button class="btn" id="sm-copy" hidden>Copy</button></div>
       </div>
       <div class="flags" id="sm-flags"></div>
     </div>
@@ -2804,6 +2804,28 @@ async function exportRecord(r,fmtKey){
     else await saveFile(base+".txt",new Blob([recText(r)],{type:"text/plain"}));
   }catch(e){setStatus(e.message||"Export failed",true)}
 }
+async function exportModel(m,fmtKey,base){base=String(base||"samples").replace(/[\\/:*?"<>|]+/g," ").replace(/\s+/g," ").trim().slice(0,80)||"samples";
+  try{if(fmtKey==="pdf"){setStatus("Making PDF…",true);await saveFile(base+".pdf",await toPdf(m))}
+    else if(fmtKey==="docx")await saveFile(base+".docx",toDocx(m));
+    else if(fmtKey==="csv")await saveFile(base+".csv",new Blob([toCsv(m)],{type:"text/csv"}));
+    else await saveFile(base+".xlsx",toXlsx(m))}catch(e){setStatus(e.message||"Export failed",true)}}
+const r3=v=>Number.isFinite(v)?Number(v.toFixed(3)):"";
+$("#sm-export").addEventListener("click",()=>{flushProt();const st=smState(),gl=hasGelTool();const rows=visRows();if(!rows.length){setStatus("No samples to export",true);return}
+  const A0=st.src&&st.src!=="__none"?Store.data.assays[st.src]:null;const ap=A0&&Store.data.protocols[A0.protoId];const on=onGelNames();
+  const head=["Sample","mg/mL",...(gl?["Gel","Well","On a gel"]:[]),"Included","Note"];
+  const body=rows.map(r=>[r.name||"",r3(typeof r.conc==="number"?r.conc:num(r.conc)),...(gl?[r.gel?"Gel "+r.gel:"Auto",r.well||"",on.has(r.name)?"yes":""]:[]),r.on?"yes":"",r.flag||""]);
+  const m={title:`${S.prot.name||"Experiment"} · Samples`,blocks:[{p:A0?`Concentrations from ${ap?ap.name+" · ":""}${A0.name||""}${A0.date?" ("+A0.date+")":""}`:"Entered by hand"},{p:"Exported "+new Date().toLocaleString("en-GB")},{table:{name:"Samples",head,rows:body}}]};
+  exportModel(m,$("#sm-xfmt").value,`${S.prot.name||"Experiment"} samples`)});
+$("#a-export").addEventListener("click",()=>{const A=S.assay,R=assayCalc(A),N=A.reps,U=ru();const RL=A.method==="direct"?"Reading":"A";
+  const rh=Array.from({length:N},(_,j)=>`${RL}${N>1?" "+(j+1):""}`);
+  const srows=A.samples.map((x,i)=>({x,c:R.smp[i]})).filter(o=>o.x.name||o.c.v.length).map(({x,c},i)=>[x.name||`Sample ${i+1}`,...Array.from({length:N},(_,j)=>{const v=num(x.r[j]);return Number.isFinite(v)?v:""}),c.dil,r3(c.m),r3(c.conc*U[0]),c.flag||(c.v.length&&R.fit&&!Number.isFinite(c.conc)?"Outside the curve":"")]);
+  if(!srows.length){setStatus("No samples to export",true);return}
+  const blocks=[{p:[A.date,A.note].filter(Boolean).join(" · ")||" "},{table:{name:"Samples",head:["Sample",...rh,"Dil.",A.method==="direct"?"Mean":"Mean A",U[1],"Note"],rows:srows}}];
+  const st=A.stds.map((x,i)=>({x,c:R.stds[i]})).filter(o=>o.x.c!==""||o.c.v.length);
+  if(st.length&&A.method!=="direct")blocks.push({table:{name:"Standards",head:[unitLabel(),...rh,"Mean"],rows:st.map(({x,c})=>[Number.isFinite(num(x.c))?num(x.c):x.c,...Array.from({length:N},(_,j)=>{const v=num(x.r[j]);return Number.isFinite(v)?v:""}),r3(c.m)])}});
+  if(R.fit)blocks.push({p:`Curve fit: ${[...$("#a-fit").children].map(e=>e.textContent).join(" · ")}`});
+  const m={title:`${S.prot.name||"Protein concentration"} · ${A.name||"Assay"}`,blocks};
+  exportModel(m,$("#a-xfmt").value,`${A.name||S.prot.name||"assay"} samples`)});
 $("#hist-export").addEventListener("click",()=>{if(S.rec)exportRecord(S.rec,$("#hist-fmt").value)});
 
 /* ================= PLATE LAYOUT ================= */
