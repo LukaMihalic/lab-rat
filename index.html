@@ -657,6 +657,9 @@ nav.tabs button{position:relative}
 .ivfp .fc[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.ivfp .fc[aria-pressed=true] i{color:inherit;opacity:.8}
 .ivfp .fc:disabled{opacity:.4;cursor:default}
 .ivfp .fw{display:flex;flex-wrap:wrap;gap:6px}
+.fren{margin-top:2px}.fren .lnk{background:none;border:0;padding:4px 0;color:var(--accent);font:600 12.5px var(--sans);cursor:pointer}
+.fren.on{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--accent-soft);border-radius:10px;padding:8px}
+.fren.on input{flex:1 1 10rem;min-width:0}.fren.on .note{flex-basis:100%;margin:0;font-size:12px}
 .ivact button.on{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
 .ivact button.on b{font-weight:400;opacity:.75;margin-left:2px}
 .ivact button.clr{border-style:dashed;color:var(--muted)}
@@ -3922,17 +3925,29 @@ const Inv={
     if(f.tags.length){const T=(x.tags||[]).map(k);if(!f.tags.every(t=>skip==="tag:"+k(t)||T.includes(k(t))))return false}
     if(q&&![x.name,x.cat,x.room,x.unit,x.place,x.type,(x.tags||[]).join(" "),x.note,x.amt,TEMP_N[x.temp||""]].join(" ").toLowerCase().includes(q))return false;return true},
   nF(){const f=this.f;return (f.room?1:0)+(f.unit?1:0)+(f.type?1:0)+(f.low?1:0)+f.tags.length},
-  setF(g,v){const f=this.f,k=s=>String(s).toLowerCase();if(g==="low")f.low=!f.low;else if(g==="tag"){const i=f.tags.findIndex(t=>k(t)===k(v));if(i>=0)f.tags.splice(i,1);else f.tags.push(v)}else f[g]=k(f[g])===k(v)?"":v;this.renderList()},
+  renOpen:null,
+  bulkRename(g,from,to){const k=s=>String(s||"").trim().toLowerCase();to=String(to||"").trim();if(g==="tag")to=to.replace(/^#/,"");let n=0;
+    Object.values(this.items).forEach(x0=>{let x=null;
+      if(g==="tag"){const T=x0.tags||[];if(!T.some(t=>k(t)===k(from)))return;x=Object.assign({},x0);x.tags=ivTags([...T.map(t=>k(t)===k(from)?to:t)].filter(Boolean).join(","))}
+      else{if(k(x0[g])!==k(from))return;if(String(x0[g]||"").trim()===to)return;x=Object.assign({},x0);x[g]=to}
+      this.put(x);n++});
+    if(g==="room"&&k(lsGet("bb.inv.lastRoom",""))===k(from))lsSet("bb.inv.lastRoom",to);
+    if(g==="tag"){this.f.tags=this.f.tags.filter(t=>k(t)!==k(from));if(to)this.f.tags.push(to)}else this.f[g]=to;
+    this.renOpen=null;this.renderList();setStatus(n?`Renamed on ${n} item${n===1?"":"s"}`:"Nothing to change")},
+  setF(g,v){this.renOpen=null;const f=this.f,k=s=>String(s).toLowerCase();if(g==="low")f.low=!f.low;else if(g==="tag"){const i=f.tags.findIndex(t=>k(t)===k(v));if(i>=0)f.tags.splice(i,1);else f.tags.push(v)}else f[g]=k(f[g])===k(v)?"":v;this.renderList()},
   renderFilters(all,q){const f=this.f,k=s=>String(s||"").trim().toLowerCase();
     const vals=(get)=>{const m=new Map();all.forEach(x=>{if(x.onlyOrder)return;[].concat(get(x)||[]).forEach(v=>{v=String(v||"").trim();if(v&&!m.has(k(v)))m.set(k(v),v)})});return [...m.values()].sort((a,b)=>a.localeCompare(b))};
     const cnt=(g,v)=>all.filter(x=>this.match(x,g==="tag"?"tag:"+k(v):g,q)&&(g==="tag"?(x.tags||[]).some(t=>k(t)===k(v)):k(x[g])===k(v))).length;
-    const grp=(label,g,list,on)=>list.length?`<div class="fg"><span>${label}</span><div class="fw">${list.map(v=>{const p=on(v),n=cnt(g,v);return `<button class="fc" data-f="${g}" data-v="${esc(v)}" aria-pressed="${p}"${!p&&!n?" disabled":""}>${esc(v)}<i>${n}</i></button>`}).join("")}</div></div>`:"";
+    const ren=(g,label)=>{const sel=g==="tag"?(f.tags.length===1?f.tags[0]:""):f[g];if(!sel)return "";const n=all.filter(x=>g==="tag"?(x.tags||[]).some(t=>k(t)===k(sel)):k(x[g])===k(sel)).length;
+      if(this.renOpen===g)return `<div class="fren on"><input id="iv-ren" type="text" value="${esc(sel)}" aria-label="New name"><button class="btn sm primary" data-ren-go="${g}" data-v="${esc(sel)}">Rename on ${n}</button><button class="btn sm ghost" data-ren-x>Cancel</button><span class="note">${g==="tag"?"Leave empty to remove the tag from all of them.":"Leave empty to clear it on all of them."}${this.remote()&&this.lab?" Changes it for everyone in the lab.":""}</span></div>`;
+      return `<div class="fren"><button class="lnk" data-ren="${g}">✎ Rename “${esc(sel)}” on all ${n} item${n===1?"":"s"}</button></div>`};
+    const grp=(label,g,list,on)=>list.length?`<div class="fg"><span>${label}</span><div class="fw">${list.map(v=>{const p=on(v),n=cnt(g,v);return `<button class="fc" data-f="${g}" data-v="${esc(v)}" aria-pressed="${p}"${!p&&!n?" disabled":""}>${esc(v)}<i>${n}</i></button>`}).join("")}</div>${ren(g)}</div>`:"";
     const rooms=vals(x=>x.room),units=vals(x=>x.unit),types=vals(x=>x.type),tags=vals(x=>x.tags);
     const nLow=all.filter(x=>this.match(x,"low",q)&&(x.stock==="low"||x.stock==="empty")).length;
     let fp=grp("Lab / room","room",rooms,v=>k(v)===k(f.room))+grp("Fridge / freezer / cabinet","unit",units,v=>k(v)===k(f.unit))+grp("Type","type",types,v=>k(v)===k(f.type))+grp("Tags","tag",tags,v=>f.tags.some(t=>k(t)===k(v)))
       +`<div class="fg"><span>Stock</span><div class="fw"><button class="fc" data-f="low" aria-pressed="${f.low}"${!f.low&&!nLow?" disabled":""}>Running low or empty<i>${nLow}</i></button></div></div>`;
     if(!rooms.length&&!units.length&&!types.length&&!tags.length)fp+=`<p class="note" style="margin:0">Give items a type, tags, a lab and a fridge (tap an item → edit), and you can filter by them here.</p>`;
-    $("#inv-fp").innerHTML=fp;$("#inv-fp").hidden=!this.fOpen;$("#inv-fbtn").setAttribute("aria-expanded",String(this.fOpen));
+    const keepFocus=document.activeElement&&document.activeElement.id==="iv-ren";$("#inv-fp").innerHTML=fp;if(this.renOpen&&$("#iv-ren")&&!keepFocus){const i=$("#iv-ren");i.focus();i.select()}$("#inv-fp").hidden=!this.fOpen;$("#inv-fbtn").setAttribute("aria-expanded",String(this.fOpen));
     const n=this.nF();$("#inv-fcnt").textContent=n||"";
     const act=[];if(f.room)act.push(["room",f.room,"Lab"]);if(f.unit)act.push(["unit",f.unit,""]);if(f.type)act.push(["type",f.type,""]);f.tags.forEach(t=>act.push(["tag",t,"#"]));if(f.low)act.push(["low","","Running low"]);
     let ah=act.map(([g,v,l])=>`<button class="on" data-f="${g}" data-v="${esc(v)}" title="Remove filter">${g==="tag"?"#"+esc(v):g==="low"?l:esc(v)}<b>✕</b></button>`).join("");
@@ -4028,8 +4043,12 @@ $("#iv-save").addEventListener("click",()=>Inv.save());
 $("#inv-form").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.tagName==="INPUT"){e.preventDefault();Inv.save()}if(e.key==="Escape")Inv.close()});
 $("#iv-del").addEventListener("click",e=>{const b=e.currentTarget;if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Tap again to delete";return}const id=Inv.editing;if(id&&id!=="__new")Inv.del(id);Inv.close();setStatus("Item deleted")});
 $("#inv-q").addEventListener("input",()=>Inv.renderList());
-const ivF=e=>{const b=e.target.closest("[data-f]");if(!b||b.disabled)return;if(b.dataset.f==="clear"){Inv.resetF();Inv.renderList();return}Inv.setF(b.dataset.f,b.dataset.v||"")};
+const ivF=e=>{const rb=e.target.closest("[data-ren]");if(rb){Inv.renOpen=rb.dataset.ren;Inv.renderList();return}
+  if(e.target.closest("[data-ren-x]")){Inv.renOpen=null;Inv.renderList();return}
+  const go=e.target.closest("[data-ren-go]");if(go){Inv.bulkRename(go.dataset.renGo,go.dataset.v,$("#iv-ren").value);return}
+  const b=e.target.closest("[data-f]");if(!b||b.disabled)return;if(b.dataset.f==="clear"){Inv.resetF();Inv.renderList();return}Inv.setF(b.dataset.f,b.dataset.v||"")};
 $("#inv-rooms").addEventListener("click",ivF);$("#inv-fp").addEventListener("click",ivF);
+$("#inv-fp").addEventListener("keydown",e=>{if(e.target.id!=="iv-ren")return;if(e.key==="Enter"){e.preventDefault();const go=$("#inv-fp [data-ren-go]");go&&go.click()}if(e.key==="Escape"){Inv.renOpen=null;Inv.renderList()}});
 $("#inv-fbtn").addEventListener("click",()=>{Inv.fOpen=!Inv.fOpen;Inv.renderList()});
 $("#inv-list").addEventListener("click",e=>{const t=e.target.closest("[data-tf]");if(t){e.stopPropagation();const g=t.dataset.tf,v=t.dataset.tv,f=Inv.f;const on=g==="tag"?f.tags.some(x=>x.toLowerCase()===v.toLowerCase()):String(f[g]).toLowerCase()===v.toLowerCase();if(!on)Inv.setF(g,v);$("#inv-items").scrollIntoView({block:"start",behavior:"smooth"});return}const b=e.target.closest("[data-iv-id]");if(b)Inv.edit(b.dataset.ivId)});
 $("#iv-tags").addEventListener("input",()=>Inv.tagSug());
