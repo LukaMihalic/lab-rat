@@ -841,6 +841,43 @@ nav.tabs button{position:relative}
   #tab-sol #sol-select{display:none}
   #tab-sol>.docbar{justify-content:flex-end}
 }
+
+/* settings sheet */
+.setsheet{background:var(--bg);gap:18px;padding-top:0}
+.setsheet .sethd{position:sticky;top:0;z-index:2;background:var(--bg);margin:0 -16px;padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+.setsheet .sethd b{font-size:18px}
+.ssec{display:flex;flex-direction:column;gap:7px}
+.ssec>.seth{padding:0 4px}
+.sgrp{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;min-height:48px;box-sizing:border-box;font-size:14.5px;color:var(--ink)}
+.sgrp>.srow+.srow,.sgrp>.sform+.srow{border-top:1px solid var(--line)}
+.srow[hidden]{display:none}
+label.srow{cursor:pointer}
+.srow.stack{flex-direction:column;align-items:stretch;gap:10px}
+.srow .sl{display:flex;flex-direction:column;gap:2px;min-width:0}
+.srow .sl small{font-size:12.5px;color:var(--muted);font-weight:400;line-height:1.35}
+.srow .sl b{font-size:15px}
+.srow.danger,.srow.link.danger{color:var(--bad);font-weight:600}
+.srow.link{cursor:pointer;background:none;border:0;width:100%;text-align:left;font:inherit;font-size:14.5px;color:var(--ink)}
+.srow.link:hover{background:var(--surface-2)}
+.srow.link::after{content:"›";color:var(--muted);font-size:20px;line-height:1}
+.srow.link.danger::after{content:none}
+.srow .sseg{width:auto;flex:none;min-width:0}
+.srow .sseg button{padding:6px 12px;font-size:13px}
+.srow .ssel{width:auto;max-width:55%}
+.snote{margin:0;padding:0 4px;font-size:12.5px;color:var(--muted)}
+.acct{display:flex;align-items:center;gap:12px}
+.acct .av{flex:none;width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font:700 17px var(--sans);text-transform:uppercase}
+.acct .who{display:flex;flex-direction:column;min-width:0}.acct .who b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.acct .who small{font-size:12.5px;color:var(--muted)}
+.acct .who small.bad{color:var(--bad)}
+.sform{display:flex;flex-direction:column;gap:9px;padding:12px 14px;border-top:1px solid var(--line);background:var(--surface-2)}
+.sform[hidden]{display:none}
+input.sw{appearance:none;-webkit-appearance:none;flex:none;width:46px;height:28px;border-radius:999px;background:var(--line);position:relative;cursor:pointer;transition:background .15s;margin:0;border:0}
+input.sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+input.sw:checked{background:var(--accent)}
+input.sw:checked::after{transform:translateX(18px)}
+input.sw:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:420px){.bgpick{grid-template-columns:repeat(4,1fr);gap:6px}}
 </style>
 
 <div class="wrap">
@@ -1471,26 +1508,26 @@ nav.tabs button{position:relative}
   <div class="row" style="justify-content:flex-end"><button class="btn primary" id="fin-save">Save run</button></div>
 </div>
 <div class="scrim" id="set-scrim" hidden></div>
-<div class="sheet" id="set-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="set-title">
-  <div class="hd"><b id="set-title">Settings</b><button class="btn sm ghost" id="set-close">Done</button></div>
-  <div class="setsec" id="set-acc-sec"><div class="seth">Account and sync</div><div id="set-account" style="display:flex;flex-direction:column;gap:10px"><p class="note" style="margin:0">In this version your data is saved in Claude. Sign-in, sync between phone and laptop and backups are in the Lab Rat app (lukamihalic.github.io/lab-rat).</p></div></div>
-  <div class="setsec"><div class="seth">Theme</div><div class="seg" id="set-theme"><button data-v="auto">Automatic</button><button data-v="light">Light</button><button data-v="dark">Dark</button></div><p class="note" style="margin:0">Automatic follows your phone or computer.</p></div>
-  <div class="setsec"><div class="seth">Accent colour</div><div class="accpick" id="set-acc"></div><p class="note" style="margin:0">Buttons, tabs and highlights. The last swatch lets you pick any colour.</p></div>
-  <div class="setsec"><div class="seth">Background</div><div class="bgpick" id="set-bg"></div></div>
-  <div class="setsec"><div class="seth">Folder icon</div><div class="ficons" id="set-ficon"></div></div>
-  <div class="setsec"><div class="seth">Timers and alarms</div>
-    <label class="chk setchk"><input type="checkbox" id="set-snd"> Sound when a timer ends</label>
-    <div class="seg" id="set-vol"><button data-v="low">Quiet</button><button data-v="mid">Normal</button><button data-v="high">Loud</button></div>
-    <label class="chk setchk"><input type="checkbox" id="set-vib"> Vibrate when a timer ends</label>
-    <label class="f" style="flex-direction:row;align-items:center;gap:10px;font-size:14.5px">Ring for<select id="set-ring" style="width:auto"><option value="30">30 seconds</option><option value="60">1 minute</option><option value="180">3 minutes</option><option value="inf">until I stop it</option></select></label>
-    <div class="row"><button class="btn sm" id="set-test">Test alarm</button></div>
-    <p class="note" style="margin:0">Keep the app open while a timer runs (the screen stays on). Laptops can't vibrate, and iPhones don't allow vibration from web apps.</p>
-  </div>
-  <div class="setsec"><div class="seth">Experiments</div>
-    <label class="chk setchk"><input type="checkbox" id="set-collapse"> Close all sections when I open an experiment</label>
-    <label class="chk setchk"><input type="checkbox" id="set-plbig"> Bigger wells on plate layouts</label>
-  </div>
-  <p class="note" style="margin:0">These settings are saved on this device.</p>
+<div class="sheet setsheet" id="set-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="set-title">
+  <div class="hd sethd"><b id="set-title">Settings</b><button class="btn sm primary" id="set-close">Done</button></div>
+  <section class="ssec" id="set-acc-sec"><div class="seth">Account</div><div class="sgrp" id="set-account"><div class="srow"><span class="sl"><b>Saved in Claude</b><small>Sign-in, sync between phone and laptop and backups are in the Lab Rat app (lukamihalic.github.io/lab-rat).</small></span></div></div></section>
+  <section class="ssec"><div class="seth">Appearance</div><div class="sgrp">
+    <div class="srow"><span class="sl">Theme</span><div class="seg sseg" id="set-theme"><button data-v="auto">Auto</button><button data-v="light">Light</button><button data-v="dark">Dark</button></div></div>
+    <div class="srow stack"><span class="sl">Accent colour<small>Buttons, tabs and highlights. The last swatch picks any colour.</small></span><div class="accpick" id="set-acc"></div></div>
+    <div class="srow stack"><span class="sl">Background</span><div class="bgpick" id="set-bg"></div></div>
+    <div class="srow stack"><span class="sl">Folder icon</span><div class="ficons" id="set-ficon"></div></div>
+  </div></section>
+  <section class="ssec"><div class="seth">Timers and alarms</div><div class="sgrp">
+    <label class="srow"><span class="sl">Sound when a timer ends</span><input type="checkbox" class="sw" id="set-snd"></label>
+    <div class="srow" id="set-vol-row"><span class="sl">Volume</span><div class="seg sseg" id="set-vol"><button data-v="low">Quiet</button><button data-v="mid">Normal</button><button data-v="high">Loud</button></div></div>
+    <label class="srow"><span class="sl">Vibrate<small>Not on laptops or iPhones.</small></span><input type="checkbox" class="sw" id="set-vib"></label>
+    <div class="srow"><span class="sl">Ring for</span><select id="set-ring" class="ssel"><option value="30">30 seconds</option><option value="60">1 minute</option><option value="180">3 minutes</option><option value="inf">Until I stop it</option></select></div>
+    <div class="srow"><span class="sl">Try it</span><button class="btn sm" id="set-test">Test alarm</button></div>
+  </div><p class="snote">Keep the app open while a timer runs (the screen stays on).</p></section>
+  <section class="ssec"><div class="seth">Experiments</div><div class="sgrp">
+    <label class="srow"><span class="sl">Close all sections when I open an experiment</span><input type="checkbox" class="sw" id="set-collapse"></label>
+    <label class="srow"><span class="sl">Bigger wells on plate layouts</span><input type="checkbox" class="sw" id="set-plbig"></label>
+  </div><p class="snote">Settings on this page are saved on this device only.</p></section>
 </div>
 <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="le-title">
   <div class="hd"><b id="le-title">Well 1</b><button class="btn sm ghost" id="le-close">Done</button></div>
@@ -1582,7 +1619,7 @@ function renderSettings(){renderAccPick();const t=lsGet("bb.theme","auto");$$("#
   const bgk=lsGet("bb.bg","none");$("#set-bg").innerHTML=BG_LIST.map(([k,l])=>{const c=bgCss(k);return `<button data-bg="${k}" aria-pressed="${k===bgk}"><i style="${c?`background-image:${c.img.replace(/"/g,"'")};background-size:${k==="rats"?"110px 110px":c.size}`:""}"></i>${l}</button>`}).join("");
   const f=lsGet("bb.ficon","C");$("#set-ficon").innerHTML=[["A","Solid"],["B","Outline"],["C","Classic"]].map(([k,l])=>`<button data-f="${k}" aria-pressed="${k===f}">${folderIcon(k,false)}${l}</button>`).join("");
   $("#set-collapse").checked=!!lsGet("bb.collapseOnOpen",true);$("#set-snd").checked=!!lsGet("bb.snd",true);$("#set-vib").checked=!!lsGet("bb.vib",true);$("#set-ring").value=lsGet("bb.ring","60");
-  const v=lsGet("bb.vol","mid");$$("#set-vol button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===v)));$("#set-vol").classList.toggle("off",!lsGet("bb.snd",true));$("#set-plbig").checked=!!lsGet("bb.plbig",false)}
+  const v=lsGet("bb.vol","mid");$$("#set-vol button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===v)));$("#set-vol").classList.toggle("off",!lsGet("bb.snd",true));$("#set-vol-row").hidden=!lsGet("bb.snd",true);$("#set-plbig").checked=!!lsGet("bb.plbig",false)}
 function openSettings(){renderSettings();if(typeof renderSyncSheet==="function")setTimeout(renderSyncSheet,0);$("#set-scrim").hidden=false;$("#set-sheet").hidden=false}
 function closeSettings(){$("#set-scrim").hidden=true;$("#set-sheet").hidden=true}
 $("#set-btn").addEventListener("click",openSettings);$("#status").addEventListener("click",openSettings);$("#undo-btn").addEventListener("click",()=>doUndo());$("#set-close").addEventListener("click",closeSettings);$("#set-scrim").addEventListener("click",closeSettings);
@@ -1672,8 +1709,9 @@ const Sync={
   async onLogin(){
     const owner=lsGet("bb.syncOwner",null);
     if(owner!==this.user.id){ // first sign-in on this device for this account: upload what is here, then fetch everything
-      lsSet("bb.lastPull",null);lsSet("bb.syncOwner",this.user.id);
-      KINDS.forEach(k=>Object.values(Store.data[k]).forEach(doc=>this.push(k,doc.id,doc,doc.updatedAt||Date.now())));
+      lsSet("bb.lastPull",null);lsSet("bb.syncOwner",this.user.id);this.setPending({});
+      const untouched=doc=>{try{return String(doc.id).startsWith("solbi-")&&SOL_TPL.some(t=>recipeSig(t)===recipeSig(doc))}catch(e){return false}};
+      KINDS.forEach(k=>Object.values(Store.data[k]).forEach(doc=>{if(k==="solutions"&&untouched(doc))return;this.push(k,doc.id,doc,doc.updatedAt||Date.now())}));
     }
     await this.flush();await this.pull(true);this.live();
   },
@@ -1724,7 +1762,13 @@ const Sync={
   async signUp(email,pw){const {data,error}=await this.sb.auth.signUp({email,password:pw});return error||(!data.session?{message:"Account created. Check your email to confirm it, then sign in."}:null)},
   async resetPw(email){const {error}=await this.sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});return error},
   async setPw(pw){const {error}=await this.sb.auth.updateUser({password:pw});return error},
-  async signOut(){await this.sb.auth.signOut();lsSet("bb.guest",false);if(typeof closeSettings==="function")try{closeSettings()}catch(e){}Welcome.show()}
+  async signOut(){
+    // send what is still waiting, then remove this account's copy from the device
+    try{await this.flush()}catch(e){}try{if(typeof Inv!=="undefined")await Inv.flush()}catch(e){}
+    const left=Object.keys(this.pending()).length+Object.keys(lsGet("bb.inv.pend",{})||{}).length;
+    if(left&&!confirm(`${left} change${left>1?"s are":" is"} not synced yet${navigator.onLine?"":" (you're offline)"}. If you sign out now ${left>1?"they":"it"} will be lost. Sign out anyway?`))return false;
+    try{await this.sb.auth.signOut()}catch(e){}
+    await wipeDevice();location.reload();return true}
 };
 
 /* ---------- sync UI ---------- */
@@ -1733,24 +1777,26 @@ function openSync(){openSettings();const sec=$("#set-acc-sec");sec&&sec.scrollIn
 function closeSync(){closeSettings()}
 function renderSyncSheet(){
   const el=$("#set-account");if(!el||$("#set-sheet").hidden)return;
-  const bk=`<div class="seth" style="margin-top:6px">Backup file</div><p class="note" style="margin:0">Save everything to a file, or load a backup. Loading only adds or updates items; it never deletes.</p><div class="row"><button class="btn sm" id="bk-export">Export backup</button><button class="btn sm" id="bk-import">Import backup</button></div>`;
+  const ae=document.activeElement;if((ae&&ae.tagName==="INPUT"&&el.contains(ae))||($("#sy-pwbox")&&!$("#sy-pwbox").hidden))return;
+  const bk=`<button class="srow link" id="bk-export"><span class="sl">Export backup<small>Save everything to a file</small></span></button><button class="srow link" id="bk-import"><span class="sl">Import backup<small>Only adds or updates items, never deletes</small></span></button>`;
   const last=lsGet("bb.lastSync",null);
-  if(!Sync.cfgOk()){el.innerHTML=`<p class="note">Cloud sync is not set up in this copy of the app. Your data is saved on this device. Use backup files to move data between devices.</p>`+bk;return}
-  if(!window.supabase){el.innerHTML=`<p class="note">The sync library could not load. Connect to the internet once and reopen the app.</p>`+bk;return}
-  if(!Sync.user){el.innerHTML=`<p class="note" style="margin:0">Sign in to keep your experiments in sync across your phone and laptop.</p>
+  if(!Sync.cfgOk()){el.innerHTML=`<div class="srow"><span class="sl"><b>Saved on this device</b><small>Cloud sync is not set up in this copy of the app. Use backup files to move data between devices.</small></span></div>`+bk;return}
+  if(!window.supabase){el.innerHTML=`<div class="srow"><span class="sl"><b>Sync is not available</b><small>The sync library could not load. Connect to the internet once and reopen the app.</small></span></div>`+bk;return}
+  if(!Sync.user){el.innerHTML=`<div class="srow"><span class="sl"><b>Not signed in</b><small>Sign in to keep your experiments in sync across your phone and laptop.</small></span></div>
+    <div class="sform">
     <label class="f">Email<input id="sy-email" type="email" autocomplete="username"></label>
     <label class="f">Password<input id="sy-pw" type="password" autocomplete="current-password"></label>
-    <div class="row"><button class="btn primary" id="sy-in">Sign in</button><button class="btn" id="sy-up">Create account</button><button class="btn ghost sm" id="sy-forgot">Forgot password?</button></div>
-    <p class="note" id="sy-msg" style="margin:0"></p>`+bk;return}
-  const p=Object.keys(Sync.pending()).length;
-  el.innerHTML=`<div class="res"><span>Account</span><span style="font-family:var(--sans)">${esc(Sync.user.email)}</span><span>Status</span><span style="font-family:var(--sans)">${esc(Sync.label())}</span><span>Last sync</span><span style="font-family:var(--sans)">${last?new Date(last).toLocaleString("en-GB"):"—"}</span><span>Waiting to upload</span><span>${p}</span></div>
-    ${Sync.lastErr?`<p class="note" style="color:var(--bad);margin:0">${esc(Sync.lastErr)}</p>`:""}
-    <div class="row"><button class="btn primary sm" id="sy-now">Sync now</button><button class="btn sm" id="sy-pwbtn">Change password</button><button class="btn ghost danger sm" id="sy-out">Sign out</button></div>
-    <div id="sy-pwbox" hidden style="display:flex;flex-direction:column;gap:8px;background:var(--accent-soft);border-radius:12px;padding:10px">
+    <div class="row"><button class="btn primary sm" id="sy-in">Sign in</button><button class="btn sm" id="sy-up">Create account</button><button class="btn ghost sm" id="sy-forgot">Forgot password?</button></div>
+    <p class="note" id="sy-msg" style="margin:0"></p></div>`+bk;return}
+  const p=Object.keys(Sync.pending()).length;const em=Sync.user.email||"";
+  const sub=Sync.lastErr?`<small class="bad">${esc(Sync.lastErr)}</small>`:`<small>${esc(Sync.label())}${last?" · "+new Date(last).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):""}${p?` · ${p} waiting`:""}</small>`;
+  el.innerHTML=`<div class="srow"><div class="acct"><span class="av">${esc(em.slice(0,1)||"?")}</span><span class="who"><b>${esc(em)}</b>${sub}</span></div><button class="btn sm" id="sy-now">Sync now</button></div>
+    <button class="srow link" id="sy-pwbtn">Change password</button>
+    <div class="sform" id="sy-pwbox" hidden>
       <label class="f">New password<input id="sy-pw1" type="password" autocomplete="new-password" minlength="6"></label>
       <label class="f">Repeat new password<input id="sy-pw2" type="password" autocomplete="new-password" minlength="6"></label>
       <div class="row"><button class="btn primary sm" id="sy-pwsave">Save new password</button><button class="btn ghost sm" id="sy-pwx">Cancel</button></div>
-      <p class="note" id="sy-pwmsg" style="margin:0"></p></div>`+bk;
+      <p class="note" id="sy-pwmsg" style="margin:0"></p></div>`+bk+`<button class="srow link danger" id="sy-out">Sign out</button>`;
 }
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
@@ -1794,8 +1840,8 @@ const Welcome={
         <p class="wl-why">With an account your experiments sync between your phone and computer, and you can share a storage list with your lab.</p>
       </form>
       <div class="wl-or"><span>or</span></div>
-      <button class="btn wl-guest" id="wl-guest" type="button">Continue as guest</button>
-      <p class="wl-note">As a guest everything stays on this device. You can sign in later in Settings, and what you made here comes with you.</p>
+      <button class="btn wl-guest" id="wl-guest" type="button">Use without an account</button>
+      <p class="wl-note">Everything stays on this device only, with no sync and no shared lab storage. You can sign in later in Settings, and what you made here comes with you.</p>
     </div>`;
     this.mode="in";el.hidden=false;document.documentElement.classList.add("wl-open");setTimeout(()=>{const i=document.getElementById("wl-email");i&&window.innerWidth>=700&&i.focus()},50)},
   hide(force){if(this.recovery&&!force)return;const el=document.getElementById("welcome");if(el&&!el.hidden){el.hidden=true;document.documentElement.classList.remove("wl-open")}},
@@ -1852,6 +1898,15 @@ html.wl-open,html.wl-open body{overflow:hidden}
 #welcome .wl-or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12.5px}#welcome .wl-or::before,#welcome .wl-or::after{content:"";flex:1;height:1px;background:var(--line)}
 #welcome .wl-guest{width:100%;padding:12px;font-size:15px}
 #welcome .wl-note{margin:0;text-align:center;font-size:12.5px;color:var(--muted)}`;document.head.appendChild(st)})();
+
+/* remove the signed-in account's data from this device (appearance settings stay) */
+async function wipeDevice(){
+  try{clearTimeout(Store._st);clearTimeout(Sync._t);if(typeof Inv!=="undefined")clearTimeout(Inv._t);Object.values(saveT||{}).forEach(t=>clearTimeout(t))}catch(e){}
+  try{await new Promise(ok=>{const q=indexedDB.deleteDatabase("labrat");q.onsuccess=q.onerror=q.onblocked=()=>ok()})}catch(e){}
+  const keep=new Set(["bb.theme","bb.accent","bb.bg","bb.ficon","bb.snd","bb.vol","bb.vib","bb.ring","bb.collapseOnOpen","bb.plbig","bb.hsort"]);
+  try{const ks=[];for(let i=0;i<localStorage.length;i++)ks.push(localStorage.key(i));ks.forEach(k=>{if(keep.has(k))return;if(/^(bb\.|labrat|blotbench)/.test(k)||/^sb-.*-auth-token$/.test(k))localStorage.removeItem(k)})}catch(e){}
+  try{sessionStorage.clear()}catch(e){}
+}
 
 /* ---------- models ---------- */
 /* ---------- undo ---------- */
