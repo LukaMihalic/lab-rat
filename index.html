@@ -1063,7 +1063,7 @@ nav.tabs button{position:relative}
           <label class="chk"><input type="checkbox" data-tool="images"> Images</label>
           <label class="chk"><input type="checkbox" data-tool="quant"> Densitometry</label>
           <label class="chk"><input type="checkbox" data-tool="qpcr"> qPCR</label>
-          <label class="chk"><input type="checkbox" data-tool="solutions"> Solutions</label>
+          <label class="chk"><input type="checkbox" data-tool="solutions"> Recipes</label>
         </div>
       </div>
       <label class="f">Notes<textarea id="p-notes" style="min-height:70px;font-family:var(--sans);font-size:14px"></textarea></label>
@@ -1200,14 +1200,14 @@ nav.tabs button{position:relative}
   <!-- SOLUTIONS -->
   <section class="tab" id="tab-sol" hidden>
     <div class="docbar">
-      <select id="sol-select" aria-label="Selected solution"></select>
+      <select id="sol-select" aria-label="Selected recipe"></select>
       <button class="btn primary" id="sol-new">+ New recipe</button>
     </div>
     <p class="note" style="margin:0" id="sol-scope"></p>
     <div class="card" id="sol-lib" hidden><input id="sol-lib-q" type="search" placeholder="Search recipes" autocomplete="off"><div class="sollist" id="sol-lib-list"></div></div>
     <div class="card" id="sol-check" hidden>
-      <div class="row chead" style="justify-content:space-between"><h2>Solutions for this experiment</h2><span class="chip" id="sol-check-n"></span></div>
-      <p class="note" style="margin:0" id="sol-check-hint">Pick the solutions this experiment needs and tick them as you prepare them. Tap a name to see the recipe.</p>
+      <div class="row chead" style="justify-content:space-between"><h2>Recipes for this experiment</h2><span class="chip" id="sol-check-n"></span></div>
+      <p class="note" style="margin:0" id="sol-check-hint">Pick the recipes this experiment needs and tick them as you prepare them. Tap a name to open it.</p>
       <div class="sclist" id="sol-check-list"></div>
       <div class="row" style="gap:6px;flex-wrap:nowrap"><select id="sol-pick" aria-label="Add a solution from your recipes" style="flex:1;min-width:0"></select><button class="btn sm" id="sol-pick-add">Add</button></div>
     </div>
@@ -1215,7 +1215,7 @@ nav.tabs button{position:relative}
       <div class="row" style="justify-content:space-between"><b>Start from</b><button class="btn sm ghost" id="sol-tpl-cancel">Cancel</button></div>
       <div class="tpls" id="sol-tpl-list"></div>
     </div>
-    <div class="card" id="sol-empty" hidden><p class="note" style="margin:0">No solutions here yet. Tap <b>+ New</b> to start from a common buffer or a blank recipe.</p></div>
+    <div class="card" id="sol-empty" hidden><p class="note" style="margin:0">No recipes here yet. Tap <b>+ New</b> to start from a common buffer or a blank recipe.</p></div>
     <div class="card" id="sol-card">
       <div class="row"><h2>Recipe</h2></div>
       <div class="grid2">
@@ -1399,7 +1399,7 @@ nav.tabs button{position:relative}
 
 <nav class="tabs" role="tablist">
   <button role="tab" data-tab="home" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h11l3 3v13H5z"/><path d="M8 10h8M8 14h8M8 18h5"/></svg>Experiments</button>
-  <button role="tab" data-tab="sol" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7 15h10"/></svg>Solutions</button>
+  <button role="tab" data-tab="sol" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7 15h10"/></svg>Recipes</button>
   <button role="tab" data-tab="inv" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="m3 7.5 9 4.5 9-4.5M12 12v9"/></svg>Storage</button>
   <button role="tab" data-tab="calc" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8.5 11.5h1M11.5 11.5h1M14.5 11.5h1M8.5 15h1M11.5 15h1M14.5 15h1M8.5 18h1M11.5 18h4"/></svg>Calcs</button>
   <button role="tab" data-tab="clock" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M10 2.5h4M18.5 6.5l1.5-1.5"/></svg>Clock<i class="navdot" id="nav-dot" hidden></i></button>
@@ -1662,6 +1662,7 @@ const Sync={
       if(changed.size){Store.saveLocal();if(initial)synced=false;KINDS.forEach(k=>{if(changed.has(k)||initial)onData(k,!!initial)})}
       else if(initial){synced=false;onData("experiments",true);onData("gels",true)}
       this.state="ok";lsSet("bb.lastSync",new Date().toISOString());
+      if(initial)setTimeout(()=>{try{afterPull()}catch(e){}},300);
     }catch(e){this.state="error";this.lastErr=e.message||String(e)}
     this.pulling=false;renderSyncBtn();renderSyncSheet();
   },
@@ -2232,9 +2233,9 @@ const TEMPLATES={
     st("Setup","Clean pedestals","Wipe both pedestals with water and a lint-free tissue"),st("Setup","Blank","2 µL of the sample buffer"),
     st("Measure","Measure samples","2 µL per sample, wipe between samples; note mg/mL"),st("Measure","Enter readings","Type the readings into Protein concentration")]},
   homog:{name:"Pancreas lysate for IRS WB (RIPA)",method:"custom",label:"Homogenization",desc:"Frozen pancreas in RIPA with protease and phosphatase inhibitors (pTyr/pSer), probe sonicator. Buffers and stocks included.",tools:{protein:false,gel:false,solutions:true},sols:["RIPA base buffer (tissue lysis)","RIPA working buffer + inhibitors","PMSF 100 mM (in isopropanol)","NaF 0.5 M","Sodium vanadate 200 mM, activated"],steps:()=>[
-    st("Days before","Stocks","PMSF 100 mM (isopropanol), NaF 0.5 M, activated vanadate 200 mM; base RIPA at 4 °C (see Solutions)"),
+    st("Days before","Stocks","PMSF 100 mM (isopropanol), NaF 0.5 M, activated vanadate 200 mM; base RIPA at 4 °C (see Recipes)"),
     st("Day of","Pre-cool","Buffer, ice / ice water, centrifuge rotor at 4 °C"),
-    st("Day of","Working buffer","On ice: base RIPA + cOmplete + NaF + vanadate, PMSF last (see Solutions). Only on the day; for many samples two batches"),
+    st("Day of","Working buffer","On ice: base RIPA + cOmplete + NaF + vanadate, PMSF last (see Recipes). Only on the day; for many samples two batches"),
     st("Homogenize","Add buffer","500 µL cold working buffer to each tube with frozen tissue. Don't thaw the tissue before the buffer"),
     st("Homogenize","Sonicate","Tube in ice water, probe in the liquid without touching the bottom or walls. 3–5 pulses of 5–10 s, 20–30 s on ice between, amplitude 20–40%. Avoid foam and heating"),
     st("Homogenize","Clean the probe","Ethanol → water between samples. Work in batches; keep finished lysates on ice until all are done"),
@@ -2554,7 +2555,7 @@ $("#prot-savetpl").addEventListener("click",()=>{flushProt();const p=S.prot;cons
   Store.save("templates",t);setStatus(t.isDefault?`“${t.name}” is now your default for ${lab}`:`Saved as protocol “${t.name}”`)});
 
 function hasQuant(p){const t=(p&&p.tools)||{};return t.quant===undefined?p&&p.method==="wb":!!t.quant}
-function protTabs(){if(isTpl())return [["prot","Steps"]];const t=S.prot.tools||{};const linkedSmp=S.prot.method!=="wb"&&S.prot.smp&&S.prot.smp.src;return [["prot","Steps"],linkedSmp&&["smp","Samples"],t.protein&&(S.prot.method==="wb"?["smp","Samples"]:["assay",S.prot.method==="elisa"?"Assay":"Protein concentration"]),t.qpcr&&["qset","Setup"],t.qpcr&&["qres","Results"],t.gel&&["gel","Gel"],t.images&&["img","Images"],hasQuant(S.prot)&&["quant","Quant"],t.solutions&&["psol","Solutions"],["hist","Report"]].filter(Boolean)}
+function protTabs(){if(isTpl())return [["prot","Steps"]];const t=S.prot.tools||{};const linkedSmp=S.prot.method!=="wb"&&S.prot.smp&&S.prot.smp.src;return [["prot","Steps"],linkedSmp&&["smp","Samples"],t.protein&&(S.prot.method==="wb"?["smp","Samples"]:["assay",S.prot.method==="elisa"?"Assay":"Protein concentration"]),t.qpcr&&["qset","Setup"],t.qpcr&&["qres","Results"],t.gel&&["gel","Gel"],t.images&&["img","Images"],hasQuant(S.prot)&&["quant","Quant"],t.solutions&&["psol","Recipes"],["hist","Report"]].filter(Boolean)}
 const TI=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 const TICON={prot:TI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/>'),smp:TI('<path d="M9 2.5h6M10 2.5V18a2 2 0 0 0 4 0V2.5"/><path d="M10 10h4"/>'),assay:MICON.protein.replace('stroke-width="2"','stroke-width="2"'),
   qset:TI('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M8 5v14"/>'),qres:TI('<path d="M3 3v18h18"/><path d="M6 17c4 0 5-.5 7-5s3-6 7-6"/>'),gel:TI('<rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M7 8h3M14 8h3M7 12.5h3M14 14h3M7 17h3"/>'),
@@ -3184,9 +3185,9 @@ function renderSolSelect(){
   const L=solsInScope();const sc=solScope();
   if(!S.sol||(sc&&!psEntry(S.sol.id))||(!Store.data.solutions[S.sol.id]&&!S.sol.fresh)){S.sol=L.length?clone(L[0]):null}
   $("#sol-select").closest(".docbar").querySelector("select").hidden=!!sc;$("#sol-card").classList.toggle("noticks",!sc);$("#r-prep-row").hidden=!sc;$("#sol-del").hidden=!!sc;
-  const sel=$("#sol-select");sel.innerHTML=(L.length?"":`<option value="">No solutions yet</option>`)+L.map(r=>`<option value="${esc(r.id)}">${esc(r.name||"Untitled")}</option>`).join("");
+  const sel=$("#sol-select");sel.innerHTML=(L.length?"":`<option value="">No recipes yet</option>`)+L.map(r=>`<option value="${esc(r.id)}">${esc(r.name||"Untitled")}</option>`).join("");
   if(S.sol)sel.value=S.sol.id;
-  $("#sol-scope").textContent=sc?"Recipes are shared: editing one here changes it everywhere. All recipes are in Solutions at the bottom.":"Your recipe library. Inside an experiment, open its Solutions tab to pick the ones you need and tick them off as you make them.";
+  $("#sol-scope").textContent=sc?"Recipes are shared: editing one here changes it everywhere. The whole library is under Recipes in the menu.":"Your recipe library. Inside an experiment, open its Recipes tab to pick the ones you need and tick them off as you make them.";
   $("#sol-empty").hidden=!!S.sol||!!sc;$("#sol-card").hidden=!S.sol;
   renderSolCheck(L);renderSolLib();
   if(S.sol)fillSol();
@@ -3206,7 +3207,7 @@ function renderSolCheck(L){const sc=solScope();const box=$("#sol-check");box.hid
   $("#sol-check-n").textContent=L.length?`${n}/${L.length}`:"";$("#sol-check-n").className="chip"+(L.length&&n===L.length?" ok":"");$("#sol-check-n").hidden=!L.length;
   $("#sol-check-list").innerHTML=L.length?L.map(r=>{const e=psEntry(r.id)||{};const nm=(S.sol&&S.sol.id===r.id?S.sol:r).name;return `<div class="scrow${e.prepared?" done":""}${S.sol&&S.sol.id===r.id?" cur":""}"><input type="checkbox" data-prep="${esc(r.id)}"${e.prepared?" checked":""} aria-label="Prepared"><button data-open="${esc(r.id)}">${esc(nm||"Untitled")}</button><span class="note">${e.prepared?fmtD(e.prepared):""}</span><button class="rm" data-unpick="${esc(r.id)}" aria-label="Remove from this experiment" title="Remove from this experiment">×</button></div>`}).join(""):`<p class="note" style="margin:0">None picked yet. Choose one below, or tap <b>+ New recipe</b>.</p>`;
   const have=new Set(E.map(e=>e.id));const rest=allRecipes().filter(r=>!have.has(r.id));
-  $("#sol-pick").innerHTML=rest.length?`<option value="">Add a solution…</option>`+rest.map(r=>`<option value="${esc(r.id)}">${esc(r.name||"Untitled")}</option>`).join(""):`<option value="">All your recipes are added</option>`;$("#sol-pick-add").disabled=!rest.length}
+  $("#sol-pick").innerHTML=rest.length?`<option value="">Add a recipe…</option>`+rest.map(r=>`<option value="${esc(r.id)}">${esc(r.name||"Untitled")}</option>`).join(""):`<option value="">All your recipes are added</option>`;$("#sol-pick-add").disabled=!rest.length}
 function setPrepared(id,on){const e=psEntry(id);if(!e)return;e.prepared=on?today():null;queueSave("protocols");if(S.sol&&S.sol.id===id)fillPrep();renderSolCheck()}
 function fillPrep(){const r=S.sol;if(!r)return;const e=solScope()?psEntry(r.id):null;$("#r-prep").checked=!!(e&&e.prepared);$("#r-prep-d").textContent=e&&e.prepared?fmtD(e.prepared):"";$("#r-untick").hidden=!(e&&(e.done||[]).length)}
 function compDone(i){const e=solScope()&&S.sol?psEntry(S.sol.id):null;return !!(e&&(e.done||[]).includes(i))}
@@ -3258,16 +3259,17 @@ $("#sol-new").addEventListener("click",()=>{flushSol();S.sol=newSol(null,null);S
 $("#sol-tpl-cancel").addEventListener("click",()=>{$("#sol-tpl").hidden=true});
 function solSlug(n){return "solbi-"+String(n||"").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,48)}
 /* merge copies that older versions created once per device */
-function recipeSig(r){return JSON.stringify([String(r.name||"").trim().toLowerCase(),String(r.vol||""),r.vunit||"",String(r.diluent||"").trim().toLowerCase(),(r.comps||[]).map(c=>[String(c.name||"").trim().toLowerCase(),c.type,String(c.val),c.unit||"",String(c.extra||"")])])}
+function recipeSig(r,noVol){return JSON.stringify([String(r.name||"").trim().toLowerCase(),noVol?"":String(r.vol||""),noVol?"":r.vunit||"",String(r.diluent||"").trim().toLowerCase(),(r.comps||[]).map(c=>[String(c.name||"").trim().toLowerCase(),c.type,String(c.val),c.unit||"",String(c.extra||"")])])}
 let ddT=0;function dedupeSoon(){clearTimeout(ddT);ddT=setTimeout(dedupeData,1500)}
 function dedupeData(){if(!booted)return;let nSol=0,nFol=0;undoMute++;try{
   // recipes: identical name and contents
-  const groups={};Object.values(Store.data.solutions).filter(r=>!r.isTpl).forEach(r=>{(groups[recipeSig(r)]=groups[recipeSig(r)]||[]).push(r)});
+  // same name and same components; only the volume to make differs → one recipe (the one you changed last)
+  const groups={};Object.values(Store.data.solutions).filter(r=>!r.isTpl).forEach(r=>{const k=recipeSig(r,true);(groups[k]=groups[k]||[]).push(r)});
   const remap={};
   Object.values(groups).filter(g=>g.length>1).forEach(g=>{
     const used=id=>Object.values(Store.data.protocols).some(p=>Array.isArray(p.sols)&&p.sols.some(e=>e.id===id));
-    g.sort((a,b)=>(String(b.id).startsWith("solbi-")-String(a.id).startsWith("solbi-"))||(used(b.id)-used(a.id))||String(a.id).localeCompare(String(b.id)));
-    const keep=g[0];g.slice(1).forEach(r=>{remap[r.id]=keep.id;Store.remove("solutions",r.id);nSol++})});
+    g.sort((a,b)=>((b.updatedAt||0)-(a.updatedAt||0))||(used(b.id)-used(a.id))||(String(b.id).startsWith("solbi-")-String(a.id).startsWith("solbi-"))||String(a.id).localeCompare(String(b.id)));
+    const keep=g[0];g.slice(1).forEach(r=>{remap[r.id]=keep.id;if(S.sol&&S.sol.id===r.id){clearTimeout(saveT.solutions);dirty.solutions=false}Store.remove("solutions",r.id);nSol++})});
   if(nSol){Object.values(Store.data.protocols).forEach(p=>{if(!Array.isArray(p.sols)||!p.sols.some(e=>remap[e.id]))return;const c=S.prot&&S.prot.id===p.id?S.prot:clone(p);const seen=new Set();
       c.sols=c.sols.map(e=>remap[e.id]?Object.assign({},e,{id:remap[e.id]}):e).filter(e=>{if(seen.has(e.id))return false;seen.add(e.id);return true});if(c===S.prot)queueSave("protocols");else Store.save("protocols",c)});
     if(S.sol&&remap[S.sol.id]){const k=Store.data.solutions[remap[S.sol.id]];S.sol=k?clone(k):null}}
@@ -3277,12 +3279,15 @@ function dedupeData(){if(!booted)return;let nSol=0,nFol=0;undoMute++;try{
 }finally{undoMute--}
   if(nSol&&(S.tab==="sol"||S.tab==="psol"))renderSolSelect();if(nFol&&S.tab==="home")renderHome();
   if(nSol||nFol)console.info(`Lab Rat: merged ${nSol} duplicate recipes, ${nFol} duplicate folders`)}
+let seedWait=false;
+function afterPull(){if(!booted)return;if(seedWait){seedWait=false;seedRecipes()}dedupeData()}
 function seedRecipes(){const key=s=>String(s||"").trim().toLowerCase();
   undoMute++;try{
     // saved "my recipes" become normal recipes
     Object.values(Store.data.solutions).filter(r=>r.isTpl).forEach(t=>{const dup=Object.values(Store.data.solutions).some(r=>!r.isTpl&&r.id!==t.id&&key(r.name)===key(t.name));
       if(dup)Store.remove("solutions",t.id);else{const c=clone(t);delete c.isTpl;c.protoId=null;Store.save("solutions",c)}});
     // the built-in recipes join the library once per device
+    if(!lsGet("bb.solSeeded",false)&&typeof Sync!=="undefined"&&Sync.user&&!lsGet("bb.lastPull",null)){seedWait=true;return}
     if(!lsGet("bb.solSeeded",false)){const have=new Set(Object.values(Store.data.solutions).map(r=>key(r.name)));
       SOL_TPL.forEach(t=>{if(have.has(key(t.name)))return;const id=solSlug(t.name);if(Store.data.solutions[id])return;Store.save("solutions",Object.assign(clone(t),{id,protoId:null}))});
       lsSet("bb.solSeeded",true)}
