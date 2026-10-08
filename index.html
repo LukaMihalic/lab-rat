@@ -1111,7 +1111,7 @@ nav.tabs button{position:relative}
     <div class="row" style="justify-content:space-between"><h2>Images</h2><button class="btn primary" id="img-new">+ New</button></div>
     <div class="card" id="img-pick" hidden>
       <div class="row" style="justify-content:space-between"><b>What are you adding?</b><button class="btn sm ghost" id="img-pick-cancel">Cancel</button></div>
-      <div class="tpls"><button class="tpl" data-it="membrane"><b>Membrane</b><span>Blot image, e.g. after ECL</span></button><button class="tpl" data-it="gel"><b>Gel</b><span>Stained gel or stain-free image</span></button><button class="tpl" data-it="other"><b>Other</b><span>Ponceau, plate photo, anything else</span></button></div>
+      <div class="tpls" id="img-pick-list"></div>
     </div>
     <p class="note" style="margin:0" id="img-empty">No images yet. Tap <b>+ New</b>, choose membrane or gel, then paste or pick the picture.</p>
     <div class="imgsecs" id="img-list"></div>
@@ -4164,12 +4164,16 @@ $("#sm-send").addEventListener("click",()=>{flushProt();const list=visRows().fil
 $("#sm-hide").addEventListener("change",e=>{smState().hideSent=e.target.checked;queueSave("protocols");renderSamples()});
 $("#sm-hidden").addEventListener("click",e=>{if(e.target.id==="sm-showall"){smState().hideSent=false;queueSave("protocols");renderSamples()}else if(e.target.id==="sm-restore"){const st=smState();Object.keys(st.picks).forEach(k=>{if(st.picks[k]&&st.picks[k].removed){st.picks[k]=Object.assign({},st.picks[k]);delete st.picks[k].removed}});queueSave("protocols");renderSamples()}});
 /* ================= IMAGES ================= */
-const IT_L={membrane:"Membrane",gel:"Gel",other:"Image"};
+const IT_L={membrane:"Membrane",gel:"Gel",other:"Image",section:"Section",region:"Region",control:"Control",overview:"Overview"};
+function imgTypes(){const c=S.prot?catOfExp(S.prot):"";
+  if(c==="ihc")return [["section","Section","Stained section on the slide, e.g. 4×–10×"],["region","Region close-up","Higher magnification of a region: CA1, CA3, dentate gyrus, cortex…"],["control","Control","No-primary or positive control section"],["overview","Overview / slide scan","Whole slide or low-power overview"]];
+  return [["membrane","Membrane","Blot image, e.g. after ECL"],["gel","Gel","Stained gel or stain-free image"],["other","Other","Ponceau, plate photo, anything else"]]}
+function imgEmptyText(){return catOfExp(S.prot||{})==="ihc"?"No images yet. Tap <b>+ New</b>, choose section, region or control, then paste or pick the picture.":"No images yet. Tap <b>+ New</b>, choose membrane or gel, then paste or pick the picture."}
 let assetsNS;async function getAssets(){if(assetsNS!==undefined)return assetsNS;try{assetsNS=window.claude&&typeof window.claude.use==="function"?await window.claude.use("assets"):null}catch(e){assetsNS=null}return assetsNS}
 function imgSrc(im){if(im.asset)return "/_blob/"+im.asset;const d=Store.data.imgdata[im.id];return d?d.data:""}
 function secs(){const p=S.prot;if(!Array.isArray(p.imgs))p.imgs=[];return p.imgs}
 function renderImages(){
-  if(!S.prot||isTpl())return;const L=secs();$("#img-empty").hidden=!!L.length;
+  if(!S.prot||isTpl())return;const L=secs();$("#img-empty").hidden=!!L.length;$("#img-empty").innerHTML=imgEmptyText();
   $("#img-list").innerHTML=L.map(sc=>`<div class="isec${S.imgTarget===sc.id?" target":""}" data-s="${esc(sc.id)}">
     <div class="ihead"><span class="tag">${IT_L[sc.type]||"Image"}</span><input id="is-${esc(sc.id)}-t" data-k="title" type="text" value="${esc(sc.title||"")}"><button class="btn sm ghost danger" data-a="delsec">Delete</button></div>
     <div class="thumbs">${(sc.images||[]).map(im=>{const src=imgSrc(im);return `<div class="thumb" data-i="${esc(im.id)}">${src?`<img src="${esc(src)}" alt="${esc(sc.title||"")}" data-a="view">`:`<span class="up">Loading…</span>`}<button class="x" data-a="delimg" aria-label="Remove image">×</button></div>`}).join("")}</div>
@@ -4194,7 +4198,7 @@ async function addImages(secId,files){
     }catch(e){setStatus(e&&e.code==="quota_exceeded"?"Image storage is full":("Couldn't add the image: "+(e.message||e.code||e)),true);return}}
   setStatus("Image added");
 }
-$("#img-new").addEventListener("click",()=>{$("#img-pick").hidden=false});
+$("#img-new").addEventListener("click",()=>{$("#img-pick-list").innerHTML=imgTypes().map(([k,l,d])=>`<button class="tpl" data-it="${k}"><b>${l}</b><span>${d}</span></button>`).join("");$("#img-pick").hidden=false});
 $("#img-pick-cancel").addEventListener("click",()=>{$("#img-pick").hidden=true});
 $("#img-pick").addEventListener("click",e=>{const b=e.target.closest("[data-it]");if(!b)return;$("#img-pick").hidden=true;addSection(b.dataset.it)});
 $("#img-list").addEventListener("input",e=>{if(e.target.closest("[data-drop]")){e.target.closest("[data-drop]").querySelectorAll("img").forEach(x=>x.remove());return}const c=e.target.closest("[data-s]"),k=e.target.dataset.k;if(!c||!k)return;const sc=secs().find(x=>x.id===c.dataset.s);if(sc){sc[k]=e.target.value;queueSave("protocols")}});
