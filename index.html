@@ -880,6 +880,7 @@ input.sw:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (max-width:420px){.bgpick{grid-template-columns:repeat(4,1fr);gap:6px}}
 
 /* help */
+.nx-all-l{margin-top:8px;text-align:center}.nx-all-l .linkbtn{font-size:12.5px;color:var(--muted)}
 #status{cursor:default}#status:hover,#status:active{background:var(--surface);border-color:var(--line);transform:none}
 @media (max-width:430px){header.top #theme-btn{display:none}}
 header.top .brand{min-width:0;overflow:hidden}
@@ -1132,7 +1133,7 @@ header.top .brand{min-width:0;overflow:hidden}
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <h2>Steps</h2>
-        <div class="row"><button class="btn sm ghost" data-bench="steps" title="Print a bench sheet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;vertical-align:-2px;margin-right:4px"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Print</button><button class="btn sm ghost" id="prot-reset">Clear checks</button><button class="btn sm" id="prot-edit">Edit steps</button><button class="btn sm primary" id="prot-finish" hidden>Finish &amp; save</button><button class="btn sm primary" id="tpl-start" hidden>Start experiment</button></div>
+        <div class="row"><button class="btn sm ghost" data-bench="steps" title="Print a bench sheet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;vertical-align:-2px;margin-right:4px"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Print</button><button class="btn sm ghost" id="prot-all">✓ Check all</button><button class="btn sm ghost" id="prot-reset">Clear checks</button><button class="btn sm" id="prot-edit">Edit steps</button><button class="btn sm primary" id="prot-finish" hidden>Finish &amp; save</button><button class="btn sm primary" id="tpl-start" hidden>Start experiment</button></div>
       </div>
       <div class="steps" id="prot-steps"></div>
       <div class="row" id="prot-editbar" hidden><span class="addn"><input class="nrows" id="step-add-n" type="number" min="1" max="200" value="1" aria-label="How many"><button class="btn sm" id="step-add">Add steps</button></span></div>
@@ -1658,7 +1659,7 @@ const HELP=[
  {i:"🔎",t:"Find an experiment",k:"find search experiment filter sort pronaci traziti pretraga eksperiment sortirati",s:["On <b>Experiments</b>, tap the magnifying glass and type part of the name.","Use the status and sort menus to show only what's in progress, or the newest first."],go:["tab","home","#home-qbtn"]},
  {i:"⭐",t:"Make a protocol my default",k:"default protocol star favourite favorite zadani protokol zvjezdica omiljeni",s:["Tap <b>+ New</b> on Experiments.","Tap the ☆ next to your own protocol. Next time it's offered first for that method."],go:["tab","home","#home-new"]},
  {i:"✏️",t:"Edit or remove methods in the New list",k:"edit remove delete method hide built in list urediti obrisati maknuti metodu sakriti",s:["Tap <b>+ New</b> on Experiments.","Use <b>✎</b> to edit a method or <b>×</b> to remove it from the list. Built-in ones can be hidden."],go:["tab","home","#home-new"]},
- {i:"✅",t:"Follow the steps of an experiment",k:"steps protocol tick check follow koraci protokol oznaciti kvacica pratiti",s:["Open the experiment. It starts on <b>Steps</b>.","Tick each step as you do it. Your progress is saved."]},
+ {i:"✅",t:"Follow the steps of an experiment",k:"steps protocol tick check all follow koraci sve odjednom protokol oznaciti kvacica pratiti",s:["Open the experiment. It starts on <b>Steps</b>.","Tick each step as you do it. Your progress is saved.","Know it by heart? Tap <b>✓ Check all</b> to tick every step at once."]},
  {i:"🖨️",t:"Print a bench sheet",k:"print paper pdf bench sheet ispis isprintati papir klupa plan",s:["Open the experiment and go to <b>Steps</b>.","Tap <b>Print</b>, pick what to include (steps, loading plan, recipes…), then <b>Print</b> or <b>Save as file</b>."],p:"You can also print from the Report tab with Bench sheet."},
  {i:"🧫",t:"Plan the gel loading",k:"gel loading plan wells lanes ladder laemmli jazice ucitavanje gela plan nanosenje",s:["In a Western blot experiment, add samples on <b>Samples</b> and tap <b>Send to gel</b>.","Go to <b>Gel</b>: tap a well to change it, × removes a sample.","Below it you get how much sample and Laemmli to pipette."]},
  {i:"📈",t:"Work out protein concentrations",k:"protein concentration bca lowry standard curve absorbance koncentracija proteina standardna krivulja apsorbancija",s:["Open a BCA or Lowry experiment and go to <b>Protein concentration</b>.","Fill in the standards and the absorbances of your samples.","Concentrations are calculated from the standard curve."]},
@@ -2914,6 +2915,7 @@ $("#p-notes").addEventListener("input",e=>{S.prot.notes=e.target.value;renderSte
 $("#p-tools").addEventListener("change",e=>{const k=e.target.dataset.tool;if(!k)return;S.prot.tools=Object.assign({},S.prot.tools,{[k]:e.target.checked});renderPbar();queueSave("protocols")});
 $("#prot-dup").addEventListener("click",()=>{flushProt();if(isTpl()){const t=clone(S.prot);t.id=uid();t.name+=" (copy)";t.created=Date.now();t.steps=freshSteps(t.steps);delete t.updatedAt;Store.save("templates",t);openTemplate(clone(t));setStatus("Protocol copied");return}const c=copyProtocol(S.prot);openProtocol(clone(c));$("#prot-params").open=true;$("#p-name").focus();$("#p-name").select();setStatus("Copy created; rename and adjust it")});
 armDelete("#prot-del","Delete",async()=>{clearTimeout(saveT.protocols);dirty.protocols=false;if(isTpl()){await Store.remove("templates",S.prot.id);S.protKind="protocols";S.prot=draftProt();showTab("lib");setStatus("Protocol deleted");return}await deleteProtocol(S.prot.id);lsSet("bb.proto",null);showTab("home");renderHome();setStatus("Experiment deleted")});
+$("#prot-all").addEventListener("click",()=>{const arr=new Set(S.prot.done||[]);(S.prot.steps||[]).forEach(x=>{if(!arr.has(x.id)){arr.add(x.id);logStep(x.id,true)}});S.prot.done=[...arr];queueSave("protocols");renderSteps();setStatus("All steps checked")});
 $("#prot-reset").addEventListener("click",()=>{S.prot.done=[];queueSave("protocols");Object.keys(S.timers).forEach(k=>{if(k.startsWith(S.prot.id+"|"))delete S.timers[k]});renderSteps()});
 $("#prot-edit").addEventListener("click",()=>{S.editSteps=!S.editSteps;renderSteps()});
 $("#step-add").addEventListener("click",()=>{const last=S.prot.steps[S.prot.steps.length-1];for(let k=0,K=Math.max(1,Math.min(200,parseInt($("#step-add-n").value)||1));k<K;k++)S.prot.steps.push({id:uid()+k,phase:last?last.phase:"",t:"",d:"",min:null,rep:0});renderSteps();queueSave("protocols");const ins=$$("#prot-steps .sedit input[data-k='t']");ins.length&&ins[ins.length-1].focus()});
@@ -2926,6 +2928,7 @@ function renderSteps(){
   const p=S.prot;if(!p)return;const steps=p.steps||[];
   $("#prot-edit").textContent=S.editSteps?"Done":"Edit steps";$("#prot-edit").classList.toggle("primary",!!S.editSteps);
   $("#prot-editbar").hidden=!S.editSteps;$("#prot-reset").hidden=!!S.editSteps;
+  {const dn=new Set(p.done||[]);const all=steps.length&&steps.every(x=>dn.has(x.id));$("#prot-all").hidden=!!S.editSteps||isTpl()||!steps.length||all;$("#prot-reset").hidden=!!S.editSteps||!dn.size}
   if(S.editSteps){
     $("#prot-steps").innerHTML=steps.map((x,i)=>`<div class="sedit" data-id="${esc(x.id)}">
       <div class="ctl"><span class="row" style="gap:6px"><span class="grip" data-drag="1" title="Drag to reorder" aria-label="Drag to reorder">⋮⋮</span><span class="note">Step ${i+1}</span></span><div class="row"><button class="btn sm ghost" data-ins="1">+ Above</button><button class="btn sm ghost" data-mv="-1" ${i===0?"disabled":""} aria-label="Move up">↑</button><button class="btn sm ghost" data-mv="1" ${i===steps.length-1?"disabled":""} aria-label="Move down">↓</button><button class="btn sm ghost danger" data-del="1">Delete</button></div></div>
@@ -2949,7 +2952,8 @@ function renderSteps(){
     nc.hidden=false;nc.innerHTML=`<div class="nx-h"><span>Next step · ${ni+1} of ${steps.length}</span>${ph?`<span class="nx-ph">${esc(ph)}</span>`:""}</div>
       <div class="nx-t">${esc(x.t||"Untitled step")}</div>${x.d?`<div class="nx-d">${esc(x.d)}</div>`:""}
       <div class="nx-b">${timerHtml(x)}<button class="btn primary" data-ndone="${esc(x.id)}">✓ Done</button></div>
-      <div class="nx-prog"><i style="width:${Math.round(100*done.size/steps.length)}%"></i></div>`}
+      <div class="nx-prog"><i style="width:${Math.round(100*done.size/steps.length)}%"></i></div>
+      <div class="nx-all-l"><button class="linkbtn" type="button" data-nall="1">Know it by heart? ✓ Check all steps</button></div>`}
   $("#prot-steps").innerHTML=(steps.length?steps.map(x=>{
     const tk=p.id+"|"+x.id;const ph=x.phase&&x.phase!==lastPhase?`<div class="phase">${esc(x.phase)}</div>`:"";lastPhase=x.phase;
     let timer="";const rep=x.rep>1?x.rep:0;
@@ -2973,7 +2977,7 @@ $("#prot-steps").addEventListener("click",e=>{const row=e.target.closest(".sedit
   if(b.dataset.del){S.prot.steps.splice(i,1)}else if(b.dataset.mv){const j=i+ +b.dataset.mv;if(j<0||j>=S.prot.steps.length)return;const t=S.prot.steps[i];S.prot.steps[i]=S.prot.steps[j];S.prot.steps[j]=t}
   renderSteps();queueSave("protocols")});
 $("#prot-steps").addEventListener("change",e=>{const k=e.target.dataset.check;if(k==null)return;const arr=new Set(S.prot.done||[]);e.target.checked?arr.add(k):arr.delete(k);logStep(k,e.target.checked);S.prot.done=[...arr];queueSave("protocols");e.target.closest(".step").classList.toggle("done",e.target.checked);renderSteps()});
-$("#prot-next").addEventListener("click",e=>{const d=e.target.closest("[data-ndone]");if(d){const arr=new Set(S.prot.done||[]);arr.add(d.dataset.ndone);logStep(d.dataset.ndone,true);S.prot.done=[...arr];queueSave("protocols");renderSteps();try{navigator.vibrate&&navigator.vibrate(15)}catch(_){}return}
+$("#prot-next").addEventListener("click",e=>{if(e.target.closest("[data-nall]")){$("#prot-all").click();return}const d=e.target.closest("[data-ndone]");if(d){const arr=new Set(S.prot.done||[]);arr.add(d.dataset.ndone);logStep(d.dataset.ndone,true);S.prot.done=[...arr];queueSave("protocols");renderSteps();try{navigator.vibrate&&navigator.vibrate(15)}catch(_){}return}
   const b=e.target.closest("[data-timer]");if(b)stepTimerClick(b)});
 let audio;function beepOnce(force){const snd=force||lsGet("bb.snd",true),vib=force||lsGet("bb.vib",true),vol=({low:.1,mid:.35,high:.9})[lsGet("bb.vol","mid")]||.35;
   if(snd)try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume&&audio.resume();[0,.3,.6,.9].forEach(t=>{const o=audio.createOscillator(),g=audio.createGain();o.type="square";o.frequency.value=t===.9?1175:880;o.connect(g);g.connect(audio.destination);g.gain.setValueAtTime(.0001,audio.currentTime+t);g.gain.exponentialRampToValueAtTime(vol,audio.currentTime+t+.02);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+t+.24);o.start(audio.currentTime+t);o.stop(audio.currentTime+t+.26)})}catch(e){}if(vib)try{navigator.vibrate&&navigator.vibrate([400,150,400,150,400])}catch(e){}}
