@@ -1777,17 +1777,19 @@ function openSync(){openSettings();const sec=$("#set-acc-sec");sec&&sec.scrollIn
 function closeSync(){closeSettings()}
 function renderSyncSheet(){
   const el=$("#set-account");if(!el||$("#set-sheet").hidden)return;
-  const ae=document.activeElement;if((ae&&ae.tagName==="INPUT"&&el.contains(ae))||($("#sy-pwbox")&&!$("#sy-pwbox").hidden))return;
+  const ae=document.activeElement;if((ae&&ae.tagName==="INPUT"&&el.contains(ae))||($("#sy-pwbox")&&!$("#sy-pwbox").hidden)||($("#sy-delbox")&&!$("#sy-delbox").hidden))return;
   const bk=`<button class="srow link" id="bk-export"><span class="sl">Export backup<small>Save everything to a file</small></span></button><button class="srow link" id="bk-import"><span class="sl">Import backup<small>Only adds or updates items, never deletes</small></span></button>`;
   const last=lsGet("bb.lastSync",null);
-  if(!Sync.cfgOk()){el.innerHTML=`<div class="srow"><span class="sl"><b>Saved on this device</b><small>Cloud sync is not set up in this copy of the app. Use backup files to move data between devices.</small></span></div>`+bk;return}
+  if(!Sync.cfgOk()){el.innerHTML=`<div class="srow"><span class="sl"><b>Saved on this device</b><small>Cloud sync is not set up in this copy of the app. Use backup files to move data between devices.</small></span></div>`+bk+`<button class="srow link danger" id="sy-delbtn">Delete data on this device</button>
+    <div class="sform" id="sy-delbox" hidden></div>`;return}
   if(!window.supabase){el.innerHTML=`<div class="srow"><span class="sl"><b>Sync is not available</b><small>The sync library could not load. Connect to the internet once and reopen the app.</small></span></div>`+bk;return}
   if(!Sync.user){el.innerHTML=`<div class="srow"><span class="sl"><b>Not signed in</b><small>Sign in to keep your experiments in sync across your phone and laptop.</small></span></div>
     <div class="sform">
     <label class="f">Email<input id="sy-email" type="email" autocomplete="username"></label>
     <label class="f">Password<input id="sy-pw" type="password" autocomplete="current-password"></label>
     <div class="row"><button class="btn primary sm" id="sy-in">Sign in</button><button class="btn sm" id="sy-up">Create account</button><button class="btn ghost sm" id="sy-forgot">Forgot password?</button></div>
-    <p class="note" id="sy-msg" style="margin:0"></p></div>`+bk;return}
+    <p class="note" id="sy-msg" style="margin:0"></p></div>`+bk+`<button class="srow link danger" id="sy-delbtn">Delete data on this device</button>
+    <div class="sform" id="sy-delbox" hidden></div>`;return}
   const p=Object.keys(Sync.pending()).length;const em=Sync.user.email||"";
   const sub=Sync.lastErr?`<small class="bad">${esc(Sync.lastErr)}</small>`:`<small>${esc(Sync.label())}${last?" · "+new Date(last).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):""}${p?` · ${p} waiting`:""}</small>`;
   el.innerHTML=`<div class="srow"><div class="acct"><span class="av">${esc(em.slice(0,1)||"?")}</span><span class="who"><b>${esc(em)}</b>${sub}</span></div><button class="btn sm" id="sy-now">Sync now</button></div>
@@ -1796,7 +1798,8 @@ function renderSyncSheet(){
       <label class="f">New password<input id="sy-pw1" type="password" autocomplete="new-password" minlength="6"></label>
       <label class="f">Repeat new password<input id="sy-pw2" type="password" autocomplete="new-password" minlength="6"></label>
       <div class="row"><button class="btn primary sm" id="sy-pwsave">Save new password</button><button class="btn ghost sm" id="sy-pwx">Cancel</button></div>
-      <p class="note" id="sy-pwmsg" style="margin:0"></p></div>`+bk+`<button class="srow link danger" id="sy-out">Sign out</button>`;
+      <p class="note" id="sy-pwmsg" style="margin:0"></p></div>`+bk+`<button class="srow link danger" id="sy-out">Sign out</button><button class="srow link danger" id="sy-delbtn">Delete my account</button>
+    <div class="sform" id="sy-delbox" hidden></div>`;
 }
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
@@ -1806,6 +1809,25 @@ document.addEventListener("click",async e=>{
     t.disabled=true;msg.textContent=t.id==="sy-in"?"Signing in…":"Creating account…";
     const err=t.id==="sy-in"?await Sync.signIn(em,pw):await Sync.signUp(em,pw);t.disabled=false;
     if(err)msg.textContent=err.message;else renderSyncSheet()}
+  else if(t.id==="sy-delbtn"){const b=$("#sy-delbox");if(!b.hidden){b.hidden=true;return}const acc=!!Sync.user;
+    b.innerHTML=acc?`<p class="note" style="margin:0;color:var(--ink)"><b>This deletes your account for good.</b> All your experiments, recipes, notes and images are removed from the cloud and from this device, and you leave your shared labs. A lab you created passes to another member (or is removed if you're the only one). Items you added to a shared storage list stay for the lab, without your email.</p>
+      <p class="note" style="margin:0">Want a copy first? Use <b>Export backup</b> above.</p>
+      <label class="f">Type DELETE to confirm<input id="sy-delconf" type="text" autocomplete="off" autocapitalize="characters"></label>
+      <div class="row"><button class="btn danger sm" id="sy-delgo">Delete my account</button><button class="btn ghost sm" id="sy-delx">Cancel</button></div><p class="note" id="sy-delmsg" style="margin:0"></p>`
+      :`<p class="note" style="margin:0;color:var(--ink)"><b>This removes everything Lab Rat saved on this device:</b> experiments, recipes, notes, images, timers and the storage list. Your appearance settings stay.</p>
+      <p class="note" style="margin:0">Want a copy first? Use <b>Export backup</b> above.</p>
+      <label class="f">Type DELETE to confirm<input id="sy-delconf" type="text" autocomplete="off" autocapitalize="characters"></label>
+      <div class="row"><button class="btn danger sm" id="sy-delgo">Delete data on this device</button><button class="btn ghost sm" id="sy-delx">Cancel</button></div><p class="note" id="sy-delmsg" style="margin:0"></p>`;
+    b.hidden=false;$("#sy-delconf").focus()}
+  else if(t.id==="sy-delx"){$("#sy-delbox").hidden=true}
+  else if(t.id==="sy-delgo"){const m=$("#sy-delmsg");const wasAcc=!!Sync.user;m.style.color="var(--bad)";
+    if(($("#sy-delconf").value||"").trim().toUpperCase()!=="DELETE"){m.textContent="Type DELETE in the box to confirm.";return}
+    if(Sync.user){if(!navigator.onLine){m.textContent="You're offline. Connect to the internet to delete your account.";return}
+      t.disabled=true;m.style.color="";m.textContent="Deleting…";
+      const {error}=await Sync.sb.rpc("delete_my_account");
+      if(error){t.disabled=false;m.style.color="var(--bad)";m.textContent=/function|schema cache|does not exist|not find/i.test(error.message||"")?"Account deletion isn't set up in the database yet. The app owner needs to run supabase-account.sql once in Supabase.":(error.message||String(error));return}
+      try{await Sync.sb.auth.signOut({scope:"local"})}catch(e){}}
+    await wipeDevice();try{sessionStorage.setItem("lr.deleted",wasAcc?"account":"device")}catch(e){}location.reload()}
   else if(t.id==="sy-pwbtn"){const b=$("#sy-pwbox");b.hidden=!b.hidden;if(!b.hidden)$("#sy-pw1").focus()}
   else if(t.id==="sy-pwx"){$("#sy-pwbox").hidden=true}
   else if(t.id==="sy-pwsave"){const a=$("#sy-pw1").value,b=$("#sy-pw2").value,m=$("#sy-pwmsg");m.style.color="var(--bad)";
@@ -1843,6 +1865,8 @@ const Welcome={
       <button class="btn wl-guest" id="wl-guest" type="button">Use without an account</button>
       <p class="wl-note">Everything stays on this device only, with no sync and no shared lab storage. You can sign in later in Settings, and what you made here comes with you.</p>
     </div>`;
+    let gone="";try{gone=sessionStorage.getItem("lr.deleted")||"";sessionStorage.removeItem("lr.deleted")}catch(e){}
+    if(gone){const m=document.getElementById("wl-msg");m.classList.add("ok");m.textContent=gone==="account"?"Your account and its data were deleted.":"The data on this device was deleted."}
     this.mode="in";el.hidden=false;document.documentElement.classList.add("wl-open");setTimeout(()=>{const i=document.getElementById("wl-email");i&&window.innerWidth>=700&&i.focus()},50)},
   hide(force){if(this.recovery&&!force)return;const el=document.getElementById("welcome");if(el&&!el.hidden){el.hidden=true;document.documentElement.classList.remove("wl-open")}},
   setMode(m){this.mode=m;document.querySelectorAll("#welcome [data-wm]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.wm===m)));
