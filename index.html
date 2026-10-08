@@ -1610,6 +1610,7 @@ const Store={
   mode:"local",data:Object.fromEntries(KINDS.map(k=>[k,{}])),loaded:Object.fromEntries(KINDS.map(k=>[k,false])),
   label(){return Sync.label()},
   async init(){
+    Welcome.maybe();
     let d=await idbGet("data");if(!d)d=lsGet("labrat.v1",null)||lsGet("blotbench.v1",null);
     if(d)KINDS.forEach(k=>{this.data[k]=d[k]||{}});
     KINDS.forEach(k=>this.loaded[k]=true);
@@ -1655,9 +1656,12 @@ const Sync={
   async start(){
     renderSyncBtn();
     if(!this.cfgOk()||!window.supabase){renderSyncBtn();return}
+    const recov=/type=recovery/.test(location.hash||"")||/type=recovery/.test(location.search||"");
     this.sb=window.supabase.createClient(window.BLOT_CONFIG.SUPABASE_URL,window.BLOT_CONFIG.SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
     const {data}=await this.sb.auth.getSession();this.user=data.session?data.session.user:null;
-    this.sb.auth.onAuthStateChange((ev,session)=>{const was=this.user&&this.user.id;this.user=session?session.user:null;if(this.user&&this.user.id!==was)this.onLogin();if(!this.user)this.stopLive();renderSyncBtn();renderSyncSheet()});
+    if(this.user)Welcome.hide();
+    if(recov&&this.user)Welcome.newPassword();
+    this.sb.auth.onAuthStateChange((ev,session)=>{const was=this.user&&this.user.id;this.user=session?session.user:null;if(this.user)Welcome.hide();if(ev==="PASSWORD_RECOVERY")setTimeout(()=>Welcome.newPassword(),0);if(this.user&&this.user.id!==was)this.onLogin();if(!this.user)this.stopLive();renderSyncBtn();renderSyncSheet()});
     if(this.user)this.onLogin();
     window.addEventListener("online",()=>{this.flush();this.pull();renderSyncBtn()});
     window.addEventListener("offline",()=>renderSyncBtn());
@@ -1718,7 +1722,9 @@ const Sync={
   stopLive(){try{this.chan&&this.sb.removeChannel(this.chan)}catch(e){}this.chan=null},
   async signIn(email,pw){const {error}=await this.sb.auth.signInWithPassword({email,password:pw});return error},
   async signUp(email,pw){const {data,error}=await this.sb.auth.signUp({email,password:pw});return error||(!data.session?{message:"Account created. Check your email to confirm it, then sign in."}:null)},
-  async signOut(){await this.sb.auth.signOut()}
+  async resetPw(email){const {error}=await this.sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});return error},
+  async setPw(pw){const {error}=await this.sb.auth.updateUser({password:pw});return error},
+  async signOut(){await this.sb.auth.signOut();lsSet("bb.guest",false);if(typeof closeSettings==="function")try{closeSettings()}catch(e){}Welcome.show()}
 };
 
 /* ---------- sync UI ---------- */
@@ -1734,12 +1740,17 @@ function renderSyncSheet(){
   if(!Sync.user){el.innerHTML=`<p class="note" style="margin:0">Sign in to keep your experiments in sync across your phone and laptop.</p>
     <label class="f">Email<input id="sy-email" type="email" autocomplete="username"></label>
     <label class="f">Password<input id="sy-pw" type="password" autocomplete="current-password"></label>
-    <div class="row"><button class="btn primary" id="sy-in">Sign in</button><button class="btn" id="sy-up">Create account</button></div>
+    <div class="row"><button class="btn primary" id="sy-in">Sign in</button><button class="btn" id="sy-up">Create account</button><button class="btn ghost sm" id="sy-forgot">Forgot password?</button></div>
     <p class="note" id="sy-msg" style="margin:0"></p>`+bk;return}
   const p=Object.keys(Sync.pending()).length;
   el.innerHTML=`<div class="res"><span>Account</span><span style="font-family:var(--sans)">${esc(Sync.user.email)}</span><span>Status</span><span style="font-family:var(--sans)">${esc(Sync.label())}</span><span>Last sync</span><span style="font-family:var(--sans)">${last?new Date(last).toLocaleString("en-GB"):"—"}</span><span>Waiting to upload</span><span>${p}</span></div>
     ${Sync.lastErr?`<p class="note" style="color:var(--bad);margin:0">${esc(Sync.lastErr)}</p>`:""}
-    <div class="row"><button class="btn primary sm" id="sy-now">Sync now</button><button class="btn ghost danger sm" id="sy-out">Sign out</button></div>`+bk;
+    <div class="row"><button class="btn primary sm" id="sy-now">Sync now</button><button class="btn sm" id="sy-pwbtn">Change password</button><button class="btn ghost danger sm" id="sy-out">Sign out</button></div>
+    <div id="sy-pwbox" hidden style="display:flex;flex-direction:column;gap:8px;background:var(--accent-soft);border-radius:12px;padding:10px">
+      <label class="f">New password<input id="sy-pw1" type="password" autocomplete="new-password" minlength="6"></label>
+      <label class="f">Repeat new password<input id="sy-pw2" type="password" autocomplete="new-password" minlength="6"></label>
+      <div class="row"><button class="btn primary sm" id="sy-pwsave">Save new password</button><button class="btn ghost sm" id="sy-pwx">Cancel</button></div>
+      <p class="note" id="sy-pwmsg" style="margin:0"></p></div>`+bk;
 }
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
@@ -1749,12 +1760,98 @@ document.addEventListener("click",async e=>{
     t.disabled=true;msg.textContent=t.id==="sy-in"?"Signing in…":"Creating account…";
     const err=t.id==="sy-in"?await Sync.signIn(em,pw):await Sync.signUp(em,pw);t.disabled=false;
     if(err)msg.textContent=err.message;else renderSyncSheet()}
+  else if(t.id==="sy-pwbtn"){const b=$("#sy-pwbox");b.hidden=!b.hidden;if(!b.hidden)$("#sy-pw1").focus()}
+  else if(t.id==="sy-pwx"){$("#sy-pwbox").hidden=true}
+  else if(t.id==="sy-pwsave"){const a=$("#sy-pw1").value,b=$("#sy-pw2").value,m=$("#sy-pwmsg");m.style.color="var(--bad)";
+    if(a.length<6){m.textContent="The password needs at least 6 characters.";return}if(a!==b){m.textContent="The two passwords are not the same.";return}
+    if(!navigator.onLine){m.textContent="You're offline. Connect to the internet first.";return}
+    t.disabled=true;m.style.color="";m.textContent="Saving…";const err=await Sync.setPw(a);t.disabled=false;
+    if(err){m.style.color="var(--bad)";m.textContent=/different from the old/i.test(err.message||"")?"The new password must be different from the old one.":(err.message||String(err));return}
+    $("#sy-pwbox").hidden=true;setStatus("Password changed")}
+  else if(t.id==="sy-forgot"){const em=$("#sy-email").value.trim(),msg=$("#sy-msg");if(!/@/.test(em)){msg.textContent="Write your email above, then tap Forgot password again.";$("#sy-email").focus();return}
+    t.disabled=true;const err=await Sync.resetPw(em);t.disabled=false;msg.textContent=err?(err.message||String(err)):`We sent a link to ${em}. Open it on this device to set a new password.`}
   else if(t.id==="sy-now"){await Sync.flush();await Sync.pull();setStatus("Synced")}
   else if(t.id==="sy-out"){await Sync.signOut();renderSyncSheet()}
   else if(t.id==="bk-export"){const blob=new Blob([Store.exportAll()],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`lab-rat-backup-${today()}.json`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
   else if(t.id==="bk-import")$("#bk-file").click();
 });
 $("#bk-file").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{const txt=f.text?await f.text():await new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(fr.result);fr.onerror=no;fr.readAsText(f)});const n=Store.importAll(txt);synced=false;KINDS.forEach(k=>onData(k,true));setStatus(`Imported ${n} item${n===1?"":"s"}`)}catch(err){setStatus("That file is not a Lab Rat backup",true)}e.target.value=""});
+
+/* ---------- welcome / sign-in screen (first start, or after signing out) ---------- */
+const Welcome={
+  hasSession(){try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(/^sb-.*-auth-token$/.test(k)&&localStorage.getItem(k))return true}}catch(e){}return false},
+  maybe(){if(!Sync.cfgOk()||!window.supabase)return;if(lsGet("bb.guest",false)||this.hasSession())return;this.show()},
+  show(){let el=document.getElementById("welcome");if(!el){el=document.createElement("div");el.id="welcome";el.setAttribute("role","dialog");el.setAttribute("aria-label","Sign in to Lab Rat");document.body.appendChild(el);this.wire(el)}
+    el.innerHTML=`<div class="wl-box">
+      <div class="wl-head"><img src="icons/icon-192.png" alt="" width="72" height="72"><h1>Lab Rat</h1><p>Experiments, recipes, storage and timers for the bench.</p></div>
+      <form class="wl-card" id="wl-form" novalidate>
+        <div class="wl-seg" role="tablist"><button type="button" data-wm="in" aria-pressed="true">Sign in</button><button type="button" data-wm="up" aria-pressed="false">Create account</button></div>
+        <label class="f">Email<input id="wl-email" type="email" autocomplete="username" inputmode="email" required></label>
+        <label class="f">Password<input id="wl-pw" type="password" autocomplete="current-password" minlength="6" required></label>
+        <button class="btn primary wl-go" id="wl-go" type="submit">Sign in</button>
+        <button class="wl-link" id="wl-forgot" type="button">Forgot password?</button>
+        <p class="wl-msg" id="wl-msg" aria-live="polite"></p>
+        <p class="wl-why">With an account your experiments sync between your phone and computer, and you can share a storage list with your lab.</p>
+      </form>
+      <div class="wl-or"><span>or</span></div>
+      <button class="btn wl-guest" id="wl-guest" type="button">Continue as guest</button>
+      <p class="wl-note">As a guest everything stays on this device. You can sign in later in Settings, and what you made here comes with you.</p>
+    </div>`;
+    this.mode="in";el.hidden=false;document.documentElement.classList.add("wl-open");setTimeout(()=>{const i=document.getElementById("wl-email");i&&window.innerWidth>=700&&i.focus()},50)},
+  hide(force){if(this.recovery&&!force)return;const el=document.getElementById("welcome");if(el&&!el.hidden){el.hidden=true;document.documentElement.classList.remove("wl-open")}},
+  setMode(m){this.mode=m;document.querySelectorAll("#welcome [data-wm]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.wm===m)));
+    document.getElementById("wl-go").textContent=m==="in"?"Sign in":"Create account";document.getElementById("wl-pw").setAttribute("autocomplete",m==="in"?"current-password":"new-password");document.getElementById("wl-msg").textContent=m==="up"?"Choose a password of at least 6 characters.":"";document.getElementById("wl-forgot").hidden=m!=="in"},
+  newPassword(){this.show();const el=document.getElementById("welcome");this.recovery=true;
+    el.querySelector(".wl-box").innerHTML=`<div class="wl-head"><img src="icons/icon-192.png" alt="" width="72" height="72"><h1>New password</h1><p>${esc(Sync.user&&Sync.user.email||"")}</p></div>
+      <form class="wl-card" id="wl-pwform" novalidate>
+        <label class="f">New password<input id="wl-np1" type="password" autocomplete="new-password" minlength="6"></label>
+        <label class="f">Repeat new password<input id="wl-np2" type="password" autocomplete="new-password" minlength="6"></label>
+        <button class="btn primary wl-go" type="submit">Save new password</button>
+        <p class="wl-msg" id="wl-npmsg" aria-live="polite"></p>
+      </form>`;setTimeout(()=>{const i=document.getElementById("wl-np1");i&&i.focus()},50)},
+  wire(el){
+    el.addEventListener("click",e=>{const m=e.target.closest("[data-wm]");if(m){this.setMode(m.dataset.wm);return}
+      if(e.target.closest("#wl-forgot")){const em=document.getElementById("wl-email").value.trim(),msg=document.getElementById("wl-msg");msg.classList.remove("ok");
+        if(!/@/.test(em)){msg.textContent="Write your email above, then tap Forgot password.";document.getElementById("wl-email").focus();return}
+        if(!navigator.onLine){msg.textContent="You're offline. Connect to the internet first.";return}
+        msg.textContent="Sending…";Sync.resetPw(em).then(err=>{if(err){msg.textContent=err.message||String(err);return}msg.classList.add("ok");msg.textContent=`We sent a link to ${em}. Open it on this device to set a new password.`});return}
+      if(e.target.closest("#wl-guest")){lsSet("bb.guest",true);this.hide();setStatus("You're using Lab Rat as a guest")}});
+    el.addEventListener("submit",async e=>{e.preventDefault();
+      if(e.target.id==="wl-pwform"){const a=document.getElementById("wl-np1").value,b=document.getElementById("wl-np2").value,m=document.getElementById("wl-npmsg");m.classList.remove("ok");
+        if(a.length<6){m.textContent="The password needs at least 6 characters.";return}if(a!==b){m.textContent="The two passwords are not the same.";return}
+        const btn=e.target.querySelector("button[type=submit]");btn.disabled=true;m.textContent="Saving…";const err=await Sync.setPw(a);btn.disabled=false;
+        if(err){m.textContent=/different from the old/i.test(err.message||"")?"The new password must be different from the old one.":(err.message||String(err));return}
+        this.recovery=false;lsSet("bb.guest",false);this.hide();setStatus("Password changed. You're signed in");return}
+      const em=document.getElementById("wl-email").value.trim(),pw=document.getElementById("wl-pw").value,msg=document.getElementById("wl-msg"),go=document.getElementById("wl-go");
+      msg.classList.remove("ok");
+      if(!em||!/@/.test(em)){msg.textContent="Write your email.";return}if(pw.length<6){msg.textContent="The password needs at least 6 characters.";return}
+      if(!navigator.onLine){msg.textContent="You're offline. Connect to the internet to sign in, or continue as a guest.";return}
+      go.disabled=true;msg.textContent=this.mode==="in"?"Signing in…":"Creating account…";
+      let err=null;try{err=this.mode==="in"?await Sync.signIn(em,pw):await Sync.signUp(em,pw)}catch(x){err=x}go.disabled=false;
+      if(err){const t=err.message||String(err);msg.textContent=/invalid login/i.test(t)?"Wrong email or password.":/confirm/i.test(t)?t:/already registered/i.test(t)?"There is already an account with this email. Sign in instead.":t;if(/Check your email/i.test(t))msg.classList.add("ok");return}
+      lsSet("bb.guest",false);this.hide();setStatus("Signed in")});
+  }
+};
+(function(){const st=document.createElement("style");st.textContent=`
+#welcome{position:fixed;inset:0;z-index:200;background:var(--bg);overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:max(28px,env(safe-area-inset-top)) 16px 28px}
+#welcome[hidden]{display:none}
+html.wl-open,html.wl-open body{overflow:hidden}
+#welcome .wl-box{width:100%;max-width:380px;display:flex;flex-direction:column;gap:14px;margin:auto 0}
+#welcome .wl-head{text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:6px}
+#welcome .wl-head img{border-radius:18px;box-shadow:0 6px 18px rgba(0,0,0,.15)}
+#welcome .wl-head h1{margin:8px 0 0;font:800 28px var(--sans);letter-spacing:-.01em;color:var(--ink)}
+#welcome .wl-head p{margin:0;color:var(--muted);font-size:14px}
+#welcome .wl-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+#welcome .wl-seg{display:grid;grid-template-columns:1fr 1fr;background:var(--bg);border-radius:10px;padding:3px}
+#welcome .wl-seg button{border:0;background:none;font:600 13.5px var(--sans);color:var(--muted);padding:8px;border-radius:8px;cursor:pointer}
+#welcome .wl-seg button[aria-pressed=true]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+#welcome .wl-go{width:100%;padding:12px;font-size:15px}
+#welcome .wl-msg{margin:0;min-height:1em;font-size:13px;color:var(--bad)}#welcome .wl-msg:empty{display:none}#welcome .wl-msg.ok{color:var(--ok,var(--accent))}
+#welcome .wl-link{align-self:center;background:none;border:0;color:var(--accent);font:600 13px var(--sans);cursor:pointer;padding:2px}#welcome .wl-link[hidden]{display:none}
+#welcome .wl-why{margin:0;font-size:12.5px;color:var(--muted)}
+#welcome .wl-or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12.5px}#welcome .wl-or::before,#welcome .wl-or::after{content:"";flex:1;height:1px;background:var(--line)}
+#welcome .wl-guest{width:100%;padding:12px;font-size:15px}
+#welcome .wl-note{margin:0;text-align:center;font-size:12.5px;color:var(--muted)}`;document.head.appendChild(st)})();
 
 /* ---------- models ---------- */
 /* ---------- undo ---------- */
