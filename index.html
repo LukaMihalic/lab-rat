@@ -944,6 +944,37 @@ header.top .brand{min-width:0;overflow:hidden}
 #tour .tr-card p{margin:0;font-size:14px;line-height:1.45;color:var(--ink)}
 #tour .tr-dots{display:flex;gap:4px;margin:4px 0 2px}#tour .tr-dots i{width:6px;height:6px;border-radius:50%;background:var(--line)}#tour .tr-dots i.on{background:var(--accent);width:16px;border-radius:3px}
 #tour .tr-f{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+
+/* band labels */
+.pcard .t .abl{display:block;font:500 12px/1.3 var(--sans);color:var(--muted);margin-top:2px;white-space:normal}
+.abrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}.abrow .f:nth-child(3){grid-column:1/-1}
+@media (max-width:520px){.abrow{grid-template-columns:1fr}}
+.thumb .annb{position:absolute;left:4px;bottom:4px;background:rgba(0,0,0,.62);color:#fff;border:0;border-radius:6px;padding:3px 7px;font:600 11.5px var(--sans);cursor:pointer}
+.annw{position:relative;display:block;container-type:inline-size;line-height:0}
+.annw img{width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none}
+.anno{position:absolute;inset:0;line-height:1.1}
+.an{position:absolute;white-space:nowrap;font:600 3.2cqw/1 Arial,sans-serif;color:#fff;text-shadow:0 0 .35cqw #000,0 0 .35cqw #000,0 0 .6cqw #000,.15cqw .15cqw 0 #000,-.15cqw -.15cqw 0 #000;transform:translate(0,-50%);cursor:grab;touch-action:none}
+.an-kda{transform:translate(-100%,-50%)}
+.an-lane{transform:none;font-size:2.7cqw}.an-lane i{position:absolute;left:0;bottom:0;font-style:normal;transform:rotate(-50deg);transform-origin:left bottom}
+.an.sel{outline:2px dashed #ffd400;outline-offset:2px;border-radius:3px}
+.an-pt{position:absolute;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#ffd400;border:2px solid #000}
+.ann{position:fixed;inset:0;z-index:180;background:#101418;color:#fff;display:flex;flex-direction:column;gap:8px;padding:max(10px,env(safe-area-inset-top)) 12px max(10px,env(safe-area-inset-bottom))}
+.ann[hidden]{display:none}
+.ann-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ann-tt{display:flex;flex-direction:column;min-width:0}.ann-tt b{font-size:16px}.ann-tt small{color:#9fb3bf;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ann-tools{grid-template-columns:repeat(4,1fr)}
+.ann .seg button{background:#1d252c;color:#dfe8ee;border-color:#33414b}.ann .seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.ann-hint{font-size:13px;color:#9fb3bf;text-align:center}
+.ann-stage{flex:1;min-height:0;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:56px 64px 12px 40px}
+.ann-stage .annw{width:100%;max-width:1100px}
+.ann-stage .an{cursor:grab}
+.ann-bot{background:#1a2127;border-radius:12px;padding:10px}
+.ann-bot .note{color:#9fb3bf}
+.ann-edit{display:flex;flex-direction:column;gap:8px}.ann-edit input{font-size:16px}
+.ann-chips{display:flex;flex-wrap:wrap;gap:6px}.ann-chips button{background:#26313a;color:#fff;border:1px solid #3a4853;border-radius:999px;padding:5px 11px;font:600 13px var(--sans);cursor:pointer}
+.ann .btn:not(.primary){background:#26313a;color:#fff;border-color:#3a4853}.ann .btn.danger{color:#ff9b9b}
+.rimgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.rimgs>div.rbox{border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:9% 13% 3% 11%;overflow:hidden}
 </style>
 
 <div class="wrap">
@@ -1273,7 +1304,7 @@ header.top .brand{min-width:0;overflow:hidden}
     </div>
     <p class="note" style="margin:0" id="img-empty">No images yet. Tap <b>+ New</b>, choose membrane or gel, then paste or pick the picture.</p>
     <div class="imgsecs" id="img-list"></div>
-    <input type="file" id="img-file" accept="image/*" multiple hidden>
+    <input type="file" id="img-file" accept="image/*" multiple hidden><datalist id="ab-list"></datalist>
   </section>
 
   <section class="tab" id="tab-quant" hidden>
@@ -1712,6 +1743,7 @@ const HELP=[
  {i:"📈",t:"Work out protein concentrations",k:"protein concentration bca lowry standard curve absorbance koncentracija proteina standardna krivulja apsorbancija",s:["Open a BCA or Lowry experiment and go to <b>Protein concentration</b>.","Fill in the standards and the absorbances of your samples.","Concentrations are calculated from the standard curve."]},
  {i:"📋",t:"Add samples, paste from Excel, export",k:"samples paste excel copy export table uzorci zalijepiti kopirati izvoz tablica",s:["Open the experiment and go to <b>Samples</b>.","Copy rows in Excel and paste them into the table.","Use <b>Export</b> to save the samples as a file."]},
  {i:"🖼️",t:"Add images (blots, gels, IHC sections)",k:"image photo picture membrane gel section microscope slika fotografija membrana rez mikroskop",s:["Open the experiment and go to <b>Images</b>.","Tap <b>+ Add</b> and pick the type: membrane or gel for blots, section or region for IHC."]},
+ {i:"🏷️",t:"Label bands on a blot or gel image",k:"label bands annotate image membrane gel kda ladder lanes antibody primary secondary exposure oznaciti bandove slika membrana protutijelo markeri jazice",s:["Open the experiment → <b>Images</b> and tap an image (or <b>🏷 Label bands</b> on it).","<b>◀ Band</b>: tap a band and name it. <b>kDa</b>: tap a ladder band and pick its size. <b>Lanes</b>: tap the first and last lane; names come from your gel plan. <b>Text</b>: any note.","Drag a label to move it, tap it to edit or delete. <b>Save labelled image</b> downloads it as a PNG."],p:"Write the primary and secondary antibody (and exposure) above the images of each membrane; they show in the report too."},
  {i:"❌",t:"Mark an experiment as worked or didn't work",k:"outcome failed worked result didnt work neuspjeh nije uspjelo uspjelo ishod rezultat",s:["Open the experiment and go to <b>Report</b>.","Pick <b>✓ Worked</b> or <b>✗ Didn't work</b>. It stays in your list, marked, so you know which one you used later."]},
  {i:"⚗️",t:"Add recipes to an experiment and tick what you made",k:"recipe solution buffer prepare experiment recept otopina pufer pripremiti eksperiment",s:["Open the experiment and go to <b>Recipes</b>.","Use <b>Add a recipe…</b> to pick from your library.","Tick a recipe when you've prepared it. Tap its name to see amounts."]},
  {i:"📖",t:"Make a new recipe or change the volume",k:"new recipe volume scale amounts make novi recept volumen kolicina skalirati izracunati",s:["Go to <b>Recipes</b> and tap <b>+ New recipe</b> (start from a common buffer or blank).","Change <b>Make</b> to the volume you need. All amounts are recalculated."],go:["tab","sol"]},
@@ -2823,7 +2855,7 @@ function renderHome(){
   else if(!q&&n.p!=null&&n.p!=="__none")tiles=folders.map(f=>{const path=(n.f?n.f+"/":"")+f;return tile(f,{p:n.p,f:path},every.filter(p=>pj(p)===n.p&&under(pf(p),path)))}).join("");
   $("#home-folders").innerHTML=tiles;
   // list
-  let base=q?every.filter(p=>[p.name,p.group,p.folder,methodLabel(p),p.notes].join(" ").toLowerCase().includes(q)):n.p==null?every:every.filter(p=>inNav(p,n));
+  let base=q?every.filter(p=>[p.name,p.group,p.folder,methodLabel(p),p.notes,(p.imgs||[]).map(s=>[s.ab1,s.ab2].join(" ")).join(" ")].join(" ").toLowerCase().includes(q)):n.p==null?every:every.filter(p=>inNav(p,n));
   const root=!q&&n.p==null;
   let f=lsGet("bb.hstatus","all");let so=lsGet("bb.hsort","used");if(so==="project")so="used";$("#home-sort").value=so;
   const na=base.filter(p=>!expDone(p)).length,nd=base.length-na;
@@ -2834,9 +2866,10 @@ function renderHome(){
   L.sort(root?(a,b)=>(b.updatedAt||0)-(a.updatedAt||0):so==="new"?(a,b)=>crd(b)-crd(a):so==="old"?(a,b)=>crd(a)-crd(b):so==="name"?(a,b)=>String(a.name).localeCompare(String(b.name)):(a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
   if(root)L=L.filter(p=>!expDone(p)).slice(0,4);
   $("#home-filter").hidden=root;$("#home-sort").hidden=root;
+  const abs=p=>{const m=new Map();(p.imgs||[]).forEach(s=>{const v=String(s.ab1||"").replace(/\s*\b1\s*:\s*[\d\s.,]+$/,"").replace(/^anti[- ]?/i,"").trim();if(v&&!m.has(v.toLowerCase()))m.set(v.toLowerCase(),v)});return [...m.values()]};
   const card=p=>{const nG=Object.values(Store.data.experiments).filter(x=>x.protoId===p.id).reduce((n,x)=>n+gelsOf(x.id).filter(g=>!g.draft).length,0),nA=Object.values(Store.data.assays).filter(x=>x.protoId===p.id).length;
     const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const where=[pj(p),showPath(pf(p))].filter(Boolean).join(" › ");
-    const cat=catOfExp(p);return `<div class="pcard"><button class="pmain" data-p="${esc(p.id)}"><span class="th">${micon(cat)}<span class="t">${esc(p.name||"Untitled")}</span></span><span class="m">${outcomeTag(p)}<span class="tag mt" style="--mc:${MCOL[cat]||MCOL.other}">${esc(methodLabel(p))}</span>${(q||root)&&where?`<span class="tag" style="background:var(--surface-2);color:var(--ink)">${esc(where)}</span>`:""}</span>${steps.length?`<span class="prog${expDone(p)||dn===steps.length?" full":""}" role="img" aria-label="${dn} of ${steps.length} steps done"><i style="width:${Math.round(100*dn/steps.length)}%"></i></span>`:""}<span class="m">${[steps.length?`${dn}/${steps.length} steps`:"no steps",nA?`${nA} assay${nA>1?"s":""}`:"",nG?`${nG} gel${nG>1?"s":""}`:"",expDone(p)&&p.completed?`${expFailed(p)?"failed":"done"} ${shortD(p.completed)}`:p.created?`started ${shortD(p.created)}`:""].filter(Boolean).join(" · ")}</span>${(()=>{const u=usedIn(p.id);return u.length?`<span class="m usedin">→ used in ${u.map(q=>esc(q.name)).join(", ")}</span>`:""})()}</button><span class="mwrap"><button class="pm" data-menu aria-label="More actions">⋯</button><div class="menu" hidden><button data-copy="${esc(p.id)}">Copy experiment</button>${expDone(p)?`<button data-setout="active" data-sp="${esc(p.id)}">Back to in progress</button>`:""}${!expDone(p)||expFailed(p)?`<button data-setout="ok" data-sp="${esc(p.id)}">✓ Mark as worked</button>`:""}${!expFailed(p)?`<button data-setout="fail" data-sp="${esc(p.id)}">✗ Mark as didn't work</button>`:""}<button class="danger" data-del="${esc(p.id)}">Delete</button></div></span></div>`};
+    const cat=catOfExp(p);return `<div class="pcard"><button class="pmain" data-p="${esc(p.id)}"><span class="th">${micon(cat)}<span class="t">${esc(p.name||"Untitled")}${(()=>{const A=abs(p);return A.length?`<small class="abl" title="Primary antibodies">${esc(A.join(" · "))}</small>`:""})()}</span></span><span class="m">${outcomeTag(p)}<span class="tag mt" style="--mc:${MCOL[cat]||MCOL.other}">${esc(methodLabel(p))}</span>${(q||root)&&where?`<span class="tag" style="background:var(--surface-2);color:var(--ink)">${esc(where)}</span>`:""}</span>${steps.length?`<span class="prog${expDone(p)||dn===steps.length?" full":""}" role="img" aria-label="${dn} of ${steps.length} steps done"><i style="width:${Math.round(100*dn/steps.length)}%"></i></span>`:""}<span class="m">${[steps.length?`${dn}/${steps.length} steps`:"no steps",nA?`${nA} assay${nA>1?"s":""}`:"",nG?`${nG} gel${nG>1?"s":""}`:"",expDone(p)&&p.completed?`${expFailed(p)?"failed":"done"} ${shortD(p.completed)}`:p.created?`started ${shortD(p.created)}`:""].filter(Boolean).join(" · ")}</span>${(()=>{const u=usedIn(p.id);return u.length?`<span class="m usedin">→ used in ${u.map(q=>esc(q.name)).join(", ")}</span>`:""})()}</button><span class="mwrap"><button class="pm" data-menu aria-label="More actions">⋯</button><div class="menu" hidden><button data-copy="${esc(p.id)}">Copy experiment</button>${expDone(p)?`<button data-setout="active" data-sp="${esc(p.id)}">Back to in progress</button>`:""}${!expDone(p)||expFailed(p)?`<button data-setout="ok" data-sp="${esc(p.id)}">✓ Mark as worked</button>`:""}${!expFailed(p)?`<button data-setout="fail" data-sp="${esc(p.id)}">✗ Mark as didn't work</button>`:""}<button class="danger" data-del="${esc(p.id)}">Delete</button></div></span></div>`};
   const lh=$("#home-lhead");lh.hidden=!(root&&L.length)&&!(n.p!=null&&n.p!=="__none"&&folders.length&&L.length&&!q);
   lh.innerHTML=root?`<span>Continue</span><span></span>`:`<span>${n.f?"In this folder":"Not in a folder"}</span><span>${L.length}</span>`;
   const mini=p=>{const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const cat=catOfExp(p);
@@ -3826,7 +3859,7 @@ function recHTML(r){
   if(r.exp){h+=`<div class="sec"><h3>Gels · ${esc(r.exp.name)}</h3>${r.exp.gels.map(g=>`<div><b>${esc(g.name)}</b> <span class="note">${fmt(num(g.targetUg),0)} µg/well${g.mode==="premix"?`, Laemmli ${esc(g.mix)}`:""}</span>
     <div class="tablewrap"><table><thead><tr><th>Well</th><th>Sample</th><th>c µg/µL</th><th>Load µL</th></tr></thead><tbody>${g.lanes.filter(l=>l.type!=="empty").map(l=>`<tr><td>${l.loaded?"✓":""}${l.well}</td><td class="n">${esc(l.name||(l.type==="ladder"?"Ladder":""))}</td><td>${l.type==="sample"?fmt(num(l.conc),2):""}</td><td>${fmt(l.load)}</td></tr>`).join("")}</tbody></table></div></div>`).join("")}</div>`}
   if(r.qpcr){const q=r.qpcr;h+=`<div class="sec"><h3>qPCR · reference ${esc(q.refs.join(", ")||"—")} · control ${esc(q.ctrl||"—")}</h3><div class="tablewrap"><table><thead><tr><th>Gene</th><th>Group</th><th>n</th><th>Fold</th><th>SEM</th></tr></thead><tbody>${q.summ.map(x=>`<tr><td class="n">${esc(x.gene)}</td><td style="text-align:left">${esc(x.group)}</td><td>${x.n}</td><td>${fmt(x.mean,2)}</td><td>${fmt(x.sem,2)}</td></tr>`).join("")}</tbody></table></div></div>`}
-  if(r.images&&r.images.length){h+=`<div class="sec"><h3>Images</h3>${r.images.map(x=>`<div><b>${esc(x.title||"")}</b> <span class="note">${x.n} image${x.n===1?"":"s"}</span>${x.notes?`<div class="note">${esc(x.notes)}</div>`:""}<div class="thumbs" style="margin-top:6px">${(x.srcs||[]).map(u=>`<div class="thumb"><img src="${esc(u)}" alt=""></div>`).join("")}</div></div>`).join("")}</div>`}
+  if(r.images&&r.images.length){h+=`<div class="sec"><h3>Images</h3>${r.images.map(x=>`<div><b>${esc(x.title||"")}</b> <span class="note">${x.n} image${x.n===1?"":"s"}</span>${x.ab1||x.ab2||x.exp?`<div class="note">${[x.ab1&&"Primary: "+x.ab1,x.ab2&&"Secondary: "+x.ab2,x.exp&&"Detection: "+x.exp].filter(Boolean).map(esc).join(" · ")}</div>`:""}${x.notes?`<div class="note">${esc(x.notes)}</div>`:""}<div class="rimgs" style="margin-top:6px">${(x.srcs||[]).map((u,i)=>{const A=x.anns&&x.anns[i]&&x.anns[i].length;return A?`<div class="rbox"><div class="annw"><img src="${esc(u)}" alt=""><div class="anno">${annHTML(x.anns[i])}</div></div></div>`:`<div class="thumb"><img src="${esc(u)}" alt=""></div>`}).join("")}</div></div>`).join("")}</div>`}
   if(r.solutions&&r.solutions.length){h+=`<div class="sec"><h3>Solutions</h3>${r.solutions.map(x=>`<div><b>${esc(x.name)}</b> <span class="note">${esc(x.vol)} ${esc(x.vunit)}</span><div class="note">${x.lines.map(esc).join(" · ")}</div></div>`).join("")}</div>`}
   return h;
 }
@@ -3847,7 +3880,7 @@ function buildLive(){
   if(t.gel){const x=S.exp&&Store.data.experiments[S.exp.id]?S.exp:expList()[0];if(x){const gs=gelsOf(x.id).filter(g=>!g.draft).map(g=>g.id===(S.gel&&S.gel.id)?S.gel:g);if(gs.length)rec.exp={name:x.name,date:x.date,gels:gs.map(g=>({name:g.name,targetUg:g.targetUg,mode:g.mode||"premix",mix:g.mix||"1:1",
     lanes:g.lanes.map((l,i)=>{const c=laneCalc(g,l);return{well:i+1,type:l.type,name:l.name,conc:l.conc,load:c?(c.premix?c.load:c.s):(l.type==="ladder"?num(g.ladderUl):null),loaded:!!l.loaded}})}))}}}
   if(t.qpcr&&p.qpcr){const R=qCalc();if(R.rows.length)rec.qpcr={tgts:R.tgts,refs:R.refs,ctrl:R.ctrl,rows:R.rows.map(r2=>({name:r2.name,group:r2.group,ref:r2.ref,dct:r2.dct,fold:r2.fold})),summ:R.summ}}
-  if((p.imgs||[]).length)rec.images=p.imgs.map(sc=>({type:sc.type,title:sc.title,notes:sc.notes,n:(sc.images||[]).length,srcs:(sc.images||[]).map(imgSrc).filter(Boolean)}));
+  if((p.imgs||[]).length)rec.images=p.imgs.map(sc=>{const it=(sc.images||[]).map(im=>({src:imgSrc(im),ann:im.ann||[]})).filter(x=>x.src);return {type:sc.type,title:sc.title,notes:sc.notes,ab1:sc.ab1||"",ab2:sc.ab2||"",exp:sc.exp||"",n:(sc.images||[]).length,srcs:it.map(x=>x.src),anns:it.map(x=>x.ann)}});
   const ss=expSols(p);if(ss.length)rec.solutions=ss.map(r=>{const V=volML(r);return{name:r.name,vol:r.vol,vunit:r.vunit,notes:r.notes,lines:r.comps.map(c=>{const a=compAmt(c,V);return `${c.name||"component"}: ${a&&!a.err?fmtAmt(a.a,a.u):"?"}`})}});
   if(expDone(p)&&p.completed)rec.method+=` · finished ${new Date(p.completed).toLocaleDateString("en-GB")}`;
   return rec;
@@ -3856,7 +3889,7 @@ function buildLive(){
 function projectSnapshot(project){const keep={prot:S.prot,exp:S.exp,gel:S.gel,assay:S.assay};const out=[];let bytes=0;const MAXB=6e6;
   try{protList().filter(p=>pj(p)===project).sort((a,b)=>(b.created||b.updatedAt||0)-(a.created||a.updatedAt||0)).forEach(p0=>{
     let rec=null;try{S.prot=clone(p0);S.exp=null;S.gel=null;S.assay=null;rec=buildLive()}catch(e){rec={name:p0.name,method:methodLabel(p0)}}
-    if(rec&&rec.images)rec.images.forEach(x=>{x.srcs=(x.srcs||[]).filter(u=>{if(!/^data:image\//.test(u))return false;if(bytes+u.length>MAXB){x.cut=true;return false}bytes+=u.length;return true})});
+    if(rec&&rec.images)rec.images.forEach(x=>{const keep=[];(x.srcs||[]).forEach((u,i)=>{if(!/^data:image\//.test(u))return;if(bytes+u.length>MAXB){x.cut=true;return}bytes+=u.length;keep.push(i)});x.anns=keep.map(i=>(x.anns||[])[i]||[]);x.srcs=keep.map(i=>x.srcs[i])});
     out.push({id:p0.id,name:p0.name,method:methodLabel(p0),folder:pf(p0),status:expDone(p0)?(expFailed(p0)?"fail":"ok"):"active",created:p0.created||null,completed:p0.completed||null,updated:p0.updatedAt||null,results:p0.results||"",rec})})}
   finally{S.prot=keep.prot;S.exp=keep.exp;S.gel=keep.gel;S.assay=keep.assay}
   return {v:1,project,made:Date.now(),items:out}}
@@ -4858,14 +4891,22 @@ let assetsNS;async function getAssets(){if(assetsNS!==undefined)return assetsNS;
 function imgSrc(im){if(im.asset)return "/_blob/"+im.asset;const d=Store.data.imgdata[im.id];return d?d.data:""}
 function secs(){const p=S.prot;if(!Array.isArray(p.imgs))p.imgs=[];return p.imgs}
 function renderImages(){
-  if(!S.prot||isTpl())return;const L=secs();$("#img-empty").hidden=!!L.length;$("#img-empty").innerHTML=imgEmptyText();
+  if(!S.prot||isTpl())return;const L=secs();$("#img-empty").hidden=!!L.length;$("#img-empty").innerHTML=imgEmptyText();abSuggest();
   $("#img-list").innerHTML=L.map(sc=>`<div class="isec${S.imgTarget===sc.id?" target":""}" data-s="${esc(sc.id)}">
     <div class="ihead"><span class="tag">${IT_L[sc.type]||"Image"}</span><input id="is-${esc(sc.id)}-t" data-k="title" type="text" value="${esc(sc.title||"")}"><button class="btn sm ghost danger" data-a="delsec">Delete</button></div>
-    <div class="thumbs">${(sc.images||[]).map(im=>{const src=imgSrc(im);return `<div class="thumb" data-i="${esc(im.id)}">${src?`<img src="${esc(src)}" alt="${esc(sc.title||"")}" data-a="view">`:`<span class="up">Loading…</span>`}<button class="x" data-a="delimg" aria-label="Remove image">×</button></div>`}).join("")}</div>
+    ${abFields(sc)}
+    <div class="thumbs">${(sc.images||[]).map(im=>{const src=imgSrc(im);const n=(im.ann||[]).length;return `<div class="thumb" data-i="${esc(im.id)}">${src?`<img src="${esc(src)}" alt="${esc(sc.title||"")}" data-a="view">`:`<span class="up">Loading…</span>`}<button class="x" data-a="delimg" aria-label="Remove image">×</button>${src?`<button class="annb" data-a="view" type="button">${n?`🏷 ${n} label${n>1?"s":""}`:"🏷 Label bands"}</button>`:""}</div>`}).join("")}</div>
     <div class="drop" tabindex="0" contenteditable="true" data-drop="1" aria-label="Paste an image here">Paste an image here (tap, then Paste · or Ctrl+V), drop a file, or<button class="btn sm" data-a="pick" contenteditable="false">Choose image…</button></div>
-    <label class="f">Notes<textarea id="is-${esc(sc.id)}-n" data-k="notes" style="min-height:48px;font-family:var(--sans);font-size:14px" placeholder="Antibody, exposure time, what you see…">${esc(sc.notes||"")}</textarea></label>
+    <label class="f">Notes<textarea id="is-${esc(sc.id)}-n" data-k="notes" style="min-height:48px;font-family:var(--sans);font-size:14px" placeholder="What you see, dilution notes, stripping…">${esc(sc.notes||"")}</textarea></label>
   </div>`).join("");
 }
+const AB_TYPES=["membrane","section","region","control","overview"];
+function abFields(sc){if(!AB_TYPES.includes(sc.type))return "";const id=esc(sc.id);
+  return `<div class="abrow"><label class="f">Primary antibody<input id="is-${id}-a1" data-k="ab1" type="text" list="ab-list" value="${esc(sc.ab1||"")}" placeholder="e.g. anti-pIRS1 (Ser307) 1:1000"></label><label class="f">Secondary antibody<input id="is-${id}-a2" data-k="ab2" type="text" list="ab-list" value="${esc(sc.ab2||"")}" placeholder="e.g. anti-rabbit HRP 1:5000"></label>${sc.type==="membrane"?`<label class="f">Exposure / detection<input id="is-${id}-ex" data-k="exp" type="text" value="${esc(sc.exp||"")}" placeholder="e.g. ECL, 30 s"></label>`:""}</div>`}
+function abSuggest(){const set=new Map();const add=v=>{v=String(v||"").trim();if(v&&!set.has(v.toLowerCase()))set.set(v.toLowerCase(),v)};
+  try{Object.values(Inv.items||{}).forEach(x=>{if(/antibod|protutij/i.test(x.type||"")||/^anti[- ]/i.test(x.name||""))add(x.name)})}catch(e){}
+  protList().forEach(p=>(p.imgs||[]).forEach(sc=>{add(sc.ab1);add(sc.ab2)}));
+  const dl=$("#ab-list");if(dl)dl.innerHTML=[...set.values()].sort((a,b)=>a.localeCompare(b)).map(v=>`<option value="${esc(v)}"></option>`).join("")}
 function addSection(type){const L=secs();const n=L.filter(x=>x.type===type).length+1;const sc={id:uid(),type,title:`${IT_L[type]} ${n}`,notes:"",images:[],created:Date.now()};L.push(sc);S.imgTarget=sc.id;queueSave("protocols");renderImages();
   const el=document.querySelector(`.isec[data-s="${sc.id}"]`);if(el){el.scrollIntoView({block:"center"});const t=el.querySelector('input[data-k="title"]');t&&t.select()}}
 function blobToImage(blob){return new Promise((ok,no)=>{const u=URL.createObjectURL(blob);const im=new Image();im.onload=()=>ok({im,u});im.onerror=()=>{URL.revokeObjectURL(u);no(new Error("That file is not an image"))};im.src=u})}
@@ -4891,7 +4932,7 @@ $("#img-list").addEventListener("focusin",e=>{const c=e.target.closest("[data-s]
 $("#img-list").addEventListener("beforeinput",e=>{if(e.target.closest&&e.target.closest("[data-drop]")&&e.inputType!=="insertFromPaste")e.preventDefault()});
 $("#img-list").addEventListener("click",async e=>{const c=e.target.closest("[data-s]");if(!c)return;const sc=secs().find(x=>x.id===c.dataset.s);const b=e.target.closest("[data-a]");if(!b||!sc)return;const a=b.dataset.a;
   if(a==="pick"){e.preventDefault();S.imgTarget=sc.id;$("#img-file").click()}
-  else if(a==="view"){$("#img-view").src=b.src;$("#img-vcap").textContent=sc.title||"";$("#img-viewer").hidden=false}
+  else if(a==="view"){const id=b.closest("[data-i]").dataset.i;Ann.open(sc.id,id)}
   else if(a==="delimg"){if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Delete?";setTimeout(()=>{b.classList.remove("armed");b.textContent="×"},3000);return}
     const id=b.closest("[data-i]").dataset.i;const im=(sc.images||[]).find(x=>x.id===id);sc.images=(sc.images||[]).filter(x=>x.id!==id);queueSave("protocols");renderImages();
     if(im&&im.asset){const A=await getAssets();try{A&&await A.delete(im.asset)}catch(er){}}if(im&&Store.data.imgdata[im.id])Store.remove("imgdata",im.id)}
@@ -4907,6 +4948,85 @@ $("#img-list").addEventListener("dragover",e=>{const d=e.target.closest("[data-d
 $("#img-list").addEventListener("dragleave",e=>{const d=e.target.closest("[data-drop]");if(d)d.classList.remove("over")});
 $("#img-list").addEventListener("drop",e=>{const d=e.target.closest("[data-drop]");if(!d)return;e.preventDefault();d.classList.remove("over");addImages(d.closest("[data-s]").dataset.s,e.dataTransfer.files)});
 $("#img-vclose").addEventListener("click",()=>{$("#img-viewer").hidden=true});$("#img-viewer").addEventListener("click",e=>{if(e.target.id==="img-viewer"||e.target.id==="img-view")$("#img-viewer").hidden=true});
+
+/* ================= BAND LABELS ON IMAGES ================= */
+function annHTML(list,selId){return (list||[]).map(a=>{const st=`left:${(a.x*100).toFixed(2)}%;top:${(a.y*100).toFixed(2)}%`;const cls=`an an-${a.k}${a.id===selId?" sel":""}`;
+  const t=esc(a.t||"");return a.k==="kda"?`<span class="${cls}" data-an="${esc(a.id)}" style="${st}">${t} —</span>`:a.k==="lane"?`<span class="${cls}" data-an="${esc(a.id)}" style="${st}"><i>${t}</i></span>`:`<span class="${cls}" data-an="${esc(a.id)}" style="${st}">◀ ${t}</span>`}).join("")}
+function annDraw(ctx,W,H,list){const fs=Math.max(12,Math.round(W*0.032));ctx.font=`600 ${fs}px Arial, sans-serif`;ctx.lineJoin="round";ctx.lineWidth=Math.max(2,fs/5);ctx.strokeStyle="rgba(0,0,0,.9)";ctx.fillStyle="#fff";
+  (list||[]).forEach(a=>{const x=a.x*W,y=a.y*H;ctx.save();
+    if(a.k==="kda"){ctx.textAlign="right";ctx.textBaseline="middle";const s=(a.t||"")+" —";ctx.strokeText(s,x,y);ctx.fillText(s,x,y)}
+    else if(a.k==="lane"){ctx.font=`600 ${Math.round(fs*0.85)}px Arial, sans-serif`;ctx.translate(x,y);ctx.rotate(-50*Math.PI/180);ctx.textAlign="left";ctx.textBaseline="bottom";ctx.strokeText(a.t||"",0,0);ctx.fillText(a.t||"",0,0)}
+    else{ctx.textAlign="left";ctx.textBaseline="middle";const s="◀ "+(a.t||"");ctx.strokeText(s,x,y);ctx.fillText(s,x,y)}
+    ctx.restore()})}
+const KDA=["250","150","100","75","50","37","25","20","15","10"];
+const Ann={sec:null,img:null,tool:"band",sel:null,lanePts:[],
+  cur(){const sc=secs().find(x=>x.id===this.sec);const im=sc&&(sc.images||[]).find(x=>x.id===this.img);return {sc,im}},
+  list(){const {im}=this.cur();if(im&&!Array.isArray(im.ann))im.ann=[];return im?im.ann:[]},
+  open(secId,imgId){this.sec=secId;this.img=imgId;this.sel=null;this.lanePts=[];const {sc,im}=this.cur();if(!im)return;
+    let el=$("#ann");if(!el){el=document.createElement("div");el.id="ann";el.className="ann";document.body.appendChild(el);this.wire(el)}
+    this.tool=sc.type==="membrane"?"band":sc.type==="gel"?"lane":"band";
+    el.hidden=false;document.documentElement.classList.add("wl-open");this.render()},
+  close(){const el=$("#ann");if(el)el.hidden=true;document.documentElement.classList.remove("wl-open");this.sel=null;renderImages()},
+  render(){const el=$("#ann");const {sc,im}=this.cur();if(!im){this.close();return}const L=this.list();const src=imgSrc(im);const isGel=sc.type!=="membrane";
+    const tools=[["band","◀ Band"],["kda","kDa"],["lane","Lanes"],["text","Text"]];
+    const hint={band:"Tap a band to label it.",kda:"Tap a ladder band and pick its size.",lane:this.lanePts.length?"Now tap the centre of the last lane.":"Tap the centre of the first lane, at the top.",text:"Tap where the text should go."}[this.tool];
+    const s=this.sel&&L.find(a=>a.id===this.sel);
+    el.innerHTML=`<div class="ann-top"><div class="ann-tt"><b>${esc(sc.title||"Image")}</b>${sc.ab1?`<small>${esc(sc.ab1)}${sc.ab2?" · "+esc(sc.ab2):""}</small>`:""}</div><button class="btn sm primary" data-ax="done">Done</button></div>
+      <div class="ann-tools seg">${tools.map(([k,l])=>`<button data-at="${k}" aria-pressed="${this.tool===k}">${l}</button>`).join("")}</div>
+      <div class="ann-hint">${s?"Drag to move it, or edit it below.":hint}</div>
+      <div class="ann-stage"><div class="annw" id="ann-w"><img src="${esc(src)}" alt="" draggable="false"><div class="anno">${annHTML(L,this.sel)}${this.lanePts.map(p=>`<span class="an-pt" style="left:${p.x*100}%;top:${p.y*100}%"></span>`).join("")}</div></div></div>
+      <div class="ann-bot">${s?`<div class="ann-edit"><input type="text" id="ann-t" value="${esc(s.t||"")}" aria-label="Label">${s.k==="kda"?`<div class="ann-chips">${KDA.map(k=>`<button data-kd="${k}">${k}</button>`).join("")}</div>`:""}<div class="row"><button class="btn sm ghost danger" data-ax="del">Delete label</button><button class="btn sm" data-ax="desel">OK</button></div></div>`
+        :`<div class="row" style="justify-content:space-between"><span class="note">${L.length} label${L.length===1?"":"s"}</span><div class="row">${L.length?`<button class="btn sm ghost danger" data-ax="clear">Clear all</button>`:""}<button class="btn sm" data-ax="save">Save labelled image</button></div></div>`}</div>`;
+    const ti=$("#ann-t");if(ti&&this._focus){ti.focus();ti.select();this._focus=false}},
+  add(a){a.id=uid();this.list().push(a);this.sel=a.id;this._focus=true;queueSave("protocols");this.render()},
+  pos(e){const w=$("#ann-w").querySelector("img").getBoundingClientRect();return {x:Math.min(1,Math.max(0,(e.clientX-w.left)/w.width)),y:Math.min(1,Math.max(0,(e.clientY-w.top)/w.height))}},
+  laneNames(){let names=[];try{const xs=expList();for(const x of xs){const gs=gelsOf(x.id).filter(g=>!g.draft);for(const g of gs){const L=(g.lanes||[]).filter(l=>l.type!=="empty");if(L.length){names=L.map(l=>l.type==="ladder"?"M":(l.name||""));return {names,gel:g.name}}}}}catch(e){}return null},
+  wire(el){
+    let drag=null;
+    el.addEventListener("pointerdown",e=>{const an=e.target.closest("[data-an]");if(!an)return;e.preventDefault();this.sel=an.dataset.an;const a=this.list().find(x=>x.id===this.sel);drag={a,moved:false,x0:e.clientX,y0:e.clientY};
+      const mv=ev=>{if(Math.abs(ev.clientX-drag.x0)+Math.abs(ev.clientY-drag.y0)>4)drag.moved=true;if(!drag.moved)return;const p=this.pos(ev);drag.a.x=p.x;drag.a.y=p.y;const s=el.querySelector(`[data-an="${CSS.escape(drag.a.id)}"]`);if(s){s.style.left=p.x*100+"%";s.style.top=p.y*100+"%"}};
+      const up=()=>{window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);if(drag&&drag.moved)queueSave("protocols");drag=null;this.render()};
+      window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up)});
+    el.addEventListener("click",async e=>{
+      const at=e.target.closest("[data-at]");if(at){this.tool=at.dataset.at;this.sel=null;this.lanePts=[];this.render();return}
+      const ax=e.target.closest("[data-ax]");if(ax){const a=ax.dataset.ax;
+        if(a==="done")this.close();
+        else if(a==="desel"){this.sel=null;this.render()}
+        else if(a==="del"){const {im}=this.cur();im.ann=this.list().filter(x=>x.id!==this.sel);this.sel=null;queueSave("protocols");this.render()}
+        else if(a==="clear"){if(!ax.classList.contains("armed")){ax.classList.add("armed");ax.textContent="Tap again";setTimeout(()=>{ax.classList.remove("armed");ax.textContent="Clear all"},3000);return}const {im}=this.cur();im.ann=[];queueSave("protocols");this.render()}
+        else if(a==="save")this.download();
+        return}
+      const kd=e.target.closest("[data-kd]");if(kd){const a=this.list().find(x=>x.id===this.sel);if(a){a.t=kd.dataset.kd;queueSave("protocols");this.sel=null;this.render()}return}
+      if(e.target.closest("[data-an]"))return;
+      if(!e.target.closest("#ann-w"))return;
+      if(this.sel){this.sel=null;this.render();return}
+      const p=this.pos(e);const {sc}=this.cur();
+      if(this.tool==="band")this.add({k:"band",x:p.x,y:p.y,t:sc.ab1?String(sc.ab1).replace(/^anti[- ]?/i,"").split(/[ (,]/)[0]:""});
+      else if(this.tool==="kda")this.add({k:"kda",x:p.x,y:p.y,t:""});
+      else if(this.tool==="text")this.add({k:"text",x:p.x,y:p.y,t:""});
+      else if(this.tool==="lane"){this.lanePts.push(p);if(this.lanePts.length<2){this.render();return}
+        const [a,b]=this.lanePts;this.lanePts=[];const g=this.laneNames();let names=g&&g.names.length?g.names:null;
+        if(!names){const n=parseInt(prompt("How many lanes?","10")||"0",10);if(!(n>1)){this.render();return}names=Array.from({length:n},(_,i)=>String(i+1))}
+        const n=names.length,y=(a.y+b.y)/2;const {im}=this.cur();this.list();im.ann=im.ann.filter(x=>x.k!=="lane");
+        names.forEach((t,i)=>im.ann.push({id:uid(),k:"lane",x:n>1?a.x+(b.x-a.x)*i/(n-1):a.x,y,t}));queueSave("protocols");this.render();setStatus(g?`Lane names from ${g.gel}`:"Lanes numbered. Tap one to rename it")}});
+    el.addEventListener("input",e=>{if(e.target.id!=="ann-t")return;const a=this.list().find(x=>x.id===this.sel);if(!a)return;a.t=e.target.value;const s=el.querySelector(`[data-an="${CSS.escape(a.id)}"]`);if(s)s.innerHTML=a.k==="kda"?esc(a.t)+" —":a.k==="lane"?`<i>${esc(a.t)}</i>`:"◀ "+esc(a.t);queueSave("protocols")});
+    el.addEventListener("keydown",e=>{if(e.target.id==="ann-t"&&e.key==="Enter"){e.preventDefault();this.sel=null;this.render()}if(e.key==="Escape"){if(this.sel){this.sel=null;this.render()}else this.close()}});
+  },
+  async download(){const {sc,im}=this.cur();const src=imgSrc(im);try{const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=src});
+      const W=img.naturalWidth,H=img.naturalHeight,L=this.list();
+      // grow the canvas so labels outside the picture (kDa on the left, lanes on top, bands on the right) are not cut off
+      const m=document.createElement("canvas").getContext("2d");const fs=Math.max(12,Math.round(W*0.032));m.font=`600 ${fs}px Arial, sans-serif`;
+      let x0=0,y0=0,x1=W,y1=H;const sin=Math.sin(50*Math.PI/180),cos=Math.cos(50*Math.PI/180);
+      L.forEach(a=>{const x=a.x*W,y=a.y*H;const tw=m.measureText(a.k==="kda"?(a.t||"")+" —":a.k==="lane"?(a.t||""):"◀ "+(a.t||"")).width;
+        if(a.k==="kda"){x0=Math.min(x0,x-tw);y0=Math.min(y0,y-fs);y1=Math.max(y1,y+fs)}
+        else if(a.k==="lane"){y0=Math.min(y0,y-tw*sin-fs);x1=Math.max(x1,x+tw*cos+fs)}
+        else{x1=Math.max(x1,x+tw);y0=Math.min(y0,y-fs);y1=Math.max(y1,y+fs)}});
+      const pad=Math.round(fs*0.6),ox=Math.ceil(-x0)+(x0<0?pad:0),oy=Math.ceil(-y0)+(y0<0?pad:0);
+      const c=document.createElement("canvas");c.width=Math.ceil(x1+ox+(x1>W?pad:0));c.height=Math.ceil(y1+oy+(y1>H?pad:0));const ctx=c.getContext("2d");
+      ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,ox,oy);ctx.translate(ox,oy);annDraw(ctx,W,H,L);
+      const url=c.toDataURL("image/png");const a=document.createElement("a");a.href=url;a.download=`${(S.prot.name||"image").replace(/[^\w\- ]+/g,"").trim()} - ${(sc.title||"image").replace(/[^\w\- ]+/g,"").trim()}.png`;document.body.appendChild(a);a.click();a.remove();setStatus("Labelled image saved")}
+    catch(e){setStatus("Couldn't make the image: "+(e.message||e),true)}}
+};
 
 /* ================= QUICK NOTES ================= */
 const noteDirty=new Map();
