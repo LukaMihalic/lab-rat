@@ -946,6 +946,7 @@ header.top .brand{min-width:0;overflow:hidden}
 #tour .tr-f{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
 
 /* band labels */
+.mixrow{display:flex;flex-direction:column;gap:6px}.mixrow select,.mixrow input{width:100%;min-width:0}.mixrow input.bad{border-color:var(--bad)}
 .pcard .t .abl{display:block;font:500 12px/1.3 var(--sans);color:var(--muted);margin-top:2px;white-space:normal}
 .abrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}.abrow .f:nth-child(3){grid-column:1/-1}
 @media (max-width:520px){.abrow{grid-template-columns:1fr}}
@@ -1093,7 +1094,7 @@ header.top .brand{min-width:0;overflow:hidden}
         <label class="f">Protein per well (µg)<input id="g-ug" type="text" inputmode="decimal"></label>
         <label class="f" id="g-final-wrap">Total volume (µL)<input id="g-final" type="text" inputmode="decimal"></label>
         <label class="f">Well capacity (µL)<input id="g-max" type="text" inputmode="decimal"></label>
-        <label class="f" id="g-mix-wrap">Sample : Laemmli<select id="g-mix"><option value="1:1">1 : 1</option><option value="1:2">1 : 2</option><option value="2:1">2 : 1</option><option value="3:1">3 : 1</option></select></label>
+        <label class="f" id="g-mix-wrap">Sample : Laemmli<span class="mixrow"><select id="g-mix"><option value="1:1">1 : 1</option><option value="1:2">1 : 2</option><option value="2:1">2 : 1</option><option value="3:1">3 : 1</option><option value="__c">Custom…</option></select><input id="g-mixc" type="text" inputmode="decimal" placeholder="e.g. 4:1" aria-label="Your sample : Laemmli ratio" hidden></span></label>
         <label class="f" id="g-lb-wrap">Loading buffer<select id="g-lb"><option value="4">4× Laemmli</option><option value="6">6×</option><option value="2">2×</option><option value="5">5×</option></select></label>
         <label class="f">Ladder (µL)<input id="g-ladder" type="text" inputmode="decimal"></label>
       </div>
@@ -1732,7 +1733,7 @@ function closeSettings(){$("#set-scrim").hidden=true;$("#set-sheet").hidden=true
 
 /* ---------- help: searchable how-to guide (opens only from the ? button) ---------- */
 const HELP=[
- {i:"🧪",t:"Start a new experiment",k:"new experiment start create add method novi eksperiment pokus dodati zapoceti western blot bca elisa ihc qpcr",s:["Go to <b>Experiments</b>.","Tap <b>+ New</b> and pick a method (Western blot, BCA, ELISA, IHC, qPCR…).","Give it a name. It opens straight away."],go:["tab","home","#home-new"]},
+ {i:"🧪",t:"Start a new experiment",k:"new experiment start create add method novi eksperiment pokus dodati zapoceti western blot sds page elektroforeza electrophoresis gel bca elisa ihc qpcr",s:["Go to <b>Experiments</b>.","Tap <b>+ New</b> and pick a method (Western blot, BCA, ELISA, IHC, qPCR…).","Give it a name. It opens straight away."],go:["tab","home","#home-new"]},
  {i:"📁",t:"Organise experiments into projects and folders",k:"project folder organise group colour color projekt mapa folder grupa boja organizirati",s:["On <b>Experiments</b>, tap <b>+ Project</b> to make a project.","Inside a project you can add folders and move experiments into them.","Use the <b>⋯</b> menu on a folder to rename it or pick a colour."],go:["tab","home","[data-act=newproj]"]},
  {i:"🔎",t:"Find an experiment",k:"find search experiment filter sort pronaci traziti pretraga eksperiment sortirati",s:["On <b>Experiments</b>, tap the magnifying glass and type part of the name.","Use the status and sort menus to show only what's in progress, or the newest first."],go:["tab","home","#home-qbtn"]},
  {i:"⭐",t:"Make a protocol my default",k:"default protocol star favourite favorite zadani protokol zvjezdica omiljeni",s:["Tap <b>+ New</b> on Experiments.","Tap the ☆ next to your own protocol. Next time it's offered first for that method."],go:["tab","home","#home-new"]},
@@ -2441,7 +2442,7 @@ function laneCalc(g,l){
   if(l.type!=="sample")return null;
   const ug=Number.isFinite(num(l.ug))?num(l.ug):num(g.targetUg),c=num(l.conc);
   if((g.mode||"premix")==="premix"){
-    const MIX={"1:1":2,"1:2":3,"2:1":1.5,"3:1":4/3},f=MIX[g.mix||"1:1"]||2,s=c>0?ug/c:NaN,load=s*f,lbv=load-s,mx=num(g.wellMax);let warn=null,bad=false;
+    const f=mixFactor(g.mix),s=c>0?ug/c:NaN,load=s*f,lbv=load-s,mx=num(g.wellMax);let warn=null,bad=false;
     if(!(c>0))warn="Concentration missing";
     else if(load>mx){bad=true;warn=`Needs ${fmt(load)} µL of mix but the well holds ${fmt(mx,0)} µL. Lower the µg.`}
     else if(load<2)warn="Under 2 µL of mix; hard to load accurately";
@@ -2464,7 +2465,7 @@ function renderGelSelect(){
 }
 function fillGelForm(){
   const g=S.gel;$("#x-name").value=S.exp.name||"";$("#x-date").value=S.exp.date||"";$("#g-name").value=g.name||"";$("#g-wells").value=String(g.wells);
-  $("#g-ug").value=g.targetUg;$("#g-final").value=g.finalUl;$("#g-max").value=g.wellMax;$("#g-lb").value=String(g.lbFactor);$("#g-mode").value=g.mode||"premix";$("#g-lbstock").value=g.lbStock||"ready";$("#g-lbextra").value=g.lbExtra??"10";$("#g-bme").value=g.bme||"";$("#g-lbcust").checked=!!g.lbCustom;$("#g-lbvol").value=g.lbVol||"";$("#g-lbvol-wrap").hidden=!g.lbCustom;$("#g-mix").value=g.mix||"1:1";
+  $("#g-ug").value=g.targetUg;$("#g-final").value=g.finalUl;$("#g-max").value=g.wellMax;$("#g-lb").value=String(g.lbFactor);$("#g-mode").value=g.mode||"premix";$("#g-lbstock").value=g.lbStock||"ready";$("#g-lbextra").value=g.lbExtra??"10";$("#g-bme").value=g.bme||"";$("#g-lbcust").checked=!!g.lbCustom;$("#g-lbvol").value=g.lbVol||"";$("#g-lbvol-wrap").hidden=!g.lbCustom;fillMix();
   $("#g-ladder").value=g.ladderUl;$("#g-note").value=g.note||"";$("#gel-del").classList.remove("armed");$("#gel-del").textContent="Delete gel";$("#gel-del2").classList.remove("armed");$("#gel-del2").textContent="Delete gel";$("#gel-clear").classList.remove("armed");$("#gel-clear").textContent="Clear samples";$("#exp-del").classList.remove("armed");$("#exp-del").textContent="Delete experiment";
 }
 function ladderBands(){const pos=[8,17,27,38,50,64,80,96,110];const cols=["var(--l4)","var(--l1)","var(--l1)","var(--l2)","var(--l1)","var(--l3)","var(--l1)","var(--l1)","var(--l1)"];
@@ -2475,7 +2476,7 @@ function renderGel(){
   $("#gel-sub").textContent=[S.exp.name,S.exp.date?new Date(S.exp.date+"T12:00").toLocaleDateString("en-GB"):"",g.note].filter(Boolean).join(" · ");
   const pm=(g.mode||"premix")==="premix";$("#gh-3").textContent=pm?"Lysate µL":"Sample µL";$("#gh-4").textContent=pm?"Laemmli µL":"Buffer µL";$("#gh-5").textContent=pm?"Load µL":"Water µL";
   $("#g-final-wrap").hidden=pm;$("#g-lb-wrap").hidden=pm;$("#g-mix-wrap").hidden=!pm;
-  const mf={"1:1":"2","1:2":"3","2:1":"1.5","3:1":"1.33"}[g.mix||"1:1"];
+  const mf=fmt(mixFactor(g.mix),2).replace(/\.?0+$/,"");
   $("#g-mode-hint").textContent=pm?`Mix lysate with Laemmli ${g.mix||"1:1"}, then load the "Load µL" volume = (µg ÷ concentration) × ${mf}.`:"Each well gets lysate, loading buffer and water up to the total volume.";
   const fillable=g.lanes.filter(l=>l.type!=="empty"),nLoaded=fillable.filter(l=>l.loaded).length;
   const nextIdx=g.lanes.findIndex(l=>l.type!=="empty"&&!l.loaded);
@@ -2521,7 +2522,7 @@ function renderLbPrep(g,thisTot,thisN){
   const cv=g.lbCustom?num(g.lbVol):NaN,cust=cv>0;
   if(g.lbCustom&&!cust&&!(nS&&lbTot>0)){el.innerHTML="Type the volume of Laemmli you want to make.";return}
   if(!cust&&(!nS||!(lbTot>0))){el.innerHTML="Add samples with concentrations to see how much buffer you need.";return}
-  const MIX={"1:1":2,"1:2":3,"2:1":1.5,"3:1":4/3};const f=MIX[g.mix||"1:1"]||2;
+  const f=mixFactor(g.mix);
   const T=pm?f/(f-1):num(g.lbFactor);const ex=Number.isFinite(num(g.lbExtra))?num(g.lbExtra):10;const V=cust?cv:lbTot*(1+ex/100);
   const tl=fmt(T,T%1?2:0).replace(/\.00$/,"")+"×";
   const bme=num(g.bme),bv=bme>0?V*bme/100:0;
@@ -2587,9 +2588,15 @@ $("#gel-strip").addEventListener("click",e=>{const b=e.target.closest("button");
 [["#x-name","name"],["#x-date","date"]].forEach(([sel,k])=>$(sel).addEventListener("input",e=>{S.exp[k]=e.target.value;renderGel();renderGelSelect();queueSave("experiments")}));
 armDelete("#exp-del","Delete experiment",async()=>{const id=S.exp.id;clearTimeout(saveT.gels);dirty.gels=false;clearTimeout(saveT.experiments);dirty.experiments=false;for(const g of gelsOf(id))await Store.remove("gels",g.id);await Store.remove("experiments",id);
   const xs=expList();if(xs.length)openExp(clone(xs[0]));else{S.exp=draftExp();S.gel=draftGel(S.exp.id);fillGelForm();renderGelSelect();renderGel()}setStatus("Experiment deleted")});
-const gelBind=[["#g-lbstock","lbStock"],["#g-lbextra","lbExtra"],["#g-bme","bme"],["#g-mode","mode"],["#g-mix","mix"],["#g-name","name"],["#g-wells","wells"],["#g-ug","targetUg"],["#g-final","finalUl"],["#g-max","wellMax"],["#g-lb","lbFactor"],["#g-ladder","ladderUl"],["#g-note","note"]];
+const MIX_PRE=["1:1","1:2","2:1","3:1"];
+function mixParse(s){const m=String(s||"").replace(/\s+/g,"").replace(",",".").match(/^(\d*\.?\d+)[:\/](\d*\.?\d+)$/);if(!m)return null;const a=+m[1],b=+m[2];if(!(a>0)||!(b>=0))return null;return {a,b,f:(a+b)/a}}
+function mixFactor(s){const p=mixParse(s||"1:1");return p?p.f:2}
+function fillMix(){const g=S.gel,v=g.mix||"1:1",pre=MIX_PRE.includes(v);$("#g-mix").value=pre?v:"__c";$("#g-mixc").hidden=pre;if(!pre)$("#g-mixc").value=v;$("#g-mixc").classList.toggle("bad",!pre&&!mixParse(v))}
+const gelBind=[["#g-lbstock","lbStock"],["#g-lbextra","lbExtra"],["#g-bme","bme"],["#g-mode","mode"],["#g-name","name"],["#g-wells","wells"],["#g-ug","targetUg"],["#g-final","finalUl"],["#g-max","wellMax"],["#g-lb","lbFactor"],["#g-ladder","ladderUl"],["#g-note","note"]];
 $("#g-lbcust").addEventListener("change",e=>{S.gel.lbCustom=e.target.checked;$("#g-lbvol-wrap").hidden=!e.target.checked;if(e.target.checked&&!S.gel.lbVol){const r=gelsOf(S.exp.id).reduce((a,x)=>a+gelLb(x.id===S.gel.id?S.gel:x).t,0);if(r>0){S.gel.lbVol=String(Math.ceil(r*1.1/10)*10);$("#g-lbvol").value=S.gel.lbVol}}renderGel();queueSave("gels");if(e.target.checked)$("#g-lbvol").focus()});
 $("#g-lbvol").addEventListener("input",e=>{S.gel.lbVol=e.target.value;renderGel();queueSave("gels")});
+$("#g-mix").addEventListener("change",e=>{const v=e.target.value;if(v==="__c"){const cur=MIX_PRE.includes(S.gel.mix||"1:1")?"":S.gel.mix;$("#g-mixc").hidden=false;$("#g-mixc").value=cur||"";$("#g-mixc").focus();if(cur){S.gel.mix=cur}}else{S.gel.mix=v;$("#g-mixc").hidden=true}renderGel();queueSave("gels")});
+$("#g-mixc").addEventListener("input",e=>{const v=e.target.value.replace(/\s+/g,"").replace(/\//,":");const ok=!!mixParse(v);e.target.classList.toggle("bad",!ok&&!!v);if(ok){S.gel.mix=v;renderGel();queueSave("gels")}});
 gelBind.forEach(([sel,key])=>{$(sel).addEventListener("input",e=>{S.gel[key]=key==="wells"?+e.target.value:e.target.value;renderGel();if(key==="name")renderGelSelect();queueSave("gels")})});
 function delGelNow(){return (async()=>{const id=S.gel.id;clearTimeout(saveT.gels);dirty.gels=false;await Store.remove("gels",id);const list=gelsOf(S.exp.id).filter(x=>x.id!==id&&!x.draft);S.gel=list.length?clone(list[0]):draftGel(S.exp.id);fillGelForm();renderGelSelect();renderGel();setStatus("Gel deleted")})()}
 armDelete("#gel-del","Delete gel",delGelNow);armDelete("#gel-del2","Delete gel",delGelNow);
@@ -2688,6 +2695,14 @@ function buildSteps(p){
 const st=(phase,t,d,min,rep)=>({phase,t,d,min:min||null,rep:rep||0});
 const TEMPLATES={
   wb:{name:"Western blot",method:"wb",label:"Western blot",desc:"Electrophoresis, transfer and immunodetection, with protein concentration and gel planner.",tools:{protein:true,gel:true,images:true,quant:true,solutions:true},steps:()=>buildSteps(legacyWB())},
+  page:{name:"SDS-PAGE (electrophoresis only)",method:"wb",label:"SDS-PAGE",desc:"Gel electrophoresis without transfer: sample prep, gel plan, run, then stain-free imaging or Coomassie.",tools:{protein:true,gel:true,images:true,quant:false,solutions:true},sols:["10× running buffer (Tris-glycine-SDS)","4× Laemmli buffer"],steps:()=>[
+    st("Preparation","Denature samples","95 °C, 5 min in Laemmli buffer",5),
+    st("Preparation","Load the gel","Ladder and samples per the gel plan; spin down before loading"),
+    st("Electrophoresis","Stacking","80 V until samples enter the resolving gel",20),
+    st("Electrophoresis","Resolving","120 V until the dye front reaches the bottom",60),
+    st("Visualise","Stain-free imaging or Coomassie","Stain-free: activate and image on the ChemiDoc. Coomassie: stain about 1 h with gentle rocking",60),
+    st("Visualise","Destain","Coomassie only: destain until the background is clear, changing the solution a few times"),
+    st("Visualise","Image the gel","Photograph it and add the picture under Images (type Gel)")]},
   lowry:{name:"Protein concentration: Lowry (microplate)",method:"protein",assay:"lowry",label:"Protein concentration",desc:"Lowry on a microplate, 750 nm, standard curve.",tools:{protein:true,gel:false,solutions:true},sols:["Lowry reagent A (2% Na₂CO₃ in 0.1 M NaOH)","Lowry reagent B1 (1% CuSO₄·5H₂O)","Lowry reagent B2 (2% Na-K tartrate)","Lowry reagent C (A : B1 : B2 = 100 : 1 : 1)"],steps:()=>[
     st("Plate","Reagent C","Pipette 200 µL reagent C into each well"),st("Plate","Samples and standards","Add 1 µL of each sample and standard, in replicates"),
     st("Reaction","Incubate","Room temperature",10),st("Reaction","Folin–Ciocalteu","Add 20 µL diluted Folin–Ciocalteu reagent and mix"),
@@ -2788,6 +2803,7 @@ function migrateProt(p){ // old parameter-based western blot protocol → editab
 function protList(){return Object.values(Store.data.protocols).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))}
 const ELISA_T={kit:"sandwich kit",sandwich:"sandwich",direct:"direct",indirect:"indirect",competitive:"competitive"};
 const MICON={
+  page:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14v18H5z"/><path d="M8 3v3M12 3v3M16 3v3"/><path d="M8 10h2M14 11h2M8 14h2M14 15.5h2M11 18h2"/></svg>',
   ihc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h4l-1 5h-2z"/><path d="M11 8v3"/><path d="M8 14a5 5 0 0 0 9 3"/><path d="M5 21h14M8 21v-3h6"/><circle cx="11" cy="13" r="2"/></svg>',
   wb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M7 8h3M14 8h3M7 12.5h3M14 14h3M7 17h3"/></svg>',
   protein:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L5.2 18.2A1.8 1.8 0 0 0 6.8 21h10.4a1.8 1.8 0 0 0 1.6-2.8L14 9.5V3"/><path d="M7.5 15h9"/></svg>',
@@ -2795,10 +2811,10 @@ const MICON={
   qpcr:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M6 17c4 0 5-.5 7-5s3-6 7-6"/></svg>',
   prep:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5h8M9.5 2.5V17a2.5 2.5 0 0 0 5 0V2.5"/><path d="M9.5 11h5"/></svg>',
   other:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>'};
-const MCOL={ihc:"#A23B8C",wb:"#4F5BD5",protein:"#0E8A9A",elisa:"#C2570C",qpcr:"#2F8A4E",prep:"#A86A12",other:"#6B7489"};
+const MCOL={ihc:"#A23B8C",page:"#2E7DB8",wb:"#4F5BD5",protein:"#0E8A9A",elisa:"#C2570C",qpcr:"#2F8A4E",prep:"#A86A12",other:"#6B7489"};
 function shortD(ms){const d=new Date(ms);if(isNaN(d))return "";return d.toLocaleDateString("en-GB",d.getFullYear()===new Date().getFullYear()?{day:"numeric",month:"short"}:{day:"numeric",month:"short",year:"numeric"})}
 function micon(cat,sm){cat=MICON[cat]?cat:"other";return `<span class="mic${sm?" sm":""}" style="--mc:${MCOL[cat]}" aria-hidden="true">${MICON[cat]}</span>`}
-function methodLabel(p){return p.method==="qpcr"?"qPCR":p.method==="elisa"?"ELISA"+(p.elisaType?" · "+ELISA_T[p.elisaType]:""):p.method==="wb"?"Western blot":p.method==="protein"?({lowry:"Protein concentration · Lowry",bca:"Protein concentration · BCA",bradford:"Protein concentration · Bradford",direct:"Protein concentration · direct reading"})[p.assayMethod]||"Protein concentration":p.cat==="ihc"?"Immunohistochemistry":p.cat==="prep"?"Sample preparation":"Custom"}
+function methodLabel(p){if(p.cat==="page")return "SDS-PAGE";return p.method==="qpcr"?"qPCR":p.method==="elisa"?"ELISA"+(p.elisaType?" · "+ELISA_T[p.elisaType]:""):p.method==="wb"?"Western blot":p.method==="protein"?({lowry:"Protein concentration · Lowry",bca:"Protein concentration · BCA",bradford:"Protein concentration · Bradford",direct:"Protein concentration · direct reading"})[p.assayMethod]||"Protein concentration":p.cat==="ihc"?"Immunohistochemistry":p.cat==="prep"?"Sample preparation":"Custom"}
 /* ---- Experiments list (home) ---- */
 const isTpl=()=>S.protKind==="templates";
 const expDone=p=>p.status==="done";
@@ -2807,8 +2823,8 @@ function usedIn(pid){const as=new Set(Object.values(Store.data.assays).filter(a=
 function sourceOf(q){const a=q&&q.smp&&Store.data.assays[q.smp.src];if(!a)return null;const p=Store.data.protocols[a.protoId];return p&&p.id!==q.id?{p,a}:null}
 function outcomeTag(p){return expDone(p)?(expFailed(p)?`<span class="tag fail">✗ Didn't work</span>`:`<span class="tag done">✓ Worked</span>`):""}
 function setOutcome(p,o){if(o==="active"){p.status="active";delete p.completed;delete p.outcome}else{if(p.status!=="done")p.completed=Date.now();p.status="done";p.outcome=o}}
-const CATS=[["prep","Sample preparation"],["protein","Protein concentration"],["wb","Western blot"],["elisa","ELISA"],["qpcr","qPCR"],["ihc","Immunohistochemistry"],["other","Other"]];
-function catOfTpl(k,T){return k==="homog"?"prep":k==="ihc"?"ihc":T.method==="protein"?"protein":T.method==="wb"?"wb":T.method==="elisa"?"elisa":T.method==="qpcr"?"qpcr":"other"}
+const CATS=[["prep","Sample preparation"],["protein","Protein concentration"],["page","SDS-PAGE (electrophoresis)"],["wb","Western blot"],["elisa","ELISA"],["qpcr","qPCR"],["ihc","Immunohistochemistry"],["other","Other"]];
+function catOfTpl(k,T){return k==="homog"?"prep":k==="ihc"?"ihc":k==="page"?"page":T.method==="protein"?"protein":T.method==="wb"?"wb":T.method==="elisa"?"elisa":T.method==="qpcr"?"qpcr":"other"}
 function catOfExp(p){if(p.cat)return p.cat;if(p.method==="custom"&&/lysate|homogen/i.test((p.templateName||"")+" "+(p.name||"")))return "prep";return ({protein:"protein",wb:"wb",elisa:"elisa",qpcr:"qpcr"})[p.method]||"other"}
 const pj=p=>(p.group||"").trim(),pf=p=>(p.folder||"").trim();
 function hNav(){const n=lsGet("bb.hnav",null);return n&&typeof n==="object"?n:{p:null,f:null}}
@@ -4884,9 +4900,10 @@ $("#sm-hidden").addEventListener("click",e=>{if(e.target.id==="sm-showall"){smSt
 /* ================= IMAGES ================= */
 const IT_L={membrane:"Membrane",gel:"Gel",other:"Image",section:"Section",region:"Region",control:"Control",overview:"Overview"};
 function imgTypes(){const c=S.prot?catOfExp(S.prot):"";
+  if(c==="page")return [["gel","Gel","Stain-free or Coomassie image of the gel"],["other","Other","Anything else, e.g. a photo of the setup"]];
   if(c==="ihc")return [["section","Section","Stained section on the slide, e.g. 4×–10×"],["region","Region close-up","Higher magnification of a region: CA1, CA3, dentate gyrus, cortex…"],["control","Control","No-primary or positive control section"],["overview","Overview / slide scan","Whole slide or low-power overview"]];
   return [["membrane","Membrane","Blot image, e.g. after ECL"],["gel","Gel","Stained gel or stain-free image"],["other","Other","Ponceau, plate photo, anything else"]]}
-function imgEmptyText(){return catOfExp(S.prot||{})==="ihc"?"No images yet. Tap <b>+ New</b>, choose section, region or control, then paste or pick the picture.":"No images yet. Tap <b>+ New</b>, choose membrane or gel, then paste or pick the picture."}
+function imgEmptyText(){if(catOfExp(S.prot||{})==="page")return "No images yet. Tap <b>+ New</b>, choose Gel, then paste or pick the picture.";return catOfExp(S.prot||{})==="ihc"?"No images yet. Tap <b>+ New</b>, choose section, region or control, then paste or pick the picture.":"No images yet. Tap <b>+ New</b>, choose membrane or gel, then paste or pick the picture."}
 let assetsNS;async function getAssets(){if(assetsNS!==undefined)return assetsNS;try{assetsNS=window.claude&&typeof window.claude.use==="function"?await window.claude.use("assets"):null}catch(e){assetsNS=null}return assetsNS}
 function imgSrc(im){if(im.asset)return "/_blob/"+im.asset;const d=Store.data.imgdata[im.id];return d?d.data:""}
 function secs(){const p=S.prot;if(!Array.isArray(p.imgs))p.imgs=[];return p.imgs}
