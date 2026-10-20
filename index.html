@@ -946,6 +946,9 @@ header.top .brand{min-width:0;overflow:hidden}
 #tour .tr-f{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
 
 /* band labels */
+.sthead{margin-top:10px}.sthead span:first-child{display:inline-flex;align-items:center;gap:6px}
+.sthead span:first-child::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.sthead.st-ok span:first-child::before{background:var(--ok,#1b7f3b)}.sthead.st-fail span:first-child::before{background:var(--bad)}
 .thumb.addt{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:1.5px dashed var(--line);background:transparent;color:var(--muted);font:600 12.5px var(--sans);cursor:pointer}
 .thumb.addt span{font-size:24px;line-height:1;color:var(--accent)}
 .thumb.addt:hover,.thumb.addt.over{border-color:var(--accent);color:var(--accent)}
@@ -1017,7 +1020,7 @@ header.top .brand{min-width:0;overflow:hidden}
     </div>
     <div class="card shcard" id="home-share" hidden></div>
     <div class="row" id="home-bar" style="justify-content:space-between;align-items:center">
-      <div class="row"><select id="home-filter" style="width:auto" aria-label="Status"></select><select id="home-sort" style="width:auto" aria-label="Sort experiments"><option value="used">Recently used</option><option value="new">Newest first</option><option value="old">Oldest first</option><option value="name">Name A–Z</option></select></div>
+      <div class="row"><select id="home-filter" style="width:auto" aria-label="Status"></select><select id="home-sort" style="width:auto" aria-label="Sort experiments"><option value="status">By status</option><option value="used">Recently used</option><option value="new">Newest first</option><option value="old">Oldest first</option><option value="name">Name A–Z</option></select></div>
       <div class="row" id="home-acts"></div>
     </div>
     <div class="fcolors" id="home-color" hidden></div>
@@ -2877,7 +2880,7 @@ function renderHome(){
   // list
   let base=q?every.filter(p=>[p.name,p.group,p.folder,methodLabel(p),p.notes,(p.imgs||[]).map(s=>[s.ab1,s.ab2].join(" ")).join(" ")].join(" ").toLowerCase().includes(q)):n.p==null?every:every.filter(p=>inNav(p,n));
   const root=!q&&n.p==null;
-  let f=lsGet("bb.hstatus","all");let so=lsGet("bb.hsort","used");if(so==="project")so="used";$("#home-sort").value=so;
+  let f=lsGet("bb.hstatus","all");let so=lsGet("bb.hsort2",null)||"status";if(so==="project")so="used";$("#home-sort").value=so;
   const na=base.filter(p=>!expDone(p)).length,nd=base.length-na;
   const nf=base.filter(expFailed).length;
   $("#home-filter").innerHTML=`<option value="all">Any status (${base.length})</option><option value="active">In progress (${na})</option><option value="done">Worked (${nd-nf})</option>${nf?`<option value="fail">Didn't work (${nf})</option>`:""}`;if(f==="fail"&&!nf)f="all";$("#home-filter").value=f;
@@ -2895,7 +2898,9 @@ function renderHome(){
   const mini=p=>{const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const cat=catOfExp(p);
     return `<button class="minirow pmain" data-p="${esc(p.id)}">${micon(cat,1)}<span class="mn">${esc(p.name||"Untitled")}</span>${steps.length?`<span class="mp"><span class="prog"><i style="width:${Math.round(100*dn/steps.length)}%"></i></span><span class="mc">${dn}/${steps.length}</span></span>`:""}</button>`};
   $("#home-list").classList.toggle("minilist",root);
-  $("#home-list").innerHTML=root&&L.length?`<div class="card minicard">${L.map(mini).join("")}</div>`:L.length?L.map(card).join(""):(tiles&&!q?"":`<div class="card"><p class="note" style="margin:0">${q?"No experiments match your search.":every.length?(base.length?"No experiments match this filter.":"Nothing here yet."):"No experiments yet. Tap <b>+ New experiment</b> and pick a method."}</p></div>`);
+  const byStatus=()=>{const G=[["active","In progress",L.filter(p=>!expDone(p))],["ok","Worked",L.filter(p=>expDone(p)&&!expFailed(p))],["fail","Didn't work",L.filter(expFailed)]].filter(g=>g[2].length);
+      return G.map(([k,t,ps])=>`<div class="ghead sthead st-${k}"><span>${t}</span><span>${ps.length}</span></div>`+ps.map(card).join("")).join("")};
+  $("#home-list").innerHTML=root&&L.length?`<div class="card minicard">${L.map(mini).join("")}</div>`:L.length?(so==="status"&&f==="all"?byStatus():L.map(card).join("")):(tiles&&!q?"":`<div class="card"><p class="note" style="margin:0">${q?"No experiments match your search.":every.length?(base.length?"No experiments match this filter.":"Nothing here yet."):"No experiments yet. Tap <b>+ New experiment</b> and pick a method."}</p></div>`);
   // actions
   let acts="";
   if(!q){if(n.p==null)acts="";
@@ -3026,7 +3031,7 @@ $("#home-list").addEventListener("click",async e=>{const so=e.target.closest("[d
   const b=e.target.closest("[data-p]");if(!b)return;const p=Store.data.protocols[b.dataset.p];if(p)openProtocol(clone(p))});
 $("#home-filter").addEventListener("input",e=>{lsSet("bb.hstatus",e.target.value);renderHome()});
 function copyProtocol(src){const c=clone(src);c.id=uid();c.name=(src.name||"Experiment")+" (copy)";c.created=Date.now();c.steps=freshSteps(c.steps);c.done=[];if(Array.isArray(c.sols))c.sols=c.sols.map(e=>({id:e.id,prepared:null,done:[]}));c.status="active";delete c.completed;delete c.results;delete c.updatedAt;delete c.draft;Store.save("protocols",c);return c}
-$("#home-sort").addEventListener("input",e=>{lsSet("bb.hsort",e.target.value);renderHome()});
+$("#home-sort").addEventListener("input",e=>{lsSet("bb.hsort2",e.target.value);renderHome()});
 async function deleteProtocol(id){
   for(const x of Object.values(Store.data.experiments).filter(x=>x.protoId===id)){for(const g of Object.values(Store.data.gels).filter(g=>g.expId===x.id))await Store.remove("gels",g.id);await Store.remove("experiments",x.id)}
   for(const a of Object.values(Store.data.assays).filter(a=>a.protoId===id))await Store.remove("assays",a.id);
