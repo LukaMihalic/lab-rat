@@ -946,6 +946,10 @@ header.top .brand{min-width:0;overflow:hidden}
 #tour .tr-f{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
 
 /* band labels */
+.thumb.addt{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:1.5px dashed var(--line);background:transparent;color:var(--muted);font:600 12.5px var(--sans);cursor:pointer}
+.thumb.addt span{font-size:24px;line-height:1;color:var(--accent)}
+.thumb.addt:hover,.thumb.addt.over{border-color:var(--accent);color:var(--accent)}
+.isec .thumbs:empty{display:none}
 .mixrow{display:flex;flex-direction:column;gap:6px}.mixrow select,.mixrow input{width:100%;min-width:0}.mixrow input.bad{border-color:var(--bad)}
 .pcard .t .abl{display:block;font:500 12px/1.3 var(--sans);color:var(--muted);margin-top:2px;white-space:normal}
 .abrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}.abrow .f:nth-child(3){grid-column:1/-1}
@@ -4912,8 +4916,8 @@ function renderImages(){
   $("#img-list").innerHTML=L.map(sc=>`<div class="isec${S.imgTarget===sc.id?" target":""}" data-s="${esc(sc.id)}">
     <div class="ihead"><span class="tag">${IT_L[sc.type]||"Image"}</span><input id="is-${esc(sc.id)}-t" data-k="title" type="text" value="${esc(sc.title||"")}"><button class="btn sm ghost danger" data-a="delsec">Delete</button></div>
     ${abFields(sc)}
-    <div class="thumbs">${(sc.images||[]).map(im=>{const src=imgSrc(im);const n=(im.ann||[]).length;return `<div class="thumb" data-i="${esc(im.id)}">${src?`<img src="${esc(src)}" alt="${esc(sc.title||"")}" data-a="view">`:`<span class="up">Loading…</span>`}<button class="x" data-a="delimg" aria-label="Remove image">×</button>${src?`<button class="annb" data-a="view" type="button">${n?`🏷 ${n} label${n>1?"s":""}`:"🏷 Label bands"}</button>`:""}</div>`}).join("")}</div>
-    <div class="drop" tabindex="0" contenteditable="true" data-drop="1" aria-label="Paste an image here">Paste an image here (tap, then Paste · or Ctrl+V), drop a file, or<button class="btn sm" data-a="pick" contenteditable="false">Choose image…</button></div>
+    <div class="thumbs">${(sc.images||[]).map(im=>{const src=imgSrc(im);const n=(im.ann||[]).length;return `<div class="thumb" data-i="${esc(im.id)}">${src?`<img src="${esc(src)}" alt="${esc(sc.title||"")}" data-a="view">`:`<span class="up">Loading…</span>`}<button class="x" data-a="delimg" aria-label="Remove image">×</button>${src?`<button class="annb" data-a="view" type="button">${n?`🏷 ${n} label${n>1?"s":""}`:"🏷 Label bands"}</button>`:""}</div>`}).join("")}${(sc.images||[]).length?`<button class="thumb addt" type="button" data-a="pick" data-drop="1" title="Add another image (or paste / drop it here)"><span>＋</span>Add image</button>`:""}</div>
+    ${(sc.images||[]).length?"":`<div class="drop" tabindex="0" contenteditable="true" data-drop="1" aria-label="Paste an image here">Paste an image here (tap, then Paste · or Ctrl+V), drop a file, or<button class="btn sm" data-a="pick" contenteditable="false">Choose image…</button></div>`}
     <label class="f">Notes<textarea id="is-${esc(sc.id)}-n" data-k="notes" style="min-height:48px;font-family:var(--sans);font-size:14px" placeholder="What you see, dilution notes, stripping…">${esc(sc.notes||"")}</textarea></label>
   </div>`).join("");
 }
