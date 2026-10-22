@@ -983,6 +983,27 @@ header.top .brand{min-width:0;overflow:hidden}
 .ann .btn:not(.primary){background:#26313a;color:#fff;border-color:#3a4853}.ann .btn.danger{color:#ff9b9b}
 .rimgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
 .rimgs>div.rbox{border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:9% 13% 3% 11%;overflow:hidden}
+
+/* planned days */
+.planbar{display:flex;flex-wrap:wrap;gap:6px}
+.planbar:empty{display:none}
+.pchip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 11px;font:600 12.5px var(--sans);cursor:pointer;max-width:100%}
+.pchip small{font-weight:500;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:16rem}
+.pchip.today{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.pchip.today small{color:inherit;opacity:.85}
+.pchip.past{opacity:.6}
+.pchip.add{border-style:dashed;color:var(--accent)}
+.plancard{display:flex;flex-direction:column;gap:10px}.plancard[hidden]{display:none}
+.plrow{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--surface-2)}
+.plrow input[type=date]{width:auto;flex:none}.plwd{flex:1}
+.plph{display:flex;flex-wrap:wrap;gap:6px}
+.plph button{font:600 12.5px var(--sans);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 10px;cursor:pointer}
+.plph button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.phase .phday{margin-left:8px;font:700 10.5px var(--sans);text-transform:none;letter-spacing:0;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:2px 8px;vertical-align:1px}
+.phase .phday.today{background:var(--accent);color:var(--accent-ink)}
+.calexp li.plan{color:var(--accent)}
+.calgrid .dots i.pl{background:transparent!important;box-shadow:inset 0 0 0 1.5px var(--mc)}
+.calplan select{width:100%}
+.plnext{font-weight:700;color:var(--accent)}
 </style>
 
 <div class="wrap">
@@ -1215,6 +1236,8 @@ header.top .brand{min-width:0;overflow:hidden}
   <!-- PROTOKOL -->
   <section class="tab" id="tab-prot" hidden>
     <div class="card nextcard" id="prot-next" hidden></div>
+    <div class="planbar" id="plan-bar"></div>
+    <div class="card plancard" id="plan-card" hidden></div>
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <h2>Steps</h2>
@@ -1767,6 +1790,7 @@ const HELP=[
  {i:"⏱️",t:"Use timers and the stopwatch",k:"timer countdown stopwatch incubation tajmer odbrojavanje stoperica inkubacija",s:["Go to <b>Clock</b>.","Start a timer with a preset or your own time. You can run several at once.","Keep the app open while a timer runs."],go:["tab","clock"]},
  {i:"⏰",t:"Set an alarm",k:"alarm reminder notification wake budilica podsjetnik obavijest",s:["Go to <b>Clock</b> and scroll to <b>Alarms</b>.","Set the time and a label, then <b>Add alarm</b>. Allow notifications to also get a notification."],go:["tab","clock","#al-card"]},
  {i:"🧮",t:"Calculators (gel, antibody dilution, C₁V₁, molar mass)",k:"calculator dilution antibody c1v1 molar mass gel casting kalkulator razrjedenje protutijelo molarna masa izracun lijevanje gela",s:["Go to <b>Calcs</b>.","Pick gel casting, antibody dilution, C₁V₁ = C₂V₂ or molar mass."],go:["tab","calc"]},
+ {i:"🗓",t:"Plan an experiment over several days",k:"plan days schedule calendar monday tuesday planirati raspored dani kalendar ponedjeljak utorak",s:["Open the experiment → <b>Steps</b> → <b>📅 Plan days</b>.","Add the days and tap which sections (e.g. Electrophoresis, Transfer) you'll do on each, plus a note.","The days show in the calendar, on the experiment card, and the steps get a “Today” label on the day."],p:"From the calendar you can also pick a future day and plan an experiment on it."},
  {i:"📅",t:"See what I did on a day",k:"calendar day diary history what did kalendar dan dnevnik povijest sto sam radio",s:["On <b>Experiments</b>, tap the calendar icon.","Tap a day to see the experiments, steps and recipes from it, and add a note for the day."],go:["cal"]},
  {i:"📝",t:"Quick notes",k:"note notes write memo biljeska biljeske zapisati",s:["Go to <b>Notes</b> and write. Notes are saved and synced."],go:["tab","notes"]},
  {i:"↩️",t:"Undo a change",k:"undo back mistake revert ponisti vratiti greska",s:["Tap the curved arrow at the top of the screen to undo the last change."],go:["hl","#undo-btn"]},
@@ -2893,7 +2917,7 @@ function renderHome(){
   const abs=p=>{const m=new Map();(p.imgs||[]).forEach(s=>{const v=String(s.ab1||"").replace(/\s*\b1\s*:\s*[\d\s.,]+$/,"").replace(/^anti[- ]?/i,"").trim();if(v&&!m.has(v.toLowerCase()))m.set(v.toLowerCase(),v)});return [...m.values()]};
   const card=p=>{const nG=Object.values(Store.data.experiments).filter(x=>x.protoId===p.id).reduce((n,x)=>n+gelsOf(x.id).filter(g=>!g.draft).length,0),nA=Object.values(Store.data.assays).filter(x=>x.protoId===p.id).length;
     const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const where=[pj(p),showPath(pf(p))].filter(Boolean).join(" › ");
-    const cat=catOfExp(p);return `<div class="pcard"><button class="pmain" data-p="${esc(p.id)}"><span class="th">${micon(cat)}<span class="t">${esc(p.name||"Untitled")}${(()=>{const A=abs(p);return A.length?`<small class="abl" title="Primary antibodies">${esc(A.join(" · "))}</small>`:""})()}</span></span><span class="m">${outcomeTag(p)}<span class="tag mt" style="--mc:${MCOL[cat]||MCOL.other}">${esc(methodLabel(p))}</span>${(q||root)&&where?`<span class="tag" style="background:var(--surface-2);color:var(--ink)">${esc(where)}</span>`:""}</span>${steps.length?`<span class="prog${expDone(p)||dn===steps.length?" full":""}" role="img" aria-label="${dn} of ${steps.length} steps done"><i style="width:${Math.round(100*dn/steps.length)}%"></i></span>`:""}<span class="m">${[steps.length?`${dn}/${steps.length} steps`:"no steps",nA?`${nA} assay${nA>1?"s":""}`:"",nG?`${nG} gel${nG>1?"s":""}`:"",expDone(p)&&p.completed?`${expFailed(p)?"failed":"done"} ${shortD(p.completed)}`:p.created?`started ${shortD(p.created)}`:""].filter(Boolean).join(" · ")}</span>${(()=>{const u=usedIn(p.id);return u.length?`<span class="m usedin">→ used in ${u.map(q=>esc(q.name)).join(", ")}</span>`:""})()}</button><span class="mwrap"><button class="pm" data-menu aria-label="More actions">⋯</button><div class="menu" hidden><button data-copy="${esc(p.id)}">Copy experiment</button>${expDone(p)?`<button data-setout="active" data-sp="${esc(p.id)}">Back to in progress</button>`:""}${!expDone(p)||expFailed(p)?`<button data-setout="ok" data-sp="${esc(p.id)}">✓ Mark as worked</button>`:""}${!expFailed(p)?`<button data-setout="fail" data-sp="${esc(p.id)}">✗ Mark as didn't work</button>`:""}<button class="danger" data-del="${esc(p.id)}">Delete</button></div></span></div>`};
+    const cat=catOfExp(p);return `<div class="pcard"><button class="pmain" data-p="${esc(p.id)}"><span class="th">${micon(cat)}<span class="t">${esc(p.name||"Untitled")}${(()=>{const A=abs(p);return A.length?`<small class="abl" title="Primary antibodies">${esc(A.join(" · "))}</small>`:""})()}</span></span><span class="m">${outcomeTag(p)}<span class="tag mt" style="--mc:${MCOL[cat]||MCOL.other}">${esc(methodLabel(p))}</span>${(q||root)&&where?`<span class="tag" style="background:var(--surface-2);color:var(--ink)">${esc(where)}</span>`:""}</span>${steps.length?`<span class="prog${expDone(p)||dn===steps.length?" full":""}" role="img" aria-label="${dn} of ${steps.length} steps done"><i style="width:${Math.round(100*dn/steps.length)}%"></i></span>`:""}<span class="m">${[steps.length?`${dn}/${steps.length} steps`:"no steps",nA?`${nA} assay${nA>1?"s":""}`:"",nG?`${nG} gel${nG>1?"s":""}`:"",expDone(p)&&p.completed?`${expFailed(p)?"failed":"done"} ${shortD(p.completed)}`:p.created?`started ${shortD(p.created)}`:""].filter(Boolean).join(" · ")}${(()=>{if(expDone(p))return "";const n=nextPlan(p);if(!n)return "";return ` · <b class="plnext">📅 ${n.d===dkey(Date.now())?"today":esc(planDayLabel(n.d))}</b>`})()}</span>${(()=>{const u=usedIn(p.id);return u.length?`<span class="m usedin">→ used in ${u.map(q=>esc(q.name)).join(", ")}</span>`:""})()}</button><span class="mwrap"><button class="pm" data-menu aria-label="More actions">⋯</button><div class="menu" hidden><button data-copy="${esc(p.id)}">Copy experiment</button>${expDone(p)?`<button data-setout="active" data-sp="${esc(p.id)}">Back to in progress</button>`:""}${!expDone(p)||expFailed(p)?`<button data-setout="ok" data-sp="${esc(p.id)}">✓ Mark as worked</button>`:""}${!expFailed(p)?`<button data-setout="fail" data-sp="${esc(p.id)}">✗ Mark as didn't work</button>`:""}<button class="danger" data-del="${esc(p.id)}">Delete</button></div></span></div>`};
   const lh=$("#home-lhead");lh.hidden=!(root&&L.length)&&!(n.p!=null&&n.p!=="__none"&&folders.length&&L.length&&!q);
   lh.innerHTML=root?`<span>Continue</span><span></span>`:`<span>${n.f?"In this folder":"Not in a folder"}</span><span>${L.length}</span>`;
   const mini=p=>{const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const cat=catOfExp(p);
@@ -3148,8 +3172,33 @@ $("#prot-steps").addEventListener("input",e=>{const row=e.target.closest(".sedit
 
 function clock(sec){sec=Math.max(0,Math.round(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(s).padStart(2,"0")}
 function openStepsCard(){const c=$("#prot-steps").closest(".card.collapsible");if(c&&collapsedSet.has(c.dataset.ck)){collapsedSet.delete(c.dataset.ck);lsSet("bb.collapsed",[...collapsedSet]);const u=ckUpd.get(c.dataset.ck);u&&u()}}
+/* ---- planned days for an experiment ---- */
+function planOf(p){return Array.isArray(p&&p.plan)?p.plan:[]}
+function planDayLabel(d){const x=new Date(d+"T12:00");return isNaN(x)?d:x.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}
+function nextPlan(p){const t=dkey(Date.now());return planOf(p).filter(x=>x.d>=t).sort((a,b)=>a.d.localeCompare(b.d))[0]||null}
+function phasesOf(p){const out=[];(p.steps||[]).forEach(x=>{if(x.phase&&!out.includes(x.phase))out.push(x.phase)});return out}
+function planText(x){return (x.ph&&x.ph.length?x.ph.join(", "):"")+(x.note?(x.ph&&x.ph.length?" · ":"")+x.note:"")}
+function renderPlanBar(){const p=S.prot,bar=$("#plan-bar");if(!bar)return;if(!p||isTpl()){bar.innerHTML="";return}const L=planOf(p).slice().sort((a,b)=>a.d.localeCompare(b.d));const t=dkey(Date.now());
+  bar.innerHTML=(L.length?L.map(x=>`<button class="pchip${x.d===t?" today":x.d<t?" past":""}" data-plan-open="1" title="${esc(planText(x))}">📅 ${x.d===t?"Today":esc(planDayLabel(x.d))}${planText(x)?`<small>${esc(planText(x))}</small>`:""}</button>`).join(""):"")+`<button class="pchip add" data-plan-open="1">${L.length?"✎ Edit plan":"📅 Plan days"}</button>`}
+function renderPlan(){const p=S.prot,el=$("#plan-card");if(!el||el.hidden)return;const L=planOf(p);const PH=phasesOf(p);
+  el.innerHTML=`<div class="row" style="justify-content:space-between"><b>Plan the days</b><button class="btn sm ghost" data-pl="x">Done</button></div>
+    <p class="note" style="margin:0">Pick the days and what you'll do on each. They show in the calendar, and on the day the steps are marked “Today”.</p>
+    ${L.map((x,i)=>`<div class="plrow" data-pi="${i}"><div class="row" style="flex-wrap:nowrap;align-items:center"><input type="date" data-pk="d" value="${esc(x.d)}" aria-label="Day"><span class="note plwd">${esc(new Date(x.d+"T12:00").toLocaleDateString("en-GB",{weekday:"long"}))}</span><button class="btn sm ghost danger" data-pl="rm" aria-label="Remove day">×</button></div>
+      ${PH.length?`<div class="plph">${PH.map(ph=>`<button type="button" data-ph="${esc(ph)}" aria-pressed="${(x.ph||[]).includes(ph)}">${esc(ph)}</button>`).join("")}</div>`:""}
+      <input type="text" data-pk="note" value="${esc(x.note||"")}" placeholder="Note, e.g. primary overnight at 4 °C"></div>`).join("")}
+    <div class="row"><button class="btn sm" data-pl="add">+ Add a day</button></div>`}
+function planAddDay(p,d){if(!Array.isArray(p.plan))p.plan=[];const L=p.plan;let day=d;if(!day){const last=L.map(x=>x.d).sort().pop();const b=last?new Date(last+"T12:00"):new Date();b.setDate(b.getDate()+1);day=dkey(b.getTime())}
+  const used=new Set(L.flatMap(x=>x.ph||[]));const PH=phasesOf(p);const rest=PH.filter(x=>!used.has(x));L.push({d:day,ph:L.length?rest:[],note:""})}
+$("#plan-bar").addEventListener("click",e=>{if(!e.target.closest("[data-plan-open]"))return;const el=$("#plan-card");el.hidden=!el.hidden;if(!el.hidden&&!planOf(S.prot).length){planAddDay(S.prot);queueSave("protocols");renderPlanBar()}renderPlan();if(!el.hidden)el.scrollIntoView({block:"nearest",behavior:"smooth"})});
+$("#plan-card").addEventListener("click",e=>{const b=e.target.closest("[data-pl],[data-ph]");if(!b)return;const p=S.prot;
+  if(b.dataset.pl==="x"){$("#plan-card").hidden=true;return}
+  if(b.dataset.pl==="add"){planAddDay(p);queueSave("protocols");renderPlan();renderPlanBar();return}
+  const row=b.closest("[data-pi]");if(!row)return;const x=p.plan[+row.dataset.pi];
+  if(b.dataset.pl==="rm"){p.plan.splice(+row.dataset.pi,1);queueSave("protocols");renderPlan();renderPlanBar();renderSteps();return}
+  if(b.dataset.ph){const ph=b.dataset.ph;x.ph=x.ph||[];if(x.ph.includes(ph))x.ph=x.ph.filter(y=>y!==ph);else{p.plan.forEach(o=>{if(o!==x&&o.ph)o.ph=o.ph.filter(y=>y!==ph)});x.ph.push(ph);const PH=phasesOf(p);x.ph.sort((a,b)=>PH.indexOf(a)-PH.indexOf(b))}queueSave("protocols");renderPlan();renderPlanBar();renderSteps()}});
+$("#plan-card").addEventListener("input",e=>{const k=e.target.dataset.pk;const row=e.target.closest("[data-pi]");if(!k||!row)return;const x=S.prot.plan[+row.dataset.pi];x[k]=e.target.value;queueSave("protocols");renderPlanBar();if(k==="d"){const w=row.querySelector(".plwd");if(w)w.textContent=new Date(e.target.value+"T12:00").toLocaleDateString("en-GB",{weekday:"long"});renderSteps()}});
 function renderSteps(){
-  const p=S.prot;if(!p)return;const steps=p.steps||[];
+  const p=S.prot;if(!p)return;const steps=p.steps||[];try{renderPlanBar()}catch(e){}
   $("#prot-edit").textContent=S.editSteps?"Done":"Edit steps";$("#prot-edit").classList.toggle("primary",!!S.editSteps);
   $("#prot-editbar").hidden=!S.editSteps;$("#prot-reset").hidden=!!S.editSteps;
   {const dn=new Set(p.done||[]);const all=steps.length&&steps.every(x=>dn.has(x.id));$("#prot-all").hidden=!!S.editSteps||isTpl()||!steps.length||all;$("#prot-reset").hidden=!!S.editSteps||!dn.size}
@@ -3179,7 +3228,7 @@ function renderSteps(){
       <div class="nx-prog"><i style="width:${Math.round(100*done.size/steps.length)}%"></i></div>
       <div class="nx-all-l"><button class="linkbtn" type="button" data-nall="1">Know it by heart? ✓ Check all steps</button></div>`}
   $("#prot-steps").innerHTML=(steps.length?steps.map(x=>{
-    const tk=p.id+"|"+x.id;const ph=x.phase&&x.phase!==lastPhase?`<div class="phase">${esc(x.phase)}</div>`:"";lastPhase=x.phase;
+    const tk=p.id+"|"+x.id;const ph=x.phase&&x.phase!==lastPhase?`<div class="phase">${esc(x.phase)}${(()=>{const pd=planOf(p).find(o=>(o.ph||[]).includes(x.phase));if(!pd)return "";const t=dkey(Date.now());return `<span class="phday${pd.d===t?" today":""}">${pd.d===t?"Today":esc(planDayLabel(pd.d))}</span>`})()}</div>`:"";lastPhase=x.phase;
     let timer="";const rep=x.rep>1?x.rep:0;
     if(T&&x.min)timer=`<span class="note">${rep?rep+" × ":""}${x.min} min</span>`;
     else if(x.min)timer=timerHtml(x);
@@ -4347,7 +4396,8 @@ function calActivities(){const A={};const add=(day,pid,txt,kind)=>{if(!day)retur
     Object.entries(byDay).forEach(([d,L])=>add(d,pid,`Steps done: ${[...new Set(L)].join(", ")}`,"steps"));
     (Array.isArray(p.sols)?p.sols:[]).forEach(e=>{if(isD(e.prepared)){const r=Store.data.solutions[e.id];add(e.prepared,pid,`Prepared ${r?r.name:"a solution"}`,"sol")}});
     (p.imgs||[]).forEach(sc=>{const by={};(sc.images||[]).forEach(im=>{if(im.added){const d=dkey(im.added);by[d]=(by[d]||0)+1}});Object.entries(by).forEach(([d,n])=>add(d,pid,`Added ${n} image${n>1?"s":""}${sc.title?" to "+sc.title:""}`,"img"))});
-    (p.days||[]).forEach(d=>add(d,pid,"Worked on it","worked"))});
+    (p.days||[]).forEach(d=>add(d,pid,"Worked on it","worked"));
+    if(!expDone(p))planOf(p).forEach(x=>{if(x.d)add(x.d,pid,"Planned"+(planText(x)?": "+planText(x):""),"plan")})});
   Object.values(Store.data.assays).filter(a=>!a.draft&&a.protoId).forEach(a=>{const n=(a.samples||[]).filter(x=>x.name||(x.r||[]).length).length;add(isD(a.date)?a.date:a.created?dkey(a.created):null,a.protoId,`Protein concentration: ${a.name||"assay"}${n?` (${n} samples)`:""}`,"assay")});
   Object.values(Store.data.experiments).filter(x=>!x.draft&&x.protoId).forEach(x=>{const gs=gelsOf(x.id).filter(g=>!g.draft);if(!gs.length)return;const ns=gs.reduce((t,g)=>t+g.lanes.filter(l=>l.type==="sample").length,0);add(isD(x.date)?x.date:null,x.protoId,`Gels: ${x.name||"gel run"} · ${gs.length} gel${gs.length>1?"s":""}, ${ns} samples`,"gel")});
   Object.values(Store.data.records||{}).forEach(r=>{if(r.created)add(dkey(r.created),r.protoId,`Saved a run: ${r.name||""}`,"rec")});
@@ -4360,7 +4410,7 @@ function renderCal(){const A=calActivities();const y=CAL.y,m=CAL.m;const first=n
   $("#cal-title").textContent=first.toLocaleDateString("en-GB",{month:"long",year:"numeric"});
   let h=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(w=>`<div class="wd">${w}</div>`).join("");
   for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);if(i>=35&&d.getMonth()!==m)break;const k=dkey(d.getTime());const L=A[k]||[];
-    const pids=[...new Set(L.map(x=>x.pid||"__note"))];const dots=pids.slice(0,4).map(pid=>{const p=Store.data.protocols[pid];return `<i style="--mc:${p?MCOL[catOfExp(p)]||MCOL.other:"var(--muted)"}"></i>`}).join("");
+    const pids=[...new Set(L.map(x=>x.pid||"__note"))];const dots=pids.slice(0,4).map(pid=>{const p=Store.data.protocols[pid];const onlyPlan=L.filter(x=>(x.pid||"__note")===pid).every(x=>x.kind==="plan");return `<i class="${onlyPlan?"pl":""}" style="--mc:${p?MCOL[catOfExp(p)]||MCOL.other:"var(--muted)"}"></i>`}).join("");
     h+=`<button class="dy${d.getMonth()!==m?" out":""}${k===tk?" today":""}${k===CAL.sel?" sel":""}" data-day="${k}" aria-label="${d.toDateString()}${L.length?`, ${pids.length} item${pids.length>1?"s":""}`:""}"><span>${d.getDate()}</span>${L.length?`<span class="dots">${dots}</span>`:""}</button>`}
   $("#cal-grid").innerHTML=h;renderCalDay(A)}
 function renderCalDay(A){A=A||calActivities();const k=CAL.sel;const L=(A[k]||[]).filter(x=>x.kind!=="daynote");const d=new Date(k+"T12:00");
@@ -4369,7 +4419,8 @@ function renderCalDay(A){A=A||calActivities();const k=CAL.sel;const L=(A[k]||[])
   [...groups.entries()].forEach(([pid,items])=>{const p=Store.data.protocols[pid];
     if(!p){h+=`<div class="calexp" style="cursor:default"><div class="ht"><b>Notes</b></div><ul>${items.map(x=>`<li>${esc(x.txt)}</li>`).join("")}</ul></div>`;return}
     const tab=items.some(x=>x.kind==="gel")?"gel":items.some(x=>x.kind==="assay")?(p.method==="wb"?"smp":"assay"):items.some(x=>x.kind==="sol")?"psol":items.some(x=>x.kind==="img")?"img":"prot";
-    h+=`<button class="calexp" data-calp="${esc(pid)}" data-calt="${tab}"><div class="ht">${micon(catOfExp(p),1)}<b>${esc(p.name||"Untitled")}</b></div><ul>${items.map(x=>`<li>${esc(x.txt)}</li>`).join("")}</ul></button>`});
+    h+=`<button class="calexp" data-calp="${esc(pid)}" data-calt="${tab}"><div class="ht">${micon(catOfExp(p),1)}<b>${esc(p.name||"Untitled")}</b></div><ul>${items.map(x=>`<li class="${x.kind==="plan"?"plan":""}">${x.kind==="plan"?"🗓 ":""}${esc(x.txt)}</li>`).join("")}</ul></button>`});
+  if(k>=dkey(Date.now())){const act=protList().filter(p=>!p.draft&&!expDone(p)&&!planOf(p).some(x=>x.d===k));if(act.length)h+=`<div class="row calplan"><select id="cal-plan-sel" aria-label="Experiment to plan"><option value="">Plan an experiment on this day…</option>${act.map(p=>`<option value="${esc(p.id)}">${esc(p.name||"Untitled")}</option>`).join("")}</select></div>`}
   if(!L.length)h+=`<p class="note" style="margin:0">${k>dkey(Date.now())?"Nothing planned. Write a note below to plan this day.":"Nothing recorded on this day."}</p>`;
   const dn=Object.values(Store.data.notes||{}).find(n=>n.day===k&&n.calNote);
   h+=`<label class="f">Note for this day<textarea id="cal-daynote" placeholder="What you did, what's planned, anything to remember…">${esc(dn?dn.text:"")}</textarea></label>`;
@@ -4380,6 +4431,7 @@ $("#cal-day").addEventListener("input",e=>{if(e.target.id!=="cal-daynote")return
   if(!v.trim()&&n.id)Store.remove("notes",n.id);else Store.save("notes",n);const A=calActivities();const sel=$("#cal-grid .dy.sel");if(sel){const L=A[k]||[];}renderCalGridOnly()},600)});
 function renderCalGridOnly(){const keep=document.activeElement&&document.activeElement.id==="cal-daynote";if(keep){const ta=$("#cal-daynote"),pos=ta.selectionStart;const day=$("#cal-day");const html=day.innerHTML;renderCal();const t2=$("#cal-daynote");if(t2){t2.focus();try{t2.setSelectionRange(pos,pos)}catch(_){}}}else renderCal()}
 $("#cal-grid").addEventListener("click",e=>{const b=e.target.closest("[data-day]");if(!b)return;CAL.sel=b.dataset.day;const d=new Date(CAL.sel+"T12:00");if(d.getMonth()!==CAL.m){CAL.m=d.getMonth();CAL.y=d.getFullYear()}renderCal();if(window.innerWidth<1000)$("#cal-day").scrollIntoView({block:"start",behavior:"smooth"})});
+$("#cal-day").addEventListener("change",e=>{if(e.target.id!=="cal-plan-sel"||!e.target.value)return;const p0=Store.data.protocols[e.target.value];if(!p0)return;const p=clone(p0);planAddDay(p,CAL.sel);Store.save("protocols",p);if(S.prot&&S.prot.id===p.id)S.prot.plan=clone(p.plan);setStatus(`Planned for ${planDayLabel(CAL.sel)}. Open it to pick what you'll do that day`);renderCal()});
 $("#cal-day").addEventListener("click",e=>{const b=e.target.closest("[data-calp]");if(!b)return;const p=Store.data.protocols[b.dataset.calp];if(p)openProtocol(clone(p),b.dataset.calt)});
 $("#cal-prev").addEventListener("click",()=>{CAL.m--;if(CAL.m<0){CAL.m=11;CAL.y--}renderCal()});
 $("#cal-next").addEventListener("click",()=>{CAL.m++;if(CAL.m>11){CAL.m=0;CAL.y++}renderCal()});
