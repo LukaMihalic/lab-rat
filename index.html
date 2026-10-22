@@ -2676,7 +2676,7 @@ const HOSTS={rabbit:"anti-rabbit",mouse:"anti-mouse",goat:"anti-goat",rat:"anti-
 const TIMES={on:["overnight at 4 °C",null],"1h":["1 h at room temp.",60],"2h":["2 h at room temp.",120]};
 function parseWash(w){const m=String(w||"").match(/(\d+)\s*[×xX*]\s*(\d+)/);return m?[+m[1],+m[2]]:[3,5]}
 function newAb(){return{target:"",host:"rabbit",dil:"1000",time:"on",secDil:"5000"}}
-function legacyWB(){return{gel:"10",denat:"95",membrane:"PVDF",v1:"80",t1:"20",v2:"120",t2:"60",transfer:"wet",tv:"100 V",tt:"60",ponceau:true,block:"5% milk in LSWB (2 g milk + 200 µL PBS-Tween in 40 mL)",bt:"60",abs:[{target:"primary antibody",host:"rabbit",dil:"1000",time:"on",secDil:"5000"}],strip:false,wash:"3 × 5",det:"ECL (chemiluminescence)"}}
+function legacyWB(){return{gel:"10",denat:"95",membrane:"PVDF",v1:"80",t1:"20",v2:"120",t2:"60",transfer:"semi",tv:"Bjerrum Schafer-Nielsen buffer, 15–25 V (about 1 mA per cm² of membrane)",tt:"30",ponceau:true,block:"5% milk in LSWB (2 g milk + 200 µL PBS-Tween in 40 mL)",bt:"60",abs:[{target:"primary antibody",host:"rabbit",dil:"1000",time:"on",secDil:"5000"}],strip:false,wash:"3 × 5",det:"ECL (chemiluminescence)"}}
 function buildSteps(p){
   const S2=[];const add=(phase,t,d,min,rep)=>S2.push({id:uid()+S2.length,phase,t,d,min:min||null,rep:rep||0});
   const den={95:["Denature samples","95 °C, 5 min in loading buffer",5],70:["Denature samples","70 °C, 10 min (for membrane proteins)",10],37:["Denature samples","37 °C, 30 min",30],0:["Prepare samples","No heating; mix and spin down briefly",null]}[p.denat]||["Denature samples","",null];
@@ -2702,7 +2702,7 @@ function buildSteps(p){
 }
 const st=(phase,t,d,min,rep)=>({phase,t,d,min:min||null,rep:rep||0});
 const TEMPLATES={
-  wb:{name:"Western blot",method:"wb",label:"Western blot",desc:"Electrophoresis, transfer and immunodetection, with protein concentration and gel planner.",tools:{protein:true,gel:true,images:true,quant:true,solutions:true},sols:["10× running buffer (Tris-glycine-SDS)","4× Laemmli buffer","LSWB (low-salt wash buffer)","5% milk blocking buffer"],steps:()=>buildSteps(legacyWB())},
+  wb:{name:"Western blot",method:"wb",label:"Western blot",desc:"Electrophoresis, transfer and immunodetection, with protein concentration and gel planner.",tools:{protein:true,gel:true,images:true,quant:true,solutions:true},sols:["10× running buffer (Tris-glycine-SDS)","4× Laemmli buffer","1× Bjerrum Schafer-Nielsen transfer buffer","LSWB (low-salt wash buffer)","5% milk blocking buffer"],steps:()=>buildSteps(legacyWB())},
   page:{name:"SDS-PAGE (electrophoresis only)",method:"wb",label:"SDS-PAGE",desc:"Gel electrophoresis without transfer: sample prep, gel plan, run, then stain-free imaging or Coomassie.",tools:{protein:true,gel:true,images:true,quant:false,solutions:true},sols:["10× running buffer (Tris-glycine-SDS)","4× Laemmli buffer"],steps:()=>[
     st("Preparation","Denature samples","95 °C, 5 min in Laemmli buffer",5),
     st("Preparation","Load the gel","Ladder and samples per the gel plan; spin down before loading"),
@@ -3682,7 +3682,8 @@ const SOL_TPL=[
   {name:"Tris buffer 0.05 M, pH 7.6 (TB)",vol:"1",vunit:"L",notes:"Adjust pH to 7.6 with HCl. For the wash before DAB and for the DAB solution.",comps:[c_("Tris base","M",50,"mM",121.14)]},
   {name:"DAB solution (0.05% DAB, 0.01% H₂O₂)",vol:"10",vunit:"mL",diluent:"TB (0.05 M Tris, pH 7.6)",notes:"Dissolve DAB in TB, filter, add the H₂O₂ right before use. Or use a DAB kit. DAB is a carcinogen: weigh in the hood, collect waste and inactivate with bleach.",comps:[c_("DAB (3,3′-diaminobenzidine)","wv",0.05),c_("30% H₂O₂","vv",0.033)]},
   {name:"10× running buffer (Tris-glycine-SDS)",vol:"1",vunit:"L",notes:"Do not adjust pH (~8.3). Dilute 1:10 for use.",comps:[c_("Tris base","gl",30.3),c_("Glycine","gl",144),c_("SDS","gl",10)]},
-  {name:"1× transfer buffer (Towbin)",vol:"1",vunit:"L",notes:"Chill to 4 °C before wet transfer.",comps:[c_("Tris base","gl",3.03),c_("Glycine","gl",14.4),c_("Methanol","vv",20)]},
+  {name:"1× Bjerrum Schafer-Nielsen transfer buffer",vol:"1",vunit:"L",notes:"For semi-dry transfer. pH is about 9.2; don't adjust. Some labs add 0.0375% SDS for large proteins. Soak the filter papers, gel and membrane in it before building the sandwich.",comps:[c_("Tris base","M",48,"mM",121.14),c_("Glycine","M",39,"mM",75.07),c_("Methanol","vv",20)]},
+{name:"1× transfer buffer (Towbin)",vol:"1",vunit:"L",notes:"Chill to 4 °C before wet transfer.",comps:[c_("Tris base","gl",3.03),c_("Glycine","gl",14.4),c_("Methanol","vv",20)]},
   {name:"10× TBS (pH 7.6)",vol:"1",vunit:"L",notes:"Adjust pH to 7.6 with HCl before topping up.",comps:[c_("Tris base","M",200,"mM",121.14),c_("NaCl","M",1.5,"M",58.44)]},
   {name:"1× TBST (0.1% Tween-20)",vol:"1",vunit:"L",notes:"",comps:[c_("10× TBS","stock",1,"×",10),c_("Tween-20","vv",0.1)]},
   {name:"LSWB (low-salt wash buffer)",vol:"1",vunit:"L",notes:"For washing the membrane. Adjust pH to 7.5. Check the composition against your lab's recipe.",comps:[c_("Tris base","M",10,"mM",121.14),c_("NaCl","M",100,"mM",58.44),c_("Tween-20","vv",0.1)]},
@@ -3838,7 +3839,12 @@ function seedRecipes(){const key=s=>String(s||"").trim().toLowerCase();
     if(!lsGet("bb.solSeeded",false)&&typeof Sync!=="undefined"&&Sync.user&&!lsGet("bb.lastPull",null)){seedWait=true;return}
     if(!lsGet("bb.solSeeded",false)){const have=new Set(Object.values(Store.data.solutions).map(r=>key(r.name)));
       SOL_TPL.forEach(t=>{if(have.has(key(t.name)))return;const id=solSlug(t.name);if(Store.data.solutions[id])return;Store.save("solutions",Object.assign(clone(t),{id,protoId:null}))});
-      lsSet("bb.solSeeded",true)}
+      lsSet("bb.solSeeded",true);lsSet("bb.solAdded",SOL_TPL.map(t=>t.name))}
+    else{ // recipes added to the app later: put each one in the library once
+      const done=new Set(lsGet("bb.solAdded",null)||["__first"]);if(done.has("__first")){lsSet("bb.solAdded",SOL_TPL.filter(t=>t.name!=="1× Bjerrum Schafer-Nielsen transfer buffer").map(t=>t.name))}
+      const done2=new Set(lsGet("bb.solAdded",[]));const have=new Set(Object.values(Store.data.solutions).map(r=>key(r.name)));let ch=false;
+      SOL_TPL.forEach(t=>{if(done2.has(t.name))return;done2.add(t.name);ch=true;if(have.has(key(t.name)))return;const id=solSlug(t.name);if(Store.data.solutions[id])return;Store.save("solutions",Object.assign(clone(t),{id,protoId:null}))});
+      if(ch)lsSet("bb.solAdded",[...done2])}
   }finally{undoMute--}}
 function solAddCur(){if(solScope()&&S.sol&&!psEntry(S.sol.id)){psList().push({id:S.sol.id,prepared:null,done:[]});queueSave("protocols")}}
 function recipeFrom(r){const t=clone(r);["id","protoId","isTpl","prepared","updatedAt","fresh","draft"].forEach(k=>delete t[k]);(t.comps||[]).forEach(c=>delete c.done);return t}
