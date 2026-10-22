@@ -3030,7 +3030,11 @@ $("#home-list").addEventListener("click",async e=>{const so=e.target.closest("[d
     d.classList.add("armed");d.textContent="Tap again to delete";d._t=setTimeout(()=>{d.classList.remove("armed");d.textContent="Delete"},4000);return}
   const b=e.target.closest("[data-p]");if(!b)return;const p=Store.data.protocols[b.dataset.p];if(p)openProtocol(clone(p))});
 $("#home-filter").addEventListener("input",e=>{lsSet("bb.hstatus",e.target.value);renderHome()});
-function copyProtocol(src){const c=clone(src);c.id=uid();c.name=(src.name||"Experiment")+" (copy)";c.created=Date.now();c.steps=freshSteps(c.steps);c.done=[];if(Array.isArray(c.sols))c.sols=c.sols.map(e=>({id:e.id,prepared:null,done:[]}));c.status="active";delete c.completed;delete c.results;delete c.updatedAt;delete c.draft;Store.save("protocols",c);return c}
+function copyProtocol(src){const c=clone(src);c.id=uid();c.name=(src.name||"Experiment")+" (copy)";c.created=Date.now();c.steps=freshSteps(c.steps);c.done=[];if(Array.isArray(c.sols))c.sols=c.sols.map(e=>({id:e.id,prepared:null,done:[]}));c.status="active";delete c.completed;delete c.results;delete c.updatedAt;delete c.draft;Store.save("protocols",c);
+  // the gel plans come along (same samples in the same wells), with nothing marked as loaded yet
+  try{Object.values(Store.data.experiments).filter(x=>x.protoId===src.id).forEach(x=>{const nx=clone(S.exp&&S.exp.id===x.id?S.exp:x);nx.id=uid();nx.protoId=c.id;nx.date=today();delete nx.updatedAt;delete nx.draft;Store.save("experiments",nx);
+    gelsOf(x.id).filter(g=>!g.draft).forEach(g0=>{const g=clone(S.gel&&S.gel.id===g0.id?S.gel:g0);g.id=uid();g.expId=nx.id;(g.lanes||[]).forEach(l=>{if(l)l.loaded=false});delete g.updatedAt;delete g.draft;Store.save("gels",g)})})}catch(e){console.warn(e)}
+  return c}
 $("#home-sort").addEventListener("input",e=>{lsSet("bb.hsort2",e.target.value);renderHome()});
 async function deleteProtocol(id){
   for(const x of Object.values(Store.data.experiments).filter(x=>x.protoId===id)){for(const g of Object.values(Store.data.gels).filter(g=>g.expId===x.id))await Store.remove("gels",g.id);await Store.remove("experiments",x.id)}
