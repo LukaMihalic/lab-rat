@@ -1896,7 +1896,9 @@ const SEASON_IMG={"halloween":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMA
 function seasonDecorate(img){if(!img)return;if(!img.dataset.orig)img.dataset.orig=img.getAttribute("src");const s=seasonNow();const src=s&&SEASON_IMG[s]?SEASON_IMG[s]:img.dataset.orig;if(img.getAttribute("src")!==src)img.setAttribute("src",src);img.dataset.season=s||""}
 async function seasonFavicon(){const s=seasonNow();const link=document.querySelector('link[rel="icon"]');if(!link)return;if(!link.dataset.orig)link.dataset.orig=link.getAttribute("href");if(!s||!SEASON_IMG[s]){link.setAttribute("href",link.dataset.orig);return}
   try{const i=await new Promise((ok,no)=>{const x=new Image();x.onload=()=>ok(x);x.onerror=no;x.src=SEASON_IMG[s]});const c=document.createElement("canvas");c.width=c.height=64;c.getContext("2d").drawImage(i,0,0,64,64);link.setAttribute("href",c.toDataURL("image/png"))}catch(e){}}
-function applySeason(){seasonDecorate($(".brandimg"));const wi=document.querySelector("#welcome .wl-head img");if(wi)seasonDecorate(wi);seasonFavicon()}
+function seasonAppIcon(){const s=seasonNow();const sw=(sel,base,mk)=>{const l=document.querySelector(sel);if(!l)return;if(!l.dataset.orig)l.dataset.orig=l.getAttribute("href");const h=s&&SEASON_IMG[s]?mk(s):l.dataset.orig;if(l.getAttribute("href")!==h)l.setAttribute("href",h)};
+  sw('link[rel="manifest"]',0,s=>"manifest-"+s+".webmanifest");sw('link[rel="apple-touch-icon"]',0,s=>"icons/apple-touch-icon-"+s+".png")}
+function applySeason(){seasonDecorate($(".brandimg"));const wi=document.querySelector("#welcome .wl-head img");if(wi)seasonDecorate(wi);seasonFavicon();seasonAppIcon()}
 applySeason();setInterval(applySeason,6*3600e3);
 $("#set-season").addEventListener("change",e=>{lsSet("bb.season",e.target.value);applySeason()});
 $("#set-btn").addEventListener("click",openSettings);$("#undo-btn").addEventListener("click",()=>doUndo());$("#set-close").addEventListener("click",closeSettings);$("#set-scrim").addEventListener("click",closeSettings);
