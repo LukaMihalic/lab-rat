@@ -988,7 +988,7 @@ header.top .brand{min-width:0;overflow:hidden}
 .planbar{display:flex;flex-wrap:wrap;gap:6px}
 .planbar:empty{display:none}
 .pchip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 11px;font:600 12.5px var(--sans);cursor:pointer;max-width:100%}
-.pchip small{font-weight:500;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:16rem}
+.pchip{white-space:nowrap}.pchip small{min-width:0;font-weight:500;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:16rem}
 .pchip.today{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.pchip.today small{color:inherit;opacity:.85}
 .pchip.past{opacity:.6}
 .pchip.add{border-style:dashed;color:var(--accent)}
@@ -998,6 +998,8 @@ header.top .brand{min-width:0;overflow:hidden}
 .plph{display:flex;flex-wrap:wrap;gap:6px}
 .plph button{font:600 12.5px var(--sans);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 10px;cursor:pointer}
 .plph button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.dayhead{margin:10px 0 2px;padding:6px 10px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font:700 13px var(--sans);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.dayhead span{font-weight:500;color:var(--ink);font-size:12.5px}.dayhead.today{background:var(--accent);color:var(--accent-ink)}.dayhead.today span{color:inherit}
+.plsum{margin:0;font-size:12.5px}
 .phase .phday{margin-left:8px;font:700 10.5px var(--sans);text-transform:none;letter-spacing:0;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:2px 8px;vertical-align:1px}
 .phase .phday.today{background:var(--accent);color:var(--accent-ink)}
 .calexp li.plan{color:var(--accent)}
@@ -1790,7 +1792,7 @@ const HELP=[
  {i:"⏱️",t:"Use timers and the stopwatch",k:"timer countdown stopwatch incubation tajmer odbrojavanje stoperica inkubacija",s:["Go to <b>Clock</b>.","Start a timer with a preset or your own time. You can run several at once.","Keep the app open while a timer runs."],go:["tab","clock"]},
  {i:"⏰",t:"Set an alarm",k:"alarm reminder notification wake budilica podsjetnik obavijest",s:["Go to <b>Clock</b> and scroll to <b>Alarms</b>.","Set the time and a label, then <b>Add alarm</b>. Allow notifications to also get a notification."],go:["tab","clock","#al-card"]},
  {i:"🧮",t:"Calculators (gel, antibody dilution, C₁V₁, molar mass)",k:"calculator dilution antibody c1v1 molar mass gel casting kalkulator razrjedenje protutijelo molarna masa izracun lijevanje gela",s:["Go to <b>Calcs</b>.","Pick gel casting, antibody dilution, C₁V₁ = C₂V₂ or molar mass."],go:["tab","calc"]},
- {i:"🗓",t:"Plan an experiment over several days",k:"plan days schedule calendar monday tuesday planirati raspored dani kalendar ponedjeljak utorak",s:["Open the experiment → <b>Steps</b> → <b>📅 Plan days</b>.","Add the days and tap which sections (e.g. Electrophoresis, Transfer) you'll do on each, plus a note.","The days show in the calendar, on the experiment card, and the steps get a “Today” label on the day."],p:"From the calendar you can also pick a future day and plan an experiment on it."},
+ {i:"🗓",t:"Plan an experiment over several days",k:"plan days schedule calendar monday tuesday planirati raspored dani kalendar ponedjeljak utorak",s:["Open the experiment → <b>Steps</b> → <b>📅 Plan days</b>.","Add the days and choose the last step of each day (e.g. the overnight primary antibody); the next day starts from the step after it. Add a note if you like.","The days show in the calendar, on the experiment card, and the steps get a “Today” label on the day."],p:"From the calendar you can also pick a future day and plan an experiment on it."},
  {i:"📅",t:"See what I did on a day",k:"calendar day diary history what did kalendar dan dnevnik povijest sto sam radio",s:["On <b>Experiments</b>, tap the calendar icon.","Tap a day to see the experiments, steps and recipes from it, and add a note for the day."],go:["cal"]},
  {i:"📝",t:"Quick notes",k:"note notes write memo biljeska biljeske zapisati",s:["Go to <b>Notes</b> and write. Notes are saved and synced."],go:["tab","notes"]},
  {i:"↩️",t:"Undo a change",k:"undo back mistake revert ponisti vratiti greska",s:["Tap the curved arrow at the top of the screen to undo the last change."],go:["hl","#undo-btn"]},
@@ -2700,7 +2702,7 @@ const HOSTS={rabbit:"anti-rabbit",mouse:"anti-mouse",goat:"anti-goat",rat:"anti-
 const TIMES={on:["overnight at 4 °C",null],"1h":["1 h at room temp.",60],"2h":["2 h at room temp.",120]};
 function parseWash(w){const m=String(w||"").match(/(\d+)\s*[×xX*]\s*(\d+)/);return m?[+m[1],+m[2]]:[3,5]}
 function newAb(){return{target:"",host:"rabbit",dil:"1000",time:"on",secDil:"5000"}}
-function legacyWB(){return{gel:"10",denat:"95",membrane:"PVDF",v1:"80",t1:"20",v2:"120",t2:"60",transfer:"semi",tv:"Bjerrum Schafer-Nielsen buffer, 15–25 V (about 1 mA per cm² of membrane)",tt:"30",ponceau:true,block:"5% milk in LSWB (2 g milk + 200 µL PBS-Tween in 40 mL)",bt:"60",abs:[{target:"primary antibody",host:"rabbit",dil:"1000",time:"on",secDil:"5000"}],strip:false,wash:"3 × 5",det:"ECL (chemiluminescence)"}}
+function legacyWB(){return{gel:"10",denat:"95",membrane:"PVDF",v1:"80",t1:"20",v2:"120",t2:"60",transfer:"semi",tv:"Bjerrum Schafer-Nielsen buffer, 15–25 V (about 1 mA per cm² of membrane)",tt:"30",ponceau:true,block:"5% milk in LSWB (2 g milk + 200 µL PBS-Tween in 40 mL)",bt:"60",abs:[{target:"primary antibody",host:"rabbit",dil:"1000",time:"on",secDil:"5000"},{target:"second antibody (e.g. loading control)",host:"mouse",dil:"5000",time:"1h",secDil:"5000"}],strip:false,wash:"3 × 5",det:"ECL (chemiluminescence)"}}
 function buildSteps(p){
   const S2=[];const add=(phase,t,d,min,rep)=>S2.push({id:uid()+S2.length,phase,t,d,min:min||null,rep:rep||0});
   const den={95:["Denature samples","95 °C, 5 min in loading buffer",5],70:["Denature samples","70 °C, 10 min (for membrane proteins)",10],37:["Denature samples","37 °C, 30 min",30],0:["Prepare samples","No heating; mix and spin down briefly",null]}[p.denat]||["Denature samples","",null];
@@ -3177,26 +3179,34 @@ function planOf(p){return Array.isArray(p&&p.plan)?p.plan:[]}
 function planDayLabel(d){const x=new Date(d+"T12:00");return isNaN(x)?d:x.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}
 function nextPlan(p){const t=dkey(Date.now());return planOf(p).filter(x=>x.d>=t).sort((a,b)=>a.d.localeCompare(b.d))[0]||null}
 function phasesOf(p){const out=[];(p.steps||[]).forEach(x=>{if(x.phase&&!out.includes(x.phase))out.push(x.phase)});return out}
-function planText(x){return (x.ph&&x.ph.length?x.ph.join(", "):"")+(x.note?(x.ph&&x.ph.length?" · ":"")+x.note:"")}
+function planSorted(p){return planOf(p).slice().sort((a,b)=>a.d.localeCompare(b.d))}
+function planFix(p){const st=p.steps||[];planOf(p).forEach(x=>{if(!x.until&&x.ph&&x.ph.length){let last=null;st.forEach(s=>{if(x.ph.includes(s.phase))last=s.id});if(last)x.until=last}delete x.ph})}
+function planRanges(p){const st=p.steps||[];const L=planSorted(p);let s=0;return L.map((x,i)=>{let e=i===L.length-1?st.length-1:st.findIndex(y=>y.id===x.until);if(e<s-1)e=s-1;const r={x,from:s,to:e};s=Math.max(s,e+1);return r})}
+function planText(p,x){const st=p.steps||[];const r=planRanges(p).find(o=>o.x===x);let t="";if(r&&r.to>=r.from){const a=st[r.from],b=st[r.to];t=r.to===r.from?`step ${r.from+1}: ${a.t}`:`steps ${r.from+1}–${r.to+1}: ${a.t} → ${b.t}`}return t+(x.note?(t?" · ":"")+x.note:"")}
+function planAutoUntil(p,fromIdx){const st=p.steps||[];const i=st.findIndex((y,k)=>k>=fromIdx&&/overnight/i.test((y.d||"")+" "+(y.t||"")));return i>=0?st[i].id:(st[Math.min(st.length-1,fromIdx+Math.floor((st.length-fromIdx)/2))]||{}).id}
 function renderPlanBar(){const p=S.prot,bar=$("#plan-bar");if(!bar)return;if(!p||isTpl()){bar.innerHTML="";return}const L=planOf(p).slice().sort((a,b)=>a.d.localeCompare(b.d));const t=dkey(Date.now());
-  bar.innerHTML=(L.length?L.map(x=>`<button class="pchip${x.d===t?" today":x.d<t?" past":""}" data-plan-open="1" title="${esc(planText(x))}">📅 ${x.d===t?"Today":esc(planDayLabel(x.d))}${planText(x)?`<small>${esc(planText(x))}</small>`:""}</button>`).join(""):"")+`<button class="pchip add" data-plan-open="1">${L.length?"✎ Edit plan":"📅 Plan days"}</button>`}
-function renderPlan(){const p=S.prot,el=$("#plan-card");if(!el||el.hidden)return;const L=planOf(p);const PH=phasesOf(p);
+  bar.innerHTML=(L.length?L.map(x=>`<button class="pchip${x.d===t?" today":x.d<t?" past":""}" data-plan-open="1" title="${esc(planText(p,x))}">📅 ${x.d===t?"Today":esc(planDayLabel(x.d))}${planText(p,x)?`<small>${esc(planText(p,x))}</small>`:""}</button>`).join(""):"")+`<button class="pchip add" data-plan-open="1">${L.length?"✎ Edit plan":"📅 Plan days"}</button>`}
+function renderPlan(){const p=S.prot,el=$("#plan-card");if(!el||el.hidden)return;planFix(p);const L=planSorted(p);
   el.innerHTML=`<div class="row" style="justify-content:space-between"><b>Plan the days</b><button class="btn sm ghost" data-pl="x">Done</button></div>
     <p class="note" style="margin:0">Pick the days and what you'll do on each. They show in the calendar, and on the day the steps are marked “Today”.</p>
     ${L.map((x,i)=>`<div class="plrow" data-pi="${i}"><div class="row" style="flex-wrap:nowrap;align-items:center"><input type="date" data-pk="d" value="${esc(x.d)}" aria-label="Day"><span class="note plwd">${esc(new Date(x.d+"T12:00").toLocaleDateString("en-GB",{weekday:"long"}))}</span><button class="btn sm ghost danger" data-pl="rm" aria-label="Remove day">×</button></div>
-      ${PH.length?`<div class="plph">${PH.map(ph=>`<button type="button" data-ph="${esc(ph)}" aria-pressed="${(x.ph||[]).includes(ph)}">${esc(ph)}</button>`).join("")}</div>`:""}
+      ${(()=>{const st=p.steps||[];const S2=planSorted(p);const last=S2[S2.length-1]===x;const rg=planRanges(p).find(o=>o.x===x);
+        return st.length?`<label class="f">${last?"From the next step to the end":"Until (last step that day)"}${last?"":`<select data-pk="until">${st.map((s,k)=>`<option value="${esc(s.id)}"${s.id===x.until?" selected":""}${rg&&k<rg.from?" disabled":""}>${k+1}. ${esc((s.phase?s.phase+" · ":"")+(s.t||""))}</option>`).join("")}</select>`}</label><div class="note plsum">${esc(planText(p,x).split(" · ")[0]||"No steps on this day")}</div>`:""})()}
       <input type="text" data-pk="note" value="${esc(x.note||"")}" placeholder="Note, e.g. primary overnight at 4 °C"></div>`).join("")}
     <div class="row"><button class="btn sm" data-pl="add">+ Add a day</button></div>`}
-function planAddDay(p,d){if(!Array.isArray(p.plan))p.plan=[];const L=p.plan;let day=d;if(!day){const last=L.map(x=>x.d).sort().pop();const b=last?new Date(last+"T12:00"):new Date();b.setDate(b.getDate()+1);day=dkey(b.getTime())}
-  const used=new Set(L.flatMap(x=>x.ph||[]));const PH=phasesOf(p);const rest=PH.filter(x=>!used.has(x));L.push({d:day,ph:L.length?rest:[],note:""})}
-$("#plan-bar").addEventListener("click",e=>{if(!e.target.closest("[data-plan-open]"))return;const el=$("#plan-card");el.hidden=!el.hidden;if(!el.hidden&&!planOf(S.prot).length){planAddDay(S.prot);queueSave("protocols");renderPlanBar()}renderPlan();if(!el.hidden)el.scrollIntoView({block:"nearest",behavior:"smooth"})});
+function planAddDay(p,d){if(!Array.isArray(p.plan))p.plan=[];planFix(p);const L=p.plan;let day=d;if(!day){const last=L.map(x=>x.d).sort().pop();const b=last?new Date(last+"T12:00"):new Date();b.setDate(b.getDate()+1);day=dkey(b.getTime())}
+  // the day that was last so far now ends at a natural break (an overnight step)
+  const S2=planSorted(p);const prev=S2[S2.length-1];if(prev&&!prev.until&&day>prev.d){const rg=planRanges(p).find(o=>o.x===prev);prev.until=planAutoUntil(p,rg?rg.from:0)}
+  L.push({d:day,note:""})}
+$("#plan-bar").addEventListener("click",e=>{if(!e.target.closest("[data-plan-open]"))return;const el=$("#plan-card");el.hidden=!el.hidden;if(!el.hidden&&!planOf(S.prot).length){planAddDay(S.prot);queueSave("protocols");renderPlanBar();renderSteps()}renderPlan();if(!el.hidden)el.scrollIntoView({block:"nearest",behavior:"smooth"})});
 $("#plan-card").addEventListener("click",e=>{const b=e.target.closest("[data-pl],[data-ph]");if(!b)return;const p=S.prot;
   if(b.dataset.pl==="x"){$("#plan-card").hidden=true;return}
-  if(b.dataset.pl==="add"){planAddDay(p);queueSave("protocols");renderPlan();renderPlanBar();return}
-  const row=b.closest("[data-pi]");if(!row)return;const x=p.plan[+row.dataset.pi];
-  if(b.dataset.pl==="rm"){p.plan.splice(+row.dataset.pi,1);queueSave("protocols");renderPlan();renderPlanBar();renderSteps();return}
-  if(b.dataset.ph){const ph=b.dataset.ph;x.ph=x.ph||[];if(x.ph.includes(ph))x.ph=x.ph.filter(y=>y!==ph);else{p.plan.forEach(o=>{if(o!==x&&o.ph)o.ph=o.ph.filter(y=>y!==ph)});x.ph.push(ph);const PH=phasesOf(p);x.ph.sort((a,b)=>PH.indexOf(a)-PH.indexOf(b))}queueSave("protocols");renderPlan();renderPlanBar();renderSteps()}});
-$("#plan-card").addEventListener("input",e=>{const k=e.target.dataset.pk;const row=e.target.closest("[data-pi]");if(!k||!row)return;const x=S.prot.plan[+row.dataset.pi];x[k]=e.target.value;queueSave("protocols");renderPlanBar();if(k==="d"){const w=row.querySelector(".plwd");if(w)w.textContent=new Date(e.target.value+"T12:00").toLocaleDateString("en-GB",{weekday:"long"});renderSteps()}});
+  if(b.dataset.pl==="add"){planAddDay(p);queueSave("protocols");renderPlan();renderPlanBar();renderSteps();return}
+  const row=b.closest("[data-pi]");if(!row)return;const x=planSorted(p)[+row.dataset.pi];
+  if(b.dataset.pl==="rm"){p.plan=p.plan.filter(o=>o!==x);queueSave("protocols");renderPlan();renderPlanBar();renderSteps();return}
+});
+$("#plan-card").addEventListener("change",e=>{if(e.target.dataset.pk!=="until")return;const row=e.target.closest("[data-pi]");const x=planSorted(S.prot)[+row.dataset.pi];x.until=e.target.value;queueSave("protocols");renderPlan();renderPlanBar();renderSteps()});
+$("#plan-card").addEventListener("input",e=>{const k=e.target.dataset.pk;const row=e.target.closest("[data-pi]");if(!k||k==="until"||!row)return;const x=planSorted(S.prot)[+row.dataset.pi];x[k]=e.target.value;queueSave("protocols");renderPlanBar();if(k==="note"){clearTimeout(window.__plT);window.__plT=setTimeout(renderSteps,400)}if(k==="d"){if(e.target.value)renderPlan();const w=row.querySelector(".plwd");if(w)w.textContent=new Date(e.target.value+"T12:00").toLocaleDateString("en-GB",{weekday:"long"});renderSteps()}});
 function renderSteps(){
   const p=S.prot;if(!p)return;const steps=p.steps||[];try{renderPlanBar()}catch(e){}
   $("#prot-edit").textContent=S.editSteps?"Done":"Edit steps";$("#prot-edit").classList.toggle("primary",!!S.editSteps);
@@ -3213,7 +3223,7 @@ function renderSteps(){
     </div>`).join("")||`<p class="note">No steps yet. Tap <b>+ Add step</b>.</p>`;
     return;
   }
-  const done=new Set(p.done||[]);let lastPhase="";const T=isTpl();
+  const done=new Set(p.done||[]);let lastPhase="";const T=isTpl();planFix(p);const dayStart=new Map();if(planOf(p).length>0)planRanges(p).forEach(r=>{if(r.to>=r.from)dayStart.set(r.from,r)});
   const timerHtml=x=>{const tk=p.id+"|"+x.id;const tm=S.timers[tk];const rep=x.rep>1?x.rep:0;if(!x.min)return "";
     const run=tm&&tm.end>Date.now();const fin=tm&&!run;const left=run?(tm.end-Date.now())/1000:x.min*60;
     const rp=rep?` <span class="note">${tm?Math.min(tm.round,rep):0}/${rep}</span>`:"";
@@ -3228,7 +3238,7 @@ function renderSteps(){
       <div class="nx-prog"><i style="width:${Math.round(100*done.size/steps.length)}%"></i></div>
       <div class="nx-all-l"><button class="linkbtn" type="button" data-nall="1">Know it by heart? ✓ Check all steps</button></div>`}
   $("#prot-steps").innerHTML=(steps.length?steps.map(x=>{
-    const tk=p.id+"|"+x.id;const ph=x.phase&&x.phase!==lastPhase?`<div class="phase">${esc(x.phase)}${(()=>{const pd=planOf(p).find(o=>(o.ph||[]).includes(x.phase));if(!pd)return "";const t=dkey(Date.now());return `<span class="phday${pd.d===t?" today":""}">${pd.d===t?"Today":esc(planDayLabel(pd.d))}</span>`})()}</div>`:"";lastPhase=x.phase;
+    const tk=p.id+"|"+x.id;const xi=steps.indexOf(x);const dr=!T&&dayStart.get(xi);const ph=(dr?`<div class="dayhead${dr.x.d===dkey(Date.now())?" today":""}">📅 ${dr.x.d===dkey(Date.now())?"Today":esc(planDayLabel(dr.x.d))}${dr.x.note?`<span>${esc(dr.x.note)}</span>`:""}</div>`:"")+(x.phase&&x.phase!==lastPhase?`<div class="phase">${esc(x.phase)}</div>`:"");lastPhase=x.phase;
     let timer="";const rep=x.rep>1?x.rep:0;
     if(T&&x.min)timer=`<span class="note">${rep?rep+" × ":""}${x.min} min</span>`;
     else if(x.min)timer=timerHtml(x);
@@ -4397,7 +4407,7 @@ function calActivities(){const A={};const add=(day,pid,txt,kind)=>{if(!day)retur
     (Array.isArray(p.sols)?p.sols:[]).forEach(e=>{if(isD(e.prepared)){const r=Store.data.solutions[e.id];add(e.prepared,pid,`Prepared ${r?r.name:"a solution"}`,"sol")}});
     (p.imgs||[]).forEach(sc=>{const by={};(sc.images||[]).forEach(im=>{if(im.added){const d=dkey(im.added);by[d]=(by[d]||0)+1}});Object.entries(by).forEach(([d,n])=>add(d,pid,`Added ${n} image${n>1?"s":""}${sc.title?" to "+sc.title:""}`,"img"))});
     (p.days||[]).forEach(d=>add(d,pid,"Worked on it","worked"));
-    if(!expDone(p))planOf(p).forEach(x=>{if(x.d)add(x.d,pid,"Planned"+(planText(x)?": "+planText(x):""),"plan")})});
+    if(!expDone(p)){const pc=clone(p);planFix(pc);planOf(pc).forEach(x=>{if(x.d){const t=planText(pc,x);add(x.d,pid,"Planned"+(t?": "+t:""),"plan")}})}});
   Object.values(Store.data.assays).filter(a=>!a.draft&&a.protoId).forEach(a=>{const n=(a.samples||[]).filter(x=>x.name||(x.r||[]).length).length;add(isD(a.date)?a.date:a.created?dkey(a.created):null,a.protoId,`Protein concentration: ${a.name||"assay"}${n?` (${n} samples)`:""}`,"assay")});
   Object.values(Store.data.experiments).filter(x=>!x.draft&&x.protoId).forEach(x=>{const gs=gelsOf(x.id).filter(g=>!g.draft);if(!gs.length)return;const ns=gs.reduce((t,g)=>t+g.lanes.filter(l=>l.type==="sample").length,0);add(isD(x.date)?x.date:null,x.protoId,`Gels: ${x.name||"gel run"} · ${gs.length} gel${gs.length>1?"s":""}, ${ns} samples`,"gel")});
   Object.values(Store.data.records||{}).forEach(r=>{if(r.created)add(dkey(r.created),r.protoId,`Saved a run: ${r.name||""}`,"rec")});
