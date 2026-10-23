@@ -893,6 +893,14 @@ input.sw:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .pkren{flex:none;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--accent);cursor:pointer;font-size:15px}
 .pkren[hidden]{display:none}
 .shbtn{display:inline-flex;align-items:center;gap:5px}
+.stab{margin-top:5px}
+.stab .abchip{display:inline-flex;align-items:center;gap:5px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font:600 13px/1.3 var(--sans);color:var(--ink);cursor:pointer;max-width:100%;text-align:left}
+.stab .abchip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+.stab .abadd{font-size:12.5px;color:var(--muted);font-weight:500;text-decoration:none}
+.stab .abadd:hover{color:var(--accent);text-decoration:underline}
+.stab.ed{display:flex;gap:6px;align-items:center}.stab.ed input{flex:1;min-width:0;padding:6px 10px;font-size:14px}
+.step.done .stab .abchip{opacity:.75}
+.nx-ab{margin-top:6px;font-weight:600;font-size:14px}.nx-ab::before{content:"Antibody: ";font-weight:400;color:var(--muted)}
 .nx-all-l{margin-top:8px;text-align:center}.nx-all-l .linkbtn{font-size:12.5px;color:var(--muted)}
 #status{cursor:default}#status:hover,#status:active{background:var(--surface);border-color:var(--line);transform:none}
 @media (max-width:430px){header.top #theme-btn{display:none}}
@@ -1265,7 +1273,7 @@ html.oncal #cal-btn{background:var(--accent);border-color:var(--accent);color:va
         <div class="row"><button class="btn sm ghost" data-bench="steps" title="Print a bench sheet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;vertical-align:-2px;margin-right:4px"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Print</button><button class="btn sm ghost" id="prot-all">✓ Check all</button><button class="btn sm ghost" id="prot-reset">Clear checks</button><button class="btn sm" id="prot-edit">Edit steps</button><button class="btn sm primary" id="prot-finish" hidden>Finish &amp; save</button><button class="btn sm primary" id="tpl-start" hidden>Start experiment</button></div>
       </div>
       <div class="steps" id="prot-steps"></div>
-      <div class="row" id="prot-editbar" hidden><span class="addn"><input class="nrows" id="step-add-n" type="number" min="1" max="200" value="1" aria-label="How many"><button class="btn sm" id="step-add">Add steps</button></span></div>
+      <div class="row" id="prot-editbar" hidden><span class="addn"><input class="nrows" id="step-add-n" type="number" min="1" max="200" value="1" aria-label="How many"><button class="btn sm" id="step-add">Add steps</button></span><button class="btn sm ghost" id="step-addab">+ Antibody step</button></div>
     </div>
 
     <details class="card" id="prot-params">
@@ -2331,7 +2339,7 @@ const Hist={open:new Map(),
         else if(k==="done"){const A=new Set(a.done||[]),B=new Set(b.done||[]);const add=[...B].filter(x=>!A.has(x)),rem=[...A].filter(x=>!B.has(x));
           if(add.length)out.push(add.length<=2&&add.every(sn)?`Checked ${add.map(x=>`"${sn(x)}"`).join(", ")}`:`Checked ${this.plur(add.length,"step")}`);
           if(rem.length)out.push(rem.length<=2&&rem.every(sn)?`Unchecked ${rem.map(x=>`"${sn(x)}"`).join(", ")}`:`Unchecked ${this.plur(rem.length,"step")}`)}
-        else if(k==="steps"){const d=(b.steps||[]).length-(a.steps||[]).length;out.push(d>0?`Added ${this.plur(d,"step")}`:d<0?`Removed ${this.plur(-d,"step")}`:"Edited steps")}
+        else if(k==="steps"){const d=(b.steps||[]).length-(a.steps||[]).length;const abc=d===0?(b.steps||[]).filter((x,i)=>(x.ab||"")!==(((a.steps||[])[i]||{}).ab||"")):[];if(abc.length&&JSON.stringify((b.steps||[]).map(x=>Object.assign({},x,{ab:0})))===JSON.stringify((a.steps||[]).map(x=>Object.assign({},x,{ab:0})))){abc.forEach(x=>out.push(x.ab?`Antibody: ${String(x.ab).slice(0,50)}`:"Removed antibody"));return}out.push(d>0?`Added ${this.plur(d,"step")}`:d<0?`Removed ${this.plur(-d,"step")}`:"Edited steps")}
         else if(k==="imgs"){const d=this.imgN(b)-this.imgN(a);out.push(d>0?`Added ${this.plur(d,"image")}`:d<0?`Removed ${this.plur(-d,"image")}`:"Edited images or band labels")}
         else if(k==="plan")out.push("Changed planned days");
         else if(k==="notes")out.push("Edited notes");
@@ -3024,7 +3032,7 @@ function renderHome(){
   else if(!q&&n.p!=null&&n.p!=="__none")tiles=folders.map(f=>{const path=(n.f?n.f+"/":"")+f;return tile(f,{p:n.p,f:path},every.filter(p=>pj(p)===n.p&&under(pf(p),path)))}).join("");
   $("#home-folders").innerHTML=tiles;
   // list
-  let base=q?every.filter(p=>[p.name,p.group,p.folder,methodLabel(p),p.notes,(p.imgs||[]).map(s=>[s.ab1,s.ab2].join(" ")).join(" ")].join(" ").toLowerCase().includes(q)):n.p==null?every:every.filter(p=>inNav(p,n));
+  let base=q?every.filter(p=>[p.name,p.group,p.folder,methodLabel(p),p.notes,stepAbs(p).join(" "),(p.imgs||[]).map(s=>[s.ab1,s.ab2].join(" ")).join(" ")].join(" ").toLowerCase().includes(q)):n.p==null?every:every.filter(p=>inNav(p,n));
   const root=!q&&n.p==null;
   let f=lsGet("bb.hstatus","all");let so=lsGet("bb.hsort2",null)||"status";if(so==="project")so="used";$("#home-sort").value=so;
   const na=base.filter(p=>!expDone(p)).length,nd=base.length-na;
@@ -3035,7 +3043,7 @@ function renderHome(){
   L.sort(root?(a,b)=>(b.updatedAt||0)-(a.updatedAt||0):so==="new"?(a,b)=>crd(b)-crd(a):so==="old"?(a,b)=>crd(a)-crd(b):so==="name"?(a,b)=>String(a.name).localeCompare(String(b.name)):(a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
   if(root)L=L.filter(p=>!expDone(p)).slice(0,4);
   $("#home-filter").hidden=root;$("#home-sort").hidden=root;
-  const abs=p=>{const m=new Map();(p.imgs||[]).forEach(s=>{const v=String(s.ab1||"").replace(/\s*\b1\s*:\s*[\d\s.,]+$/,"").replace(/^anti[- ]?/i,"").trim();if(v&&!m.has(v.toLowerCase()))m.set(v.toLowerCase(),v)});return [...m.values()]};
+  const abs=p=>{const m=new Map();[...stepAbs(p,"p").map(v=>({ab1:v})),...(p.imgs||[])].forEach(s=>{const v=String(s.ab1||"").replace(/\s*\b1\s*:\s*[\d\s.,]+$/,"").replace(/^anti[- ]?/i,"").trim();if(v&&!m.has(v.toLowerCase()))m.set(v.toLowerCase(),v)});return [...m.values()]};
   const card=p=>{const nG=Object.values(Store.data.experiments).filter(x=>x.protoId===p.id).reduce((n,x)=>n+gelsOf(x.id).filter(g=>!g.draft).length,0),nA=Object.values(Store.data.assays).filter(x=>x.protoId===p.id).length;
     const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const where=[pj(p),showPath(pf(p))].filter(Boolean).join(" › ");
     const cat=catOfExp(p);return `<div class="pcard"><button class="pmain" data-p="${esc(p.id)}"><span class="th">${micon(cat)}<span class="t">${esc(p.name||"Untitled")}${(()=>{const A=abs(p);return A.length?`<small class="abl" title="Primary antibodies">${esc(A.join(" · "))}</small>`:""})()}</span></span><span class="m">${outcomeTag(p)}<span class="tag mt" style="--mc:${MCOL[cat]||MCOL.other}">${esc(methodLabel(p))}</span>${(q||root)&&where?`<span class="tag" style="background:var(--surface-2);color:var(--ink)">${esc(where)}</span>`:""}</span>${steps.length?`<span class="prog${expDone(p)||dn===steps.length?" full":""}" role="img" aria-label="${dn} of ${steps.length} steps done"><i style="width:${Math.round(100*dn/steps.length)}%"></i></span>`:""}<span class="m">${[steps.length?`${dn}/${steps.length} steps`:"no steps",nA?`${nA} assay${nA>1?"s":""}`:"",nG?`${nG} gel${nG>1?"s":""}`:"",expDone(p)&&p.completed?`${expFailed(p)?"failed":"done"} ${shortD(p.completed)}`:p.created?`started ${shortD(p.created)}`:""].filter(Boolean).join(" · ")}${(()=>{if(expDone(p))return "";const n=nextPlan(p);if(!n)return "";return ` · <b class="plnext">📅 ${n.d===dkey(Date.now())?"today":esc(planDayLabel(n.d))}</b>`})()}</span>${(()=>{const u=usedIn(p.id);return u.length?`<span class="m usedin">→ used in ${u.map(q=>esc(q.name)).join(", ")}</span>`:""})()}</button><span class="mwrap"><button class="pm" data-menu aria-label="More actions">⋯</button><div class="menu" hidden><button data-copy="${esc(p.id)}">Copy experiment</button>${expDone(p)?`<button data-setout="active" data-sp="${esc(p.id)}">Back to in progress</button>`:""}${!expDone(p)||expFailed(p)?`<button data-setout="ok" data-sp="${esc(p.id)}">✓ Mark as worked</button>`:""}${!expFailed(p)?`<button data-setout="fail" data-sp="${esc(p.id)}">✗ Mark as didn't work</button>`:""}<button class="danger" data-del="${esc(p.id)}">Delete</button></div></span></div>`};
@@ -3287,9 +3295,10 @@ armDelete("#prot-del","Delete",async()=>{clearTimeout(saveT.protocols);dirty.pro
 $("#prot-all").addEventListener("click",()=>{const arr=new Set(S.prot.done||[]);(S.prot.steps||[]).forEach(x=>{if(!arr.has(x.id)){arr.add(x.id);logStep(x.id,true)}});S.prot.done=[...arr];queueSave("protocols");renderSteps();setStatus("All steps checked")});
 $("#prot-reset").addEventListener("click",()=>{S.prot.done=[];queueSave("protocols");Object.keys(S.timers).forEach(k=>{if(k.startsWith(S.prot.id+"|"))delete S.timers[k]});renderSteps()});
 $("#prot-edit").addEventListener("click",()=>{S.editSteps=!S.editSteps;renderSteps()});
+$("#step-addab").addEventListener("click",()=>{const last=S.prot.steps[S.prot.steps.length-1];S.prot.steps.push({id:uid(),phase:last?last.phase:"",t:"Primary antibody",d:"",min:null,rep:0,abk:"p"});renderSteps();queueSave("protocols");const ins=$$("#prot-steps .sedit input[data-k='t']");if(ins.length){const i=ins[ins.length-1];i.scrollIntoView({block:"center"});i.focus();i.select()}});
 $("#step-add").addEventListener("click",()=>{const last=S.prot.steps[S.prot.steps.length-1];for(let k=0,K=Math.max(1,Math.min(200,parseInt($("#step-add-n").value)||1));k<K;k++)S.prot.steps.push({id:uid()+k,phase:last?last.phase:"",t:"",d:"",min:null,rep:0});renderSteps();queueSave("protocols");const ins=$$("#prot-steps .sedit input[data-k='t']");ins.length&&ins[ins.length-1].focus()});
 $("#prot-steps").addEventListener("input",e=>{const row=e.target.closest(".sedit");const k=e.target.dataset.k;if(!row||!k)return;const s=S.prot.steps.find(x=>x.id===row.dataset.id);if(!s)return;
-  s[k]=k==="min"?(num(e.target.value)>0?num(e.target.value):null):k==="rep"?(parseInt(e.target.value)||0):e.target.value;queueSave("protocols")});
+  s[k]=k==="min"?(num(e.target.value)>0?num(e.target.value):null):k==="rep"?(parseInt(e.target.value)||0):e.target.value;if(k==="abk"&&!s.abk)delete s.abk;queueSave("protocols")});
 
 function clock(sec){sec=Math.max(0,Math.round(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(s).padStart(2,"0")}
 function openStepsCard(){const c=$("#prot-steps").closest(".card.collapsible");if(c&&collapsedSet.has(c.dataset.ck)){collapsedSet.delete(c.dataset.ck);lsSet("bb.collapsed",[...collapsedSet]);const u=ckUpd.get(c.dataset.ck);u&&u()}}
@@ -3326,6 +3335,15 @@ $("#plan-card").addEventListener("click",e=>{const b=e.target.closest("[data-pl]
 });
 $("#plan-card").addEventListener("change",e=>{if(e.target.dataset.pk!=="until")return;const row=e.target.closest("[data-pi]");const x=planSorted(S.prot)[+row.dataset.pi];x.until=e.target.value;queueSave("protocols");renderPlan();renderPlanBar();renderSteps()});
 $("#plan-card").addEventListener("input",e=>{const k=e.target.dataset.pk;const row=e.target.closest("[data-pi]");if(!k||k==="until"||!row)return;const x=planSorted(S.prot)[+row.dataset.pi];x[k]=e.target.value;queueSave("protocols");renderPlanBar();if(k==="note"){clearTimeout(window.__plT);window.__plT=setTimeout(renderSteps,400)}if(k==="d"){if(e.target.value)renderPlan();const w=row.querySelector(".plwd");if(w)w.textContent=new Date(e.target.value+"T12:00").toLocaleDateString("en-GB",{weekday:"long"});renderSteps()}});
+function stepAbKind(x){if(x&&x.abk)return x.abk==="none"?"":x.abk;const t=String(x&&x.t||"");if(/^secondary\b|secondary antibod/i.test(t))return "s";if(/^primary\b|primary antibod|capture antibod|detection antibod/i.test(t))return "p";return ""}
+function stepAbs(p,k){return (p.steps||[]).filter(x=>x.ab&&(!k||stepAbKind(x)===k)).map(x=>x.ab)}
+function stepAbList(k){const set=new Map();const add=v=>{v=String(v||"").trim();if(v&&!set.has(v.toLowerCase()))set.set(v.toLowerCase(),v)};
+  try{Object.values(Inv.items||{}).forEach(x=>{const ty=String(x.type||"");if(k==="s"?/secondary|sekundar/i.test(ty):/primary|primar/i.test(ty)||(/antibod|protutij/i.test(ty)&&!/secondary/i.test(ty)))add(x.name)})}catch(e){}
+  protList().forEach(p=>{stepAbs(p,k).forEach(add);(p.imgs||[]).forEach(sc=>add(k==="s"?sc.ab2:sc.ab1))});
+  return [...set.values()].sort((a,b)=>a.localeCompare(b))}
+function stepAbHTML(x,T){const k=stepAbKind(x);if(!k||T)return "";const lab=k==="s"?"Secondary antibody":"Primary antibody";
+  if(S.abEdit===x.id)return `<div class="stab ed"><input type="text" data-abin="${esc(x.id)}" list="ab-dl-${k}" value="${esc(x.ab||"")}" placeholder="${k==="s"?"e.g. anti-rabbit IgG-HRP":"e.g. anti-pIRS1 (Ser307)"}" aria-label="${lab}" autocomplete="off"><button class="btn sm primary" data-abok="${esc(x.id)}">OK</button><datalist id="ab-dl-${k}">${stepAbList(k).map(v=>`<option value="${esc(v)}"></option>`).join("")}</datalist></div>`;
+  return x.ab?`<div class="stab"><button type="button" class="abchip" data-abset="${esc(x.id)}" title="${lab}: tap to change">${esc(x.ab)}</button></div>`:`<div class="stab"><button type="button" class="linkbtn abadd" data-abset="${esc(x.id)}">+ Which antibody?</button></div>`}
 function renderSteps(){
   const p=S.prot;if(!p)return;const steps=p.steps||[];try{renderPlanBar()}catch(e){}
   $("#prot-edit").textContent=S.editSteps?"Done":"Edit steps";$("#prot-edit").classList.toggle("primary",!!S.editSteps);
@@ -3339,6 +3357,7 @@ function renderSteps(){
       <label class="f full">Details<textarea id="se-${esc(x.id)}-d" data-k="d" placeholder="Volumes, temperature, notes">${esc(x.d)}</textarea></label>
       <label class="f">Timer (min)<input id="se-${esc(x.id)}-m" data-k="min" type="text" inputmode="decimal" value="${x.min?esc(x.min):""}" placeholder="none"></label>
       <label class="f">Repeat (×)<input id="se-${esc(x.id)}-r" data-k="rep" type="text" inputmode="numeric" value="${x.rep?esc(x.rep):""}" placeholder="1"></label>
+      <label class="f">Antibody<select id="se-${esc(x.id)}-a" data-k="abk">${(()=>{const auto=(()=>{const y=Object.assign({},x,{abk:""});return stepAbKind(y)})();const cur=x.abk||"";const AL={"":"auto","p":"primary","s":"secondary"};return [["",`Auto (${auto?AL[auto]:"none"})`],["p","Primary antibody"],["s","Secondary antibody"],["none","No antibody"]].map(([v,l])=>`<option value="${v}"${cur===v?" selected":""}>${l}</option>`).join("")})()}</select></label>
     </div>`).join("")||`<p class="note">No steps yet. Tap <b>+ Add step</b>.</p>`;
     return;
   }
@@ -3352,7 +3371,7 @@ function renderSteps(){
   else if(ni<0){nc.hidden=false;nc.innerHTML=`<div class="nx-all"><span class="nx-ok">✓</span><div><b>All ${steps.length} steps done</b><div class="note">${$("#prot-finish").hidden?"Nice work.":"Tap Finish &amp; save to keep a record of this run."}</div></div></div>`}
   else{const x=steps[ni];let ph=x.phase||"";if(!ph){for(let k=ni;k>=0;k--)if(steps[k].phase){ph=steps[k].phase;break}}
     nc.hidden=false;nc.innerHTML=`<div class="nx-h"><span>Next step · ${ni+1} of ${steps.length}</span>${ph?`<span class="nx-ph">${esc(ph)}</span>`:""}</div>
-      <div class="nx-t">${esc(x.t||"Untitled step")}</div>${x.d?`<div class="nx-d">${esc(x.d)}</div>`:""}
+      <div class="nx-t">${esc(x.t||"Untitled step")}</div>${x.d?`<div class="nx-d">${esc(x.d)}</div>`:""}${x.ab&&stepAbKind(x)?`<div class="nx-ab">${esc(x.ab)}</div>`:""}
       <div class="nx-b">${timerHtml(x)}<button class="btn primary" data-ndone="${esc(x.id)}">✓ Done</button></div>
       <div class="nx-prog"><i style="width:${Math.round(100*done.size/steps.length)}%"></i></div>
       <div class="nx-all-l"><button class="linkbtn" type="button" data-nall="1">Know it by heart? ✓ Check all steps</button></div>`}
@@ -3363,7 +3382,7 @@ function renderSteps(){
     else if(x.min)timer=timerHtml(x);
     return `<div class="step${done.has(x.id)?" done":""}" id="st-${esc(tk).replace(/[^a-z0-9]/gi,"_")}">
       ${T?`<span class="note" style="text-align:center;padding-top:2px">•</span>`:`<input type="checkbox" data-check="${esc(x.id)}" ${done.has(x.id)?"checked":""} aria-label="Mark step done">`}
-      <div>${ph}<div class="t">${esc(x.t||"Untitled step")}</div>${x.d?`<div class="d">${esc(x.d)}</div>`:""}</div>${timer}</div>`}).join(""):`<p class="note">No steps yet. Tap <b>Edit steps</b> to add them.</p>`)+(p.notes?`<div class="note" style="padding-top:10px;white-space:pre-wrap">${esc(p.notes)}</div>`:"");
+      <div>${ph}<div class="t">${esc(x.t||"Untitled step")}</div>${x.d?`<div class="d">${esc(x.d)}</div>`:""}${stepAbHTML(x,T)}</div>${timer}</div>`}).join(""):`<p class="note">No steps yet. Tap <b>Edit steps</b> to add them.</p>`)+(p.notes?`<div class="note" style="padding-top:10px;white-space:pre-wrap">${esc(p.notes)}</div>`:"");
 }
 $("#prot-steps").addEventListener("pointerdown",e=>{const h=e.target.closest("[data-drag]");if(!h)return;e.preventDefault();const row=h.closest(".sedit"),box=$("#prot-steps");row.classList.add("dragging");
   let raf=null,lastY=e.clientY;
@@ -3389,6 +3408,12 @@ function alarmStop(){clearInterval(alarmT);alarmT=null;$("#alarm").hidden=true;t
 let wake=null;async function wakeOn(){try{if(!wake&&navigator.wakeLock)wake=await navigator.wakeLock.request("screen")}catch(e){wake=null}}
 function wakeOff(){if(Object.values(S.timers).some(t=>t.end>Date.now())||(typeof CK!=="undefined"&&CK.timers.some(x=>x.end&&!x.done))||S.loadMode||S.plFill)return;try{wake&&wake.release()}catch(e){}wake=null}
 $("#prot-steps").addEventListener("click",e=>{const b=e.target.closest("[data-timer]");if(b)stepTimerClick(b)});
+function abCommit(id,cancel){const x=(S.prot.steps||[]).find(y=>y.id===id);const i=document.querySelector(`[data-abin="${CSS.escape(id)}"]`);S.abEdit=null;
+  if(x&&i&&!cancel){const v=i.value.trim();if(v!==(x.ab||"")){if(v)x.ab=v;else delete x.ab;queueSave("protocols");setStatus(v?"Antibody saved":"Antibody removed")}}renderSteps()}
+$("#prot-steps").addEventListener("click",e=>{const a=e.target.closest("[data-abset]");if(a){e.preventDefault();S.abEdit=a.dataset.abset;renderSteps();const i=document.querySelector(`[data-abin="${CSS.escape(S.abEdit)}"]`);if(i){i.focus();i.select()}return}
+  const ok=e.target.closest("[data-abok]");if(ok){e.preventDefault();abCommit(ok.dataset.abok)}});
+$("#prot-steps").addEventListener("keydown",e=>{const i=e.target.closest("[data-abin]");if(!i)return;if(e.key==="Enter"){e.preventDefault();abCommit(i.dataset.abin)}else if(e.key==="Escape"){e.preventDefault();abCommit(i.dataset.abin,true)}});
+$("#prot-steps").addEventListener("focusout",e=>{const i=e.target.closest("[data-abin]");if(!i)return;setTimeout(()=>{if(S.abEdit===i.dataset.abin&&!document.activeElement?.closest?.(".stab.ed"))abCommit(i.dataset.abin)},150)});
 function stepTimerClick(b){const tk=b.dataset.timer,min=+b.dataset.min,rep=+b.dataset.rep;const tm=S.timers[tk];
   try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume&&audio.resume()}catch(er){}
   if(tm&&tm.end>Date.now()){delete S.timers[tk];wakeOff()}
@@ -4584,7 +4609,7 @@ function benchHTML(){const inc=k=>{const i=$(`#bench-opts [data-bo="${k}"]`);ret
   if(inc("steps")){const done=new Set(p.done||[]);let last="";h+=`<h2>Steps</h2>`;
     (p.steps||[]).forEach((x,i)=>{if(x.phase&&x.phase!==last){h+=`<div class="bs-ph">${e(x.phase)}</div>`;last=x.phase}
       const tm=x.min?`${x.rep>1?x.rep+" × ":""}${x.min} min`:"";
-      h+=`<div class="bs-stp"><span class="bs-bx${done.has(x.id)?" ok":""}"></span><span class="bs-st"><b>${i+1}. ${e(x.t||"")}</b>${x.d?`<br><i>${e(x.d)}</i>`:""}</span>${tm?`<span class="bs-tm">${e(tm)}${x.rep>1?" "+"☐".repeat(Math.min(6,x.rep)):""}</span>`:""}</div>`});
+      h+=`<div class="bs-stp"><span class="bs-bx${done.has(x.id)?" ok":""}"></span><span class="bs-st"><b>${i+1}. ${e(x.t||"")}</b>${x.d?`<br><i>${e(x.d)}</i>`:""}${x.ab?`<br>Antibody: <b>${e(x.ab)}</b>`:""}</span>${tm?`<span class="bs-tm">${e(tm)}${x.rep>1?" "+"☐".repeat(Math.min(6,x.rep)):""}</span>`:""}</div>`});
     if(p.notes)h+=`<div class="bs-sub" style="margin-top:6px;white-space:pre-wrap">${e(p.notes)}</div>`}
   if(inc("gel")&&S.exp){const gs=gelsOf(S.exp.id).filter(g=>!g.draft).map(g=>g.id===(S.gel&&S.gel.id)?S.gel:g);
     h+=`<h2>Gel loading plan</h2>`;
@@ -5143,9 +5168,9 @@ function abFields(sc){if(!AB_TYPES.includes(sc.type))return "";const id=esc(sc.i
   return `<div class="abrow"><label class="f">Primary antibody<input id="is-${id}-a1" data-k="ab1" type="text" list="ab-list" value="${esc(sc.ab1||"")}" placeholder="e.g. anti-pIRS1 (Ser307) 1:1000"></label><label class="f">Secondary antibody<input id="is-${id}-a2" data-k="ab2" type="text" list="ab-list" value="${esc(sc.ab2||"")}" placeholder="e.g. anti-rabbit HRP 1:5000"></label>${sc.type==="membrane"?`<label class="f">Exposure / detection<input id="is-${id}-ex" data-k="exp" type="text" value="${esc(sc.exp||"")}" placeholder="e.g. ECL, 30 s"></label>`:""}</div>`}
 function abSuggest(){const set=new Map();const add=v=>{v=String(v||"").trim();if(v&&!set.has(v.toLowerCase()))set.set(v.toLowerCase(),v)};
   try{Object.values(Inv.items||{}).forEach(x=>{if(/antibod|protutij/i.test(x.type||"")||/^anti[- ]/i.test(x.name||""))add(x.name)})}catch(e){}
-  protList().forEach(p=>(p.imgs||[]).forEach(sc=>{add(sc.ab1);add(sc.ab2)}));
+  protList().forEach(p=>{(p.imgs||[]).forEach(sc=>{add(sc.ab1);add(sc.ab2)});stepAbs(p).forEach(add)});
   const dl=$("#ab-list");if(dl)dl.innerHTML=[...set.values()].sort((a,b)=>a.localeCompare(b)).map(v=>`<option value="${esc(v)}"></option>`).join("")}
-function addSection(type){const L=secs();const n=L.filter(x=>x.type===type).length+1;const sc={id:uid(),type,title:`${IT_L[type]} ${n}`,notes:"",images:[],created:Date.now()};L.push(sc);S.imgTarget=sc.id;queueSave("protocols");renderImages();
+function addSection(type){const L=secs();const n=L.filter(x=>x.type===type).length+1;const sc={id:uid(),type,title:`${IT_L[type]} ${n}`,notes:"",images:[],created:Date.now()};{const P=stepAbs(S.prot,"p"),Q=stepAbs(S.prot,"s");if(type!=="gel"&&P[n-1]){sc.ab1=P[n-1];if(Q[n-1])sc.ab2=Q[n-1]}}L.push(sc);S.imgTarget=sc.id;queueSave("protocols");renderImages();
   const el=document.querySelector(`.isec[data-s="${sc.id}"]`);if(el){el.scrollIntoView({block:"center"});const t=el.querySelector('input[data-k="title"]');t&&t.select()}}
 function blobToImage(blob){return new Promise((ok,no)=>{const u=URL.createObjectURL(blob);const im=new Image();im.onload=()=>ok({im,u});im.onerror=()=>{URL.revokeObjectURL(u);no(new Error("That file is not an image"))};im.src=u})}
 async function compressToDataURL(blob,maxBytes){const {im,u}=await blobToImage(blob);let W=im.naturalWidth,H=im.naturalHeight,side=1600,q=.85,out="";
