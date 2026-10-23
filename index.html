@@ -533,7 +533,10 @@ table.xl td.o.amt{color:var(--accent);font-size:14px}
 #plate-card.fs .plate .hd{font-size:12px}
 #plate-card.fs>.row:last-child{flex:none}
 @media (orientation:landscape){
-  #plate-card.fs{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,200px);grid-template-rows:auto minmax(0,1fr) auto;column-gap:12px;row-gap:8px}
+  #plate-card.fs{display:grid;grid-template-columns:minmax(0,1fr) minmax(112px,150px);grid-template-rows:auto minmax(0,1fr) auto;column-gap:10px;row-gap:8px;padding-top:calc(3px + env(safe-area-inset-top,0px));padding-bottom:calc(3px + env(safe-area-inset-bottom,0px))}
+  #plate-card.fs .plate{margin:0;padding:4px;gap:2px}
+  #plate-card.fs #pl-hint{font-size:13px}
+  #plate-card.fs>.row:last-child .btn{padding-left:8px;padding-right:8px}
   #plate-card.fs #pl-hint{grid-column:2;grid-row:1}
   #plate-card.fs .platebox{grid-column:1;grid-row:1 / 4}
   #plate-card.fs>.row:last-child{grid-column:2;grid-row:3;flex-direction:column;align-items:stretch;gap:8px}
@@ -895,6 +898,13 @@ input.sw:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (max-width:430px){header.top #theme-btn{display:none}}
 header.top .brand{min-width:0;overflow:hidden}
 .helpsheet #help-q{font-size:15px}
+.histsheet{gap:6px}
+.hsday{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:12px 0 2px}
+.hsrow{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;line-height:1.35}
+.hsrow .hst{flex:none;width:44px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hsrow .hsc{flex:1;min-width:0}
+.hsrow small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+#iv-meta .ivh{background:none;border:0;padding:0;color:inherit;text-transform:none;letter-spacing:normal;font-weight:inherit;min-height:0;text-decoration:underline;text-underline-offset:2px;cursor:pointer;font:inherit}
 .hlist{display:flex;flex-direction:column;gap:8px}
 .hitem{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .hitem>button.hq{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;padding:12px 14px;text-align:left;font:600 14.5px var(--sans);color:var(--ink);cursor:pointer}
@@ -1278,7 +1288,7 @@ html.oncal #cal-btn{background:var(--accent);border-color:var(--accent);color:va
         </div>
       </div>
       <label class="f">Notes<textarea id="p-notes" style="min-height:70px;font-family:var(--sans);font-size:14px"></textarea></label>
-      <div class="row" style="justify-content:flex-end"><button class="btn sm" id="prot-savetpl" hidden>Save as my protocol</button><button class="btn sm" id="prot-dup">Duplicate</button><button class="btn danger sm" id="prot-del">Delete</button></div>
+      <div class="row" style="justify-content:flex-end"><button class="btn sm" id="prot-savetpl" hidden>Save as my protocol</button><button class="btn sm ghost" id="prot-hist" title="Who changed what and when">History</button><button class="btn sm" id="prot-dup">Duplicate</button><button class="btn danger sm" id="prot-del">Delete</button></div>
     </details>
   </section>
 
@@ -1647,6 +1657,11 @@ html.oncal #cal-btn{background:var(--accent);border-color:var(--accent);color:va
   <label class="chk" style="align-self:flex-start"><input type="checkbox" id="fin-reset" checked> Clear ticks and timers for the next run</label>
   <div class="row" style="justify-content:flex-end"><button class="btn primary" id="fin-save">Save run</button></div>
 </div>
+<div class="scrim" id="hist2-scrim" hidden></div>
+<div class="sheet setsheet histsheet" id="hist2-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="hist2-title">
+  <div class="hd sethd"><b id="hist2-title">History</b><button class="btn sm primary" id="hist2-close">Done</button></div>
+  <div id="hist2-body"></div>
+</div>
 <div class="scrim" id="help-scrim" hidden></div>
 <div class="sheet setsheet helpsheet" id="help-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
   <div class="hd sethd"><b id="help-title">Help</b><button class="btn sm primary" id="help-close">Done</button></div>
@@ -1880,7 +1895,7 @@ const Tour={i:0,on:false,
     let left=r.left+r.width/2-cw/2;left=Math.max(12,Math.min(W-cw-12,left));card.style.left=left+"px";card.style.top=top+"px"},
   end(){this.on=false;lsSet("bb.tourDone",true);const el=$("#tour");if(el)el.hidden=true;document.documentElement.classList.remove("tr-open")}
 };
-$("#help-btn").addEventListener("click",openHelp);$("#help-close").addEventListener("click",closeHelp);$("#help-scrim").addEventListener("click",closeHelp);
+$("#help-btn").addEventListener("click",openHelp);$("#hist2-close").addEventListener("click",closeHist);document.addEventListener("click",e=>{if(!e.target.closest("#iv-hist"))return;const x=Inv.items[Inv.editing];if(!x)return;openHist("History · "+(x.name||"Item"),Hist.html((x._h||[]).slice().sort((a,b)=>b.t-a.t),"No changes recorded yet."))});$("#hist2-scrim").addEventListener("click",closeHist);$("#prot-hist").addEventListener("click",()=>{try{flushAll()}catch(e){}const p=Store.data.protocols[S.prot.id]||S.prot;openHist("History · "+(p.name||"Experiment"),Hist.html(Hist.forProt(p)))});$("#help-close").addEventListener("click",closeHelp);$("#help-scrim").addEventListener("click",closeHelp);
 $("#help-q").addEventListener("input",renderHelp);$("#help-tour").addEventListener("click",()=>{closeHelp();Tour.start()});
 $("#help-q").addEventListener("keydown",e=>{if(e.key==="Escape"){if(e.target.value){e.target.value="";renderHelp();e.stopPropagation()}}});
 $("#help-list").addEventListener("click",e=>{const g=e.target.closest("[data-hgo]");if(g){helpGo(HELP[+g.dataset.hgo]);return}
@@ -2298,6 +2313,83 @@ const UNDO=[];let undoMute=0;
   Store.save=function(kind,obj){rec(kind,obj&&obj.id);return _save(kind,obj)};
   Store.remove=function(kind,id){rec(kind,id);return _remove(kind,id)};
   Store._rawSave=_save;Store._rawRemove=_remove;})();
+/* ---------- change history (quiet audit trail) ---------- */
+const Hist={open:new Map(),
+  dev(){const u=navigator.userAgent||"";return /iPhone/.test(u)?"iPhone":/iPad/.test(u)?"iPad":/Android/.test(u)?(/Mobile/.test(u)?"Android phone":"Android tablet"):/Windows/.test(u)?"Windows PC":/Mac/.test(u)?"Mac":/Linux/.test(u)?"Linux PC":"device"},
+  who(){try{return typeof Inv!=="undefined"&&Inv.remote()?Inv.me():""}catch(e){return ""}},
+  KL:{experiments:"gel set",gels:"gel",assays:"protein assay",records:"report"},
+  plur(n,w){return n+" "+w+(n===1?"":"s")},
+  outc(p){return p.status==="done"?(p.outcome==="fail"?"Didn't work":"Worked"):"In progress"},
+  imgN(p){return (p.imgs||[]).reduce((s,sc)=>s+(sc.images||[]).length,0)},
+  diff(kind,a,b){const out=[];const skip=new Set(["updatedAt","_h","by","draft","id","stepLog","days","lastOpen","opened","viewed"]);const solSig=x=>JSON.stringify((x||[]).map(e=>[e.id,!!e.prepared,(e.done||[]).length]).filter(e=>e[1]||e[2]));const keys=new Set([...Object.keys(a||{}),...Object.keys(b||{})]);
+    const ch=[...keys].filter(k=>!skip.has(k)&&JSON.stringify(a[k])!==JSON.stringify(b[k]));if(!ch.length)return out;
+    const nm=x=>x&&x.name?` "${String(x.name).slice(0,40)}"`:"";
+    if(kind==="protocols"){const steps=b.steps||[],sn=id=>{const s=steps.find(x=>x.id===id);return s?String(s.title||s.t||s.text||"").slice(0,40):""};
+      ch.forEach(k=>{
+        if(k==="name")out.push(`Renamed to "${String(b.name||"").slice(0,60)}"`);
+        else if(k==="status"||k==="outcome"||k==="completed"){const t=`Status: ${this.outc(b)}`;if(this.outc(a)!==this.outc(b)&&!out.includes(t))out.push(t)}
+        else if(k==="done"){const A=new Set(a.done||[]),B=new Set(b.done||[]);const add=[...B].filter(x=>!A.has(x)),rem=[...A].filter(x=>!B.has(x));
+          if(add.length)out.push(add.length<=2&&add.every(sn)?`Checked ${add.map(x=>`"${sn(x)}"`).join(", ")}`:`Checked ${this.plur(add.length,"step")}`);
+          if(rem.length)out.push(rem.length<=2&&rem.every(sn)?`Unchecked ${rem.map(x=>`"${sn(x)}"`).join(", ")}`:`Unchecked ${this.plur(rem.length,"step")}`)}
+        else if(k==="steps"){const d=(b.steps||[]).length-(a.steps||[]).length;out.push(d>0?`Added ${this.plur(d,"step")}`:d<0?`Removed ${this.plur(-d,"step")}`:"Edited steps")}
+        else if(k==="imgs"){const d=this.imgN(b)-this.imgN(a);out.push(d>0?`Added ${this.plur(d,"image")}`:d<0?`Removed ${this.plur(-d,"image")}`:"Edited images or band labels")}
+        else if(k==="plan")out.push("Changed planned days");
+        else if(k==="notes")out.push("Edited notes");
+        else if(k==="sols"){if(solSig(a.sols)!==solSig(b.sols))out.push("Updated recipe checklist")}
+        else if(k==="tools")out.push("Changed tools");
+        else if(k==="group"||k==="folder")out.push(b[k]?`Moved to "${String(b[k]).slice(0,40)}"`:"Moved out of project");
+        else if(k==="quant"||k==="qpcr")out.push(k==="quant"?"Edited densitometry":"Edited qPCR");
+        else if(!out.includes("Edited details"))out.push("Edited details")});
+      return out}
+    const L=this.KL[kind]||kind;
+    if(kind==="records")return ["Edited report"];
+    if(ch.includes("name")&&a.name&&b.name)out.push(`Renamed ${L} "${String(a.name).slice(0,30)}" to "${String(b.name).slice(0,40)}"`);
+    if(ch.some(k=>k!=="name"))out.push(`Edited ${L}${nm(b)}`);
+    return out},
+  protoOf(kind,o){if(!o)return null;if(kind==="protocols")return o.id;if(kind==="gels"){const x=Store.data.experiments[o.expId];return x?x.protoId:null}return o.protoId||null},
+  entry(c){const e={t:Date.now(),c:c.slice(0,8),d:this.dev()};const w=this.who();if(w)e.by=w;return e},
+  onSave(kind,obj){if(!obj||!obj.id||!["protocols","experiments","gels","assays","records"].includes(kind))return;if(!booted)return;
+    const prev=Store.data[kind]&&Store.data[kind][obj.id];const key=kind+"/"+obj.id;
+    if(!prev){obj._h=[this.entry([kind==="protocols"?"Created":`Added ${this.KL[kind]||kind}${obj.name?` "${String(obj.name).slice(0,40)}"`:""}`])];this.open.delete(key);return}
+    if(!Array.isArray(obj._h))obj._h=Array.isArray(prev._h)?prev._h.slice():[];
+    const now=Date.now();let s=this.open.get(key);const last=obj._h[obj._h.length-1];
+    if(s&&now-s.t0<10*60e3&&last&&last.t===s.et&&(last.by||"")===this.who()){const c=this.diff(kind,s.base,obj);if(!c.length){obj._h.pop();this.open.delete(key)}else{last.c=c.slice(0,8);last.t=now;s.et=now}return}
+    const c=this.diff(kind,prev,obj);if(!c.length)return;
+    const e=this.entry(c);obj._h.push(e);if(obj._h.length>150)obj._h.splice(0,obj._h.length-150);
+    this.open.set(key,{base:JSON.parse(JSON.stringify(Object.assign({},prev,{_h:undefined}))),t0:now,et:e.t})},
+  onRemove(kind,id){if(!booted)return;if(!["experiments","gels","assays","records"].includes(kind))return;const o=Store.data[kind]&&Store.data[kind][id];const pid=this.protoOf(kind,o);const p=pid&&Store.data.protocols[pid];if(!p)return;
+    const c=clone(p);if(!Array.isArray(c._h))c._h=[];c._h.push(this.entry([`Deleted ${this.KL[kind]||kind}${o&&o.name?` "${String(o.name).slice(0,40)}"`:""}`]));
+    if(S.prot&&S.prot.id===pid){S.prot._h=c._h}Store.save("protocols",c)},
+  forProt(p){const L=[];const add=(arr,where)=>(arr||[]).forEach(e=>L.push(Object.assign({w:where},e)));add(p._h,"");
+    Object.values(Store.data.experiments).filter(x=>x.protoId===p.id).forEach(x=>{add(x._h,"");Object.values(Store.data.gels).filter(g=>g.expId===x.id).forEach(g=>add(g._h,""))});
+    Object.values(Store.data.assays).filter(x=>x.protoId===p.id).forEach(x=>add(x._h,""));Object.values(Store.data.records).filter(x=>x.protoId===p.id).forEach(x=>add(x._h,""));
+    return L.sort((a,b)=>b.t-a.t)},
+  html(L,empty){if(!L.length)return `<p class="note">${empty||"No changes recorded yet. Changes are recorded from now on."}</p>`;
+    let day="";return L.slice(0,300).map(e=>{const d=new Date(e.t);const dk=d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:d.getFullYear()===new Date().getFullYear()?undefined:"numeric"});
+      const hd=dk!==day?(day=dk,`<div class="hsday">${esc(dk)}</div>`):"";
+      return `${hd}<div class="hsrow"><span class="hst">${d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</span><span class="hsc">${(e.c||[]).map(esc).join("<br>")}<small>${esc([e.by,e.d].filter(Boolean).join(" · "))}</small></span></div>`}).join("")}
+};
+(function(){const _s=Store.save,_r=Store.remove;
+  Store.save=function(kind,obj){try{Hist.onSave(kind,obj)}catch(e){console.warn(e)}return _s.call(Store,kind,obj)};
+  Store.remove=function(kind,id){try{Hist.onRemove(kind,id)}catch(e){console.warn(e)}return _r.call(Store,kind,id)}})();
+const IVL={name:"name",cat:"supplier / cat. no.",room:"lab",unit:"fridge / cabinet",shelf:"shelf",type:"type",tags:"tags",stock:"stock",temp:"storage temperature",qty:"amount",note:"note",notes:"note",cas:"CAS",lot:"lot",exp:"expiry",order:"order list"};
+Hist.inv=function(a,b){if(!b)return;const prevH=a&&Array.isArray(a._h)?a._h.slice():[];
+  if(!a){b._h=[this.entry(["Added"])];return}
+  const skip=new Set(["updatedAt","_h","by","id","created"]);const ch=[...new Set([...Object.keys(a),...Object.keys(b)])].filter(k=>!skip.has(k)&&JSON.stringify(a[k])!==JSON.stringify(b[k]));
+  b._h=prevH;if(!ch.length)return;
+  const c=ch.map(k=>{const v=b[k];if(k==="stock")return `Stock: ${v==="low"?"running low":v==="empty"?"empty":"OK"}`;if(k==="order")return !v?"Removed from order list":v.state==="ordered"?"Marked as ordered":"On order list";
+    if(k==="tags")return `Tags: ${(v||[]).join(", ")||"none"}`;if(k==="temp")return `Storage: ${TEMP_N[v||""]||v||"room temperature"}`;
+    const lab=IVL[k]||k;return typeof v==="string"&&v.length<=40?(v?`${lab[0].toUpperCase()+lab.slice(1)}: ${v}`:`Cleared ${lab}`):`Edited ${lab}`});
+  const now=Date.now(),last=b._h[b._h.length-1],me=this.who();
+  if(last&&now-last.t<10*60e3&&(last.by||"")===me){last.t=now;last.c=[...new Set([...(last.c||[]).filter(x=>!c.some(y=>y.split(":")[0]===x.split(":")[0])),...c])].slice(-8);return}
+  b._h.push(this.entry(c));if(b._h.length>40)b._h.splice(0,b._h.length-40)};
+function openHist(title,html){$("#hist2-title").textContent=title;$("#hist2-body").innerHTML=html;$("#hist2-scrim").hidden=false;$("#hist2-sheet").hidden=false;$("#hist2-sheet").scrollTop=0}
+function plCenter(){const card=$("#plate-card");if(!card)return;card.style.paddingLeft=card.style.paddingRight="";
+  if(!card.classList.contains("fs")||!matchMedia("(orientation:landscape)").matches)return;
+  requestAnimationFrame(()=>{const box=card.querySelector(".platebox"),pl=$("#pl-grid");if(!box||!pl)return;const free=box.clientWidth-pl.offsetWidth;if(free>8){const h=Math.floor(free/2);const cs=getComputedStyle(card);card.style.paddingLeft=(parseFloat(cs.paddingLeft)+h)+"px";card.style.paddingRight=(parseFloat(cs.paddingRight)+h)+"px"}})}
+addEventListener("resize",()=>{clearTimeout(plCenter._t);plCenter._t=setTimeout(plCenter,120)});
+function closeHist(){$("#hist2-scrim").hidden=true;$("#hist2-sheet").hidden=true}
+
 function undoBtn(){const b=document.getElementById("undo-btn");if(b){b.disabled=!UNDO.length;b.title=UNDO.length?"Undo last change":"Nothing to undo"}}
 function flushAll(){try{flushProt()}catch(e){}try{flushGel()}catch(e){}try{flushSol()}catch(e){}try{flushNotes()}catch(e){}
   ["assays","experiments","records"].forEach(k=>{if(dirty[k]){clearTimeout(saveT[k]);const o=k==="assays"?S.assay:k==="experiments"?S.exp:S.rec;if(o)Store.save(k,o);dirty[k]=false}})}
@@ -4230,7 +4322,7 @@ function renderPlate(){
   $("#pl-all").hidden=!S.plFill||nf===used.length;$("#pl-reset").hidden=!nf;
   $("#pl-fill").textContent=S.plFill?"Done filling":"Start filling";$("#pl-fill").classList.toggle("primary",S.plFill);
   $("#pl-hint").innerHTML=S.plFill?(next?`Next: <b>${next}</b>${P.w[next].label?" · "+esc(P.w[next].label):""}. Tap a well when it's filled.`:used.length?"All wells filled.":"Name some wells first."):"Tap wells to select them, or drag a box over several (on a phone: hold, then drag). A row letter or column number selects the whole line. Then give them a name and colour.";
-  const card=$("#plate-card");card.classList.toggle("fs",S.plFill);card.classList.toggle("loading",S.plFill);document.body.classList.toggle("fslock",S.plFill||!!S.loadMode);
+  const card=$("#plate-card");card.classList.toggle("fs",S.plFill);plCenter();card.classList.toggle("loading",S.plFill);document.body.classList.toggle("fslock",S.plFill||!!S.loadMode);
 }
 function plGrid(){const P=plate();const [Rn,Cn]=PL_FMT[P.fmt]||PL_FMT["96"];const head=["",...Array.from({length:Cn},(_,i)=>String(i+1))];const rows=[];
   for(let r=0;r<Rn;r++){const L=String.fromCharCode(65+r);rows.push([L,...Array.from({length:Cn},(_,i)=>((P.w[L+(i+1)]||{}).label||""))])}return{head,rows}}
@@ -4564,7 +4656,7 @@ const Inv={
   async flush(){if(!this.remote()||!navigator.onLine)return;const pend=lsGet("bb.inv.pend",{});const L=Object.values(pend);if(!L.length)return;
     try{const rows=L.map(x=>({lab_code:x.lab,id:x.id,data:x.body,deleted:!x.body,updated_ms:x.ms,updated_email:this.me()}));const {error}=await Sync.sb.from("inventory").upsert(rows,{onConflict:"lab_code,id"});if(error)throw error;
       const now=lsGet("bb.inv.pend",{});L.forEach(x=>{const k=x.lab+"/"+x.id;if(now[k]&&now[k].ms===x.ms)delete now[k]});lsSet("bb.inv.pend",now)}catch(e){setStatus("Storage not synced yet: "+(e.message||e),true)}},
-  put(item){const ms=Date.now();if(item){item.updatedAt=ms;item.by=this.me();this.items[item.id]=item}else return;this.saveCache();this.queue(item.id,item,ms)},
+  put(item){const ms=Date.now();if(item){try{Hist.inv(this.items[item.id],item)}catch(e){console.warn(e)}item.updatedAt=ms;item.by=this.me();this.items[item.id]=item}else return;this.saveCache();this.queue(item.id,item,ms)},
   del(id){delete this.items[id];this.saveCache();this.queue(id,null,Date.now())},
   queue(id,body,ms){if(!this.lab)return;const pend=lsGet("bb.inv.pend",{});pend[this.lab+"/"+id]={lab:this.lab,id,body,ms};lsSet("bb.inv.pend",pend);clearTimeout(this._t);this._t=setTimeout(()=>this.flush(),400)},
   genCode(){const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let c="";const r=crypto.getRandomValues(new Uint32Array(8));for(let i=0;i<8;i++)c+=A[r[i]%A.length];return c.slice(0,4)+"-"+c.slice(4)},
@@ -4716,7 +4808,7 @@ const Inv={
     $("#inv-list").innerHTML=h||`<div class="card"><p class="note" style="margin:0">${filt?"Nothing matches.":this.remote()&&!this.lab?"Create or join a lab to start the shared list.":"No items yet. Tap <b>+ Add</b> and write where a chemical is kept."}</p></div>`},
   edit(id){const x=id?this.items[id]:null;this.editing=x?x.id:"__new";$("#inv-form").hidden=false;$("#inv-form-t").textContent=x?"Edit item":"New item";
     $("#iv-name").value=x?x.name||"":"";$("#iv-cat").value=x?x.cat||"":"";$("#iv-room").value=x?x.room||"":(this.room||lsGet("bb.inv.lastRoom",""));$("#iv-place").value=x?x.place||"":"";$("#iv-unit").value=x?x.unit||"":(this.f.unit||"");$("#iv-type").value=x?x.type||"":(this.f.type||"");$("#iv-tags").value=x?(x.tags||[]).join(", "):this.f.tags.join(", ");this.tagSug();this.pkMode={};$("#iv-amt").value=x?x.amt||"":"";$("#iv-temp").value=x?x.temp||"":"";$("#iv-note").value=x?x.note||"":"";
-    this.setStock(x?x.stock||"ok":"ok");this.renderPks();$("#iv-del").hidden=!x;$("#iv-del").classList.remove("armed");$("#iv-del").textContent="Delete";$("#iv-meta").textContent=x&&x.updatedAt?`Last change ${x.by&&x.by!=="you"?"by "+x.by+" ":""}${new Date(x.updatedAt).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}`:"";
+    this.setStock(x?x.stock||"ok":"ok");this.renderPks();$("#iv-del").hidden=!x;$("#iv-del").classList.remove("armed");$("#iv-del").textContent="Delete";$("#iv-meta").innerHTML=x&&x.updatedAt?esc(`Last change ${x.by&&x.by!=="you"?"by "+x.by+" ":""}${new Date(x.updatedAt).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}`)+(Array.isArray(x._h)&&x._h.length?` · <button type="button" class="ivh" id="iv-hist">History</button>`:""):"";
     $("#inv-form").scrollIntoView({block:"start",behavior:"smooth"});setTimeout(()=>$("#iv-name").focus(),50)},
   close(){this.editing=null;$("#inv-form").hidden=true;this.renderList()},
   save(){const name=$("#iv-name").value.trim();if(!name){setStatus("Write what the item is",true);$("#iv-name").focus();return}
