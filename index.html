@@ -1156,6 +1156,7 @@ html.oncal #cal-btn{background:var(--accent);border-color:var(--accent);color:va
         <label class="f" id="g-lb-wrap">Loading buffer<select id="g-lb"><option value="4">4× Laemmli</option><option value="6">6×</option><option value="2">2×</option><option value="5">5×</option></select></label>
         <label class="f">Ladder (µL)<input id="g-ladder" type="text" inputmode="decimal"></label>
       </div>
+      <label class="chk" id="g-fixall-wrap" hidden style="margin:2px 0"><input type="checkbox" id="g-fixall"> Same tubes for all gels in this experiment</label>
       <div class="note" id="g-fix-hint" style="margin:2px 0 6px;line-height:1.45" hidden></div>
       <label class="f">Note<input id="g-note" type="text" placeholder="e.g. hippocampus, pIRS1 membrane"></label>
       <div class="row" style="justify-content:flex-end"><button class="btn danger sm" id="gel-del">Delete gel</button><button class="btn danger sm" id="exp-del" hidden>Delete experiment</button></div>
@@ -2601,16 +2602,19 @@ function showTab(t){document.documentElement.classList.toggle("oncal",t==="cal")
 $$("nav.tabs button").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
 
 /* ================= GEL ================= */
+function gelExp(g){return S.exp&&g&&S.exp.id===g.expId?S.exp:(g&&Store.data.experiments[g.expId])}
+function fixAllOn(g){const ex=gelExp(g);return !!(ex&&ex.fixAll)}
+function fixOf(g){const ex=gelExp(g);return ex&&ex.fixAll?num(ex.fixS):num(g.fixS)}
 function laneCalc(g,l){
   if(l.type!=="sample")return null;
   const ug=Number.isFinite(num(l.ug))?num(l.ug):num(g.targetUg),c=num(l.conc);
   if((g.mode||"premix")==="premix"){
     const f=mixFactor(g.mix),s=c>0?ug/c:NaN,load=s*f,lbv=load-s,mx=num(g.wellMax);let warn=null,bad=false;
-    const fx=num(g.fixS),fixed=fx>0;
+    const fx=fixOf(g),fixed=fx>0;
     if(!(c>0))warn="Concentration missing";
     else if(load>mx){bad=true;warn=`Needs ${fmt(load)} µL of mix but the well holds ${fmt(mx,0)} µL. Lower the µg.`}
-    else if(fixed&&load>fx*f){bad=true;warn=`Needs ${fmt(load)} µL of mix but the tube has ${fmt(fx*f)} µL. Mix at least ${Math.ceil((load+1)/f)} µL lysate for this one.`}
-    else if(fixed&&load>fx*f-1)warn=`Needs ${fmt(load)} of the ${fmt(fx*f)} µL in the tube; little to spare`;
+    else if(fixed&&load>fx*f-0.5){const own=Math.ceil((load+1)/f),r=x=>fmt(x,x%1?1:0);if(load<2)warn="Under 2 µL of mix; hard to load accurately";
+      return{ug,s:own,lb:own*(f-1),w:0,load,warn:`Own tube: needs ${fmt(load)} µL of mix, so mix ${r(own)} + ${r(own*(f-1))} µL for this one`,bad:false,premix:true,fixed:true,own:true}}
     else if(load<2)warn="Under 2 µL of mix; hard to load accurately";
     if(fixed)return{ug,s:fx,lb:fx*(f-1),w:0,load,warn,bad,premix:true,fixed:true};
     return{ug,s,lb:lbv,w:0,load,warn,bad,premix:true};
@@ -2632,7 +2636,7 @@ function renderGelSelect(){
 }
 function fillGelForm(){
   const g=S.gel;$("#x-name").value=S.exp.name||"";$("#x-date").value=S.exp.date||"";$("#g-name").value=g.name||"";$("#g-wells").value=String(g.wells);
-  $("#g-fix").value=g.fixS||"";$("#g-ug").value=g.targetUg;$("#g-final").value=g.finalUl;$("#g-max").value=g.wellMax;$("#g-lb").value=String(g.lbFactor);$("#g-mode").value=g.mode||"premix";$("#g-lbstock").value=g.lbStock||"ready";$("#g-lbextra").value=g.lbExtra??"10";$("#g-bme").value=g.bme||"";$("#g-lbcust").checked=!!g.lbCustom;$("#g-lbvol").value=g.lbVol||"";$("#g-lbvol-wrap").hidden=!g.lbCustom;fillMix();
+  $("#g-fix").value=(fixAllOn(g)?S.exp.fixS:g.fixS)||"";$("#g-ug").value=g.targetUg;$("#g-final").value=g.finalUl;$("#g-max").value=g.wellMax;$("#g-lb").value=String(g.lbFactor);$("#g-mode").value=g.mode||"premix";$("#g-lbstock").value=g.lbStock||"ready";$("#g-lbextra").value=g.lbExtra??"10";$("#g-bme").value=g.bme||"";$("#g-lbcust").checked=!!g.lbCustom;$("#g-lbvol").value=g.lbVol||"";$("#g-lbvol-wrap").hidden=!g.lbCustom;fillMix();
   $("#g-ladder").value=g.ladderUl;$("#g-note").value=g.note||"";$("#gel-del").classList.remove("armed");$("#gel-del").textContent="Delete gel";$("#gel-del2").classList.remove("armed");$("#gel-del2").textContent="Delete gel";$("#gel-clear").classList.remove("armed");$("#gel-clear").textContent="Clear samples";$("#exp-del").classList.remove("armed");$("#exp-del").textContent="Delete experiment";
 }
 function ladderBands(){const pos=[8,17,27,38,50,64,80,96,110];const cols=["var(--l4)","var(--l1)","var(--l1)","var(--l2)","var(--l1)","var(--l3)","var(--l1)","var(--l1)","var(--l1)"];
@@ -2643,11 +2647,16 @@ function renderGel(){
   $("#gel-sub").textContent=[S.exp.name,S.exp.date?new Date(S.exp.date+"T12:00").toLocaleDateString("en-GB"):"",g.note].filter(Boolean).join(" · ");
   const pm=(g.mode||"premix")==="premix";$("#gh-3").textContent=pm?"Lysate µL":"Sample µL";$("#gh-4").textContent=pm?"Laemmli µL":"Buffer µL";$("#gh-5").textContent=pm?"Load µL":"Water µL";
   $("#g-final-wrap").hidden=pm;$("#g-lb-wrap").hidden=pm;$("#g-mix-wrap").hidden=!pm;$("#g-fix-wrap").hidden=!pm;
-  {const fh=$("#g-fix-hint");const f=mixFactor(g.mix);let mxL=0,n=0;g.lanes.forEach(l=>{if(l.type!=="sample")return;const ug=Number.isFinite(num(l.ug))?num(l.ug):num(g.targetUg),c=num(l.conc);if(c>0&&ug>0){mxL=Math.max(mxL,ug/c*f);n++}});
-    const sug=n?Math.max(1,Math.ceil((mxL+1)/f)):0,fx=num(g.fixS),r=x=>fmt(x,x%1?1:0);
+  {const fh=$("#g-fix-hint");const f=mixFactor(g.mix);const all=fixAllOn(g);const GS=all?gelsOf(S.exp.id).filter(x=>!x.draft||x.id===g.id).map(x=>x.id===g.id?g:x).filter(x=>(x.mode||"premix")==="premix"):[g];if(!GS.some(x=>x.id===g.id))GS.push(g);
+    const needs=[];GS.forEach(G=>{const fG=mixFactor(G.mix);G.lanes.forEach(l=>{if(l.type!=="sample")return;const ug=Number.isFinite(num(l.ug))?num(l.ug):num(G.targetUg),c=num(l.conc);if(c>0&&ug>0&&ug/c*fG<=num(G.wellMax))needs.push((ug/c*fG+1)/fG)})});
+    needs.sort((a,b)=>a-b);const n=needs.length;const med=n?needs[Math.floor((n-1)/2)]:0;const cover=needs.filter(x=>x<=Math.max(med*2,med+3));const nOut=n-cover.length;
+    const sug=n?Math.max(1,Math.ceil(cover.length?cover[cover.length-1]:needs[n-1])):0,fx=fixOf(g),r=x=>fmt(x,x%1?1:0);
+    const nOwn=fx>0?needs.filter(x=>x>fx+1e-9).length:0;
+    const nG=gelsOf(S.exp.id).filter(x=>(x.mode||"premix")==="premix").length+(gelsOf(S.exp.id).some(x=>x.id===g.id)?0:1);
+    $("#g-fixall-wrap").hidden=!pm||nG<2;$("#g-fixall").checked=all;$("#g-fix-wrap").firstChild.textContent=all?"Same lysate in every tube, all gels (µL)":"Same lysate in every tube (µL)";
     fh.hidden=!pm||(!n&&!(fx>0));
-    if(fx>0)fh.innerHTML=`Every tube: <b>${r(fx)} µL lysate + ${r(fx*(f-1))} µL Laemmli</b> (${r(fx*f)} µL of mix). The Load column is how much of it goes into each well.${n&&sug>fx?` <span style="color:var(--bad)">Some wells need more; at least ${sug} µL lysate covers all.</span> <button type="button" class="linkbtn" data-fixuse="${sug}">Use ${sug} µL</button>`:""} <button type="button" class="linkbtn" data-fixuse="">Exact amounts instead</button>`;
-    else if(n)fh.innerHTML=`Same pipette setting for every sample: <b>${sug} µL lysate + ${r(sug*(f-1))} µL Laemmli</b> is enough for all wells (with about 1 µL to spare). <button type="button" class="linkbtn" data-fixuse="${sug}">Use this</button>`}
+    if(fx>0)fh.innerHTML=`Every tube: <b>${r(fx)} µL lysate + ${r(fx*(f-1))} µL Laemmli</b> (${r(fx*f)} µL of mix). The Load column is how much of it goes into each well.${nOwn?` <b>${nOwn} sample${nOwn>1?"s need":" needs"} more</b> and ${nOwn>1?"get their":"gets its"} own tube (see the list).`:""}${n&&sug!==fx&&nOwn>nOut?` <button type="button" class="linkbtn" data-fixuse="${sug}">Use ${sug} µL</button>`:""} <button type="button" class="linkbtn" data-fixuse="">Exact amounts instead</button>`;
+    else if(n)fh.innerHTML=`Same pipette setting for every sample: <b>${sug} µL lysate + ${r(sug*(f-1))} µL Laemmli</b> is enough for ${nOut?`all wells except ${nOut} (they get their own bigger tube, shown in the list)`:"all wells"}${all?` on all ${GS.length} gels`:""} (about 1 µL to spare). <button type="button" class="linkbtn" data-fixuse="${sug}">Use this</button>`}
   const mf=fmt(mixFactor(g.mix),2).replace(/\.?0+$/,"");
   $("#g-mode-hint").textContent=pm?`Mix lysate with Laemmli ${g.mix||"1:1"}, then load the "Load µL" volume = (µg ÷ concentration) × ${mf}.`:"Each well gets lysate, loading buffer and water up to the total volume.";
   const fillable=g.lanes.filter(l=>l.type!=="empty"),nLoaded=fillable.filter(l=>l.loaded).length;
@@ -2699,7 +2708,8 @@ function renderLbPrep(g,thisTot,thisN){
   const tl=fmt(T,T%1?2:0).replace(/\.00$/,"")+"×";
   const bme=num(g.bme),bv=bme>0?V*bme/100:0;
   let h=cust?`Prepare <span class="big">${fmt(V)} µL</span> of <b>${tl}</b> Laemmli <span class="muted">(your volume${nS&&lbTot>0?`; samples need ${fmt(lbTot)} µL`:""})</span>`
-    :`Prepare <span class="big">${fmt(V)} µL</span> of <b>${tl}</b> Laemmli <span class="muted">(${fmt(lbTot)} µL for ${nS} sample${nS>1?"s":""}${gs.length>1?` on ${gs.length} gels; this gel ${fmt(thisTot)} µL`:""} + ${fmt(ex,0)}%)</span>`;
+    :`Prepare <span class="big">${fmt(V)} µL</span> of <b>${tl}</b> Laemmli <span class="muted">(${fmt(lbTot)} µL for ${nS} sample${nS>1?"s":""}${gs.length>1?` on ${gs.length} gels; this gel ${fmt(thisTot)} µL`:""} + ${fmt(ex,0)}%)</span>`+(()=>{const fxg=gs.filter(x=>(x.mode||"premix")==="premix"&&fixOf(x)>0);if(!fxg.length)return "";
+      return `<div class="muted" style="margin-top:4px">${fxg.map(x=>{const C=x.lanes.map(l=>laneCalc(x,l)).filter(Boolean),own=C.filter(c=>c.own),n=C.length-own.length,v=fixOf(x)*(mixFactor(x.mix)-1),r=y=>fmt(y,y%1?1:0);return `${gs.length>1?esc(x.name||"Gel")+": ":""}${n} tube${n===1?"":"s"} × ${r(v)} µL${own.length?` + ${own.map(c=>r(c.lb)).join(", ")} µL (own tube${own.length>1?"s":""})`:""}`}).join(" · ")}${gs.length>fxg.length?" · other gels: exact amounts":""}</div>`})();
   if(cust&&nS&&lbTot>V+1e-9)h+=`<div style="color:var(--bad);margin-top:6px">Not enough for your samples: they need ${fmt(lbTot)} µL.</div>`;
   const st=g.lbStock||"ready";
   if(st!=="ready"){const S=num(st);
@@ -2764,9 +2774,13 @@ const MIX_PRE=["1:1","1:2","2:1","3:1"];
 function mixParse(s){const m=String(s||"").replace(/\s+/g,"").replace(",",".").match(/^(\d*\.?\d+)[:\/](\d*\.?\d+)$/);if(!m)return null;const a=+m[1],b=+m[2];if(!(a>0)||!(b>=0))return null;return {a,b,f:(a+b)/a}}
 function mixFactor(s){const p=mixParse(s||"1:1");return p?p.f:2}
 function fillMix(){const g=S.gel,v=g.mix||"1:1",pre=MIX_PRE.includes(v);$("#g-mix").value=pre?v:"__c";$("#g-mixc").hidden=pre;if(!pre)$("#g-mixc").value=v;$("#g-mixc").classList.toggle("bad",!pre&&!mixParse(v))}
-const gelBind=[["#g-lbstock","lbStock"],["#g-lbextra","lbExtra"],["#g-bme","bme"],["#g-mode","mode"],["#g-name","name"],["#g-wells","wells"],["#g-ug","targetUg"],["#g-final","finalUl"],["#g-max","wellMax"],["#g-lb","lbFactor"],["#g-ladder","ladderUl"],["#g-note","note"],["#g-fix","fixS"]];
+const gelBind=[["#g-lbstock","lbStock"],["#g-lbextra","lbExtra"],["#g-bme","bme"],["#g-mode","mode"],["#g-name","name"],["#g-wells","wells"],["#g-ug","targetUg"],["#g-final","finalUl"],["#g-max","wellMax"],["#g-lb","lbFactor"],["#g-ladder","ladderUl"],["#g-note","note"]];
 $("#g-lbcust").addEventListener("change",e=>{S.gel.lbCustom=e.target.checked;$("#g-lbvol-wrap").hidden=!e.target.checked;if(e.target.checked&&!S.gel.lbVol){const r=gelsOf(S.exp.id).reduce((a,x)=>a+gelLb(x.id===S.gel.id?S.gel:x).t,0);if(r>0){S.gel.lbVol=String(Math.ceil(r*1.1/10)*10);$("#g-lbvol").value=S.gel.lbVol}}renderGel();queueSave("gels");if(e.target.checked)$("#g-lbvol").focus()});
-$("#g-fix-hint").addEventListener("click",e=>{const b=e.target.closest("[data-fixuse]");if(!b)return;S.gel.fixS=b.dataset.fixuse;$("#g-fix").value=S.gel.fixS;renderGel();queueSave("gels")});
+function setFix(v){if(fixAllOn(S.gel)){S.exp.fixS=v;queueSave("experiments")}else{S.gel.fixS=v;queueSave("gels")}}
+$("#g-fix-hint").addEventListener("click",e=>{const b=e.target.closest("[data-fixuse]");if(!b)return;setFix(b.dataset.fixuse);$("#g-fix").value=b.dataset.fixuse;renderGel()});
+$("#g-fix").addEventListener("input",e=>{setFix(e.target.value);renderGel()});
+$("#g-fixall").addEventListener("change",e=>{const on=e.target.checked;if(on){S.exp.fixAll=true;if(!(num(S.exp.fixS)>0))S.exp.fixS=S.gel.fixS||""}else{delete S.exp.fixAll;if(num(S.exp.fixS)>0)S.gel.fixS=S.exp.fixS;queueSave("gels")}queueSave("experiments");fillGelForm();renderGel();
+  if(on&&!(num(S.exp.fixS)>0)){const u=$("#g-fix-hint [data-fixuse]");if(u&&u.dataset.fixuse){setFix(u.dataset.fixuse);fillGelForm();renderGel()}}});
 $("#g-lbvol").addEventListener("input",e=>{S.gel.lbVol=e.target.value;renderGel();queueSave("gels")});
 $("#g-mix").addEventListener("change",e=>{const v=e.target.value;if(v==="__c"){const cur=MIX_PRE.includes(S.gel.mix||"1:1")?"":S.gel.mix;$("#g-mixc").hidden=false;$("#g-mixc").value=cur||"";$("#g-mixc").focus();if(cur){S.gel.mix=cur}}else{S.gel.mix=v;$("#g-mixc").hidden=true}renderGel();queueSave("gels")});
 $("#g-mixc").addEventListener("input",e=>{const v=e.target.value.replace(/\s+/g,"").replace(/\//,":");const ok=!!mixParse(v);e.target.classList.toggle("bad",!ok&&!!v);if(ok){S.gel.mix=v;renderGel();queueSave("gels")}});
@@ -4626,7 +4640,7 @@ function benchHTML(){const inc=k=>{const i=$(`#bench-opts [data-bo="${k}"]`);ret
   if(inc("gel")&&S.exp){const gs=gelsOf(S.exp.id).filter(g=>!g.draft).map(g=>g.id===(S.gel&&S.gel.id)?S.gel:g);
     h+=`<h2>Gel loading plan</h2>`;
     gs.forEach(g=>{const pm=(g.mode||"premix")==="premix";
-      h+=`<h3>${e(g.name||"Gel")} · ${e(g.wells)} wells · ${fmt(num(g.targetUg),0)} µg/well${pm?` · premix with Laemmli ${e(g.mix||"1:1")}${num(g.fixS)>0?`, every tube ${e(g.fixS)} µL lysate + ${fmt(num(g.fixS)*(mixFactor(g.mix)-1))} µL Laemmli`:""}`:` · ${fmt(num(g.finalUl),0)} µL total, ${e(g.lbFactor)}× buffer`}${g.note?" · "+e(g.note):""}</h3>
+      h+=`<h3>${e(g.name||"Gel")} · ${e(g.wells)} wells · ${fmt(num(g.targetUg),0)} µg/well${pm?` · premix with Laemmli ${e(g.mix||"1:1")}${fixOf(g)>0?`, every tube ${fmt(fixOf(g),fixOf(g)%1?1:0)} µL lysate + ${fmt(fixOf(g)*(mixFactor(g.mix)-1))} µL Laemmli`:""}`:` · ${fmt(num(g.finalUl),0)} µL total, ${e(g.lbFactor)}× buffer`}${g.note?" · "+e(g.note):""}</h3>
       <table><colgroup><col style="width:5%"><col style="width:7%"><col style="width:36%"><col style="width:12%"><col style="width:13%"><col style="width:13%"><col style="width:14%"></colgroup><thead><tr><th>✓</th><th>Well</th><th>Sample</th><th>µg/µL</th>${pm?"<th>Lysate µL</th><th>Laemmli µL</th><th>Load µL</th>":"<th>Sample µL</th><th>Buffer µL</th><th>Water µL</th>"}</tr></thead><tbody>`+
       g.lanes.map((l,i)=>{if(l.type==="empty")return `<tr><td><span class="bs-bx"></span></td><td class="bs-n">${i+1}</td><td style="color:#888">empty</td><td></td><td></td><td></td><td></td></tr>`;
         if(l.type==="ladder")return `<tr><td><span class="bs-bx"></span></td><td class="bs-n">${i+1}</td><td><b>${e(l.name||"Ladder")}</b></td><td></td><td></td><td></td><td class="bs-n bs-big">${fmt(num(g.ladderUl))}</td></tr>`;
