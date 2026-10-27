@@ -1114,7 +1114,7 @@ html.oncal #cal-btn{background:var(--accent);border-color:var(--accent);color:va
       <div class="chips" id="gel-chips"></div>
       <div class="row" style="justify-content:space-between">
         <p class="note" style="margin:0;flex:1" id="gel-hint">Tap a well to edit it. Hold and drag a well to move it.</p>
-        <div class="row"><button class="btn sm ghost" id="gel-loadall" hidden>Check all</button><button class="btn sm ghost" id="gel-loadreset" hidden>Reset</button><button class="btn sm" id="gel-loadmode">Start loading</button></div>
+        <div class="row"><button class="btn sm ghost" id="gel-prevgel" hidden aria-label="Previous gel">‹ Prev</button><button class="btn sm ghost" id="gel-loadall" hidden>Check all</button><button class="btn sm ghost" id="gel-loadreset" hidden>Reset</button><button class="btn sm" id="gel-loadmode">Start loading</button><button class="btn sm" id="gel-nextgel" hidden></button></div>
       </div>
     </div>
 
@@ -2670,6 +2670,8 @@ function renderGel(){
   const fillable=g.lanes.filter(l=>l.type!=="empty"),nLoaded=fillable.filter(l=>l.loaded).length;
   const nextIdx=g.lanes.findIndex(l=>l.type!=="empty"&&!l.loaded);
   $("#gel-loadmode").textContent=S.loadMode?"Done loading":"Start loading";$("#gel-loadmode").classList.toggle("primary",!!S.loadMode);
+  {const gs=gelsOf(S.exp.id).filter(x=>!x.draft||x.id===S.gel.id);const gi=gs.findIndex(x=>x.id===g.id);const nx=gi>=0?gs[gi+1]:null,pv=gi>0?gs[gi-1]:null;const nb=$("#gel-nextgel"),pb=$("#gel-prevgel");
+    nb.hidden=!S.loadMode||!nx;pb.hidden=!S.loadMode||!pv;if(nx){nb.textContent=`Next: ${nx.name||"gel"} ›`;nb.dataset.g=nx.id;nb.classList.toggle("primary",S.loadMode&&nextIdx<0)}if(pv)pb.dataset.g=pv.id}
   $("#gel-loadreset").hidden=!nLoaded;$("#gel-loadall").hidden=!S.loadMode||nLoaded===fillable.length;$("#gel-vis").closest(".card").classList.toggle("loading",!!S.loadMode);$("#gel-vis").closest(".card").classList.toggle("fs",!!S.loadMode);document.body.classList.toggle("fslock",!!S.loadMode||!!S.plFill);
   let nextVol="";if(S.loadMode&&nextIdx>=0){const nl=g.lanes[nextIdx];if(nl.type==="ladder")nextVol=fmt(num(g.ladderUl));else{const nc=laneCalc(g,nl);if(nc&&Number.isFinite(nc.s))nextVol=fmt(nc.premix?nc.load:nc.s)}}
   $("#gel-hint").innerHTML=S.loadMode?(nextIdx<0?"All wells loaded.":`Next: well <b>${nextIdx+1}</b>${g.lanes[nextIdx].name?" · "+esc(g.lanes[nextIdx].name):""}${nextVol?` · <b>${nextVol} µL</b>`:""}<div class="note" style="font-weight:400">Tap a well when it's loaded.</div>`):"Tap a well to edit it. Hold and drag a well to move it.";
@@ -2760,6 +2762,8 @@ $("#gel-vis").addEventListener("contextmenu",e=>{if(e.target.closest(".well"))e.
 })();
 async function fsOn(){try{const el=document.documentElement;if(!document.fullscreenElement&&el.requestFullscreen)await el.requestFullscreen()}catch(e){}try{screen.orientation&&screen.orientation.lock&&await screen.orientation.lock("landscape")}catch(e){}}
 function fsOff(){try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}catch(e){}try{document.fullscreenElement&&document.exitFullscreen&&document.exitFullscreen()}catch(e){}}
+function loadGoGel(id){const g=Store.data.gels[id];if(!g||g.id===S.gel.id)return;flushGel();S.gel=clone(g);fillGelForm();renderGelSelect();renderGel();setStatus(`Loading ${S.gel.name||"gel"}`)}
+$("#gel-nextgel").addEventListener("click",e=>loadGoGel(e.currentTarget.dataset.g));$("#gel-prevgel").addEventListener("click",e=>loadGoGel(e.currentTarget.dataset.g));
 $("#gel-loadmode").addEventListener("click",()=>{S.loadMode=!S.loadMode;if(S.loadMode&&collapsedSet.has("vis")){collapsedSet.delete("vis");lsSet("bb.collapsed",[...collapsedSet]);$('[data-ck="vis"]').classList.remove("collapsed")}renderGel();if(S.loadMode){fsOn();wakeOn()}else{fsOff();wakeOff()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&S.loadMode&&$("#sheet").hidden){S.loadMode=false;renderGel();fsOff()}});
 $("#gel-loadall").addEventListener("click",()=>{S.gel.lanes.forEach(l=>{if(l.type!=="empty")l.loaded=true});renderGel();queueSave("gels");setStatus("All wells checked")});
