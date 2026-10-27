@@ -974,6 +974,14 @@ html.oncal #cal-btn{background:var(--accent);border-color:var(--accent);color:va
 .thumb.addt span{font-size:24px;line-height:1;color:var(--accent)}
 .thumb.addt:hover,.thumb.addt.over{border-color:var(--accent);color:var(--accent)}
 .isec .thumbs:empty{display:none}
+.isec .isave{justify-content:flex-end}
+.isec.saved{gap:8px}
+.isec.saved .ihead{align-items:center}
+.isec.saved .ititle{font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.isec.saved .icount{flex:none}
+.isec.saved .thumbs{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+.isec.saved .imeta{font-size:13px;color:var(--muted)}
+.isec.saved .inotes{font-size:14px;white-space:pre-wrap;color:var(--ink);border-left:3px solid var(--line);padding:2px 0 2px 10px}
 .mixrow{display:flex;flex-direction:column;gap:6px}.mixrow select,.mixrow input{width:100%;min-width:0}.mixrow input.bad{border-color:var(--bad)}
 .pcard .t .abl{display:block;font:500 12px/1.3 var(--sans);color:var(--muted);margin-top:2px;white-space:normal}
 .abrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}.abrow .f:nth-child(3){grid-column:1/-1}
@@ -5181,14 +5189,23 @@ function imgSrc(im){if(im.asset)return "/_blob/"+im.asset;const d=Store.data.img
 function secs(){const p=S.prot;if(!Array.isArray(p.imgs))p.imgs=[];return p.imgs}
 function renderImages(){
   if(!S.prot||isTpl())return;const L=secs();$("#img-empty").hidden=!!L.length;$("#img-empty").innerHTML=imgEmptyText();abSuggest();
-  $("#img-list").innerHTML=L.map(sc=>`<div class="isec${S.imgTarget===sc.id?" target":""}" data-s="${esc(sc.id)}">
+  const isSaved=sc=>sc.saved===undefined?(sc.images||[]).length>0:!!sc.saved;
+  $("#img-list").innerHTML=L.map(sc=>isSaved(sc)?imgSavedHTML(sc):`<div class="isec${S.imgTarget===sc.id?" target":""}" data-s="${esc(sc.id)}">
     <div class="ihead"><span class="tag">${IT_L[sc.type]||"Image"}</span><input id="is-${esc(sc.id)}-t" data-k="title" type="text" value="${esc(sc.title||"")}"><button class="btn sm ghost danger" data-a="delsec">Delete</button></div>
     ${abFields(sc)}
     <div class="thumbs">${(sc.images||[]).map(im=>{const src=imgSrc(im);const n=(im.ann||[]).length;return `<div class="thumb" data-i="${esc(im.id)}">${src?`<img src="${esc(src)}" alt="${esc(sc.title||"")}" data-a="view">`:`<span class="up">Loading…</span>`}<button class="x" data-a="delimg" aria-label="Remove image">×</button>${src?`<button class="annb" data-a="view" type="button">${n?`🏷 ${n} label${n>1?"s":""}`:"🏷 Label bands"}</button>`:""}</div>`}).join("")}${(sc.images||[]).length?`<button class="thumb addt" type="button" data-a="pick" data-drop="1" title="Add another image (or paste / drop it here)"><span>＋</span>Add image</button>`:""}</div>
     ${(sc.images||[]).length?"":`<div class="drop" tabindex="0" contenteditable="true" data-drop="1" aria-label="Paste an image here">Paste an image here (tap, then Paste · or Ctrl+V), drop a file, or<button class="btn sm" data-a="pick" contenteditable="false">Choose image…</button></div>`}
     <label class="f">Notes<textarea id="is-${esc(sc.id)}-n" data-k="notes" style="min-height:48px;font-family:var(--sans);font-size:14px" placeholder="What you see, dilution notes, stripping…">${esc(sc.notes||"")}</textarea></label>
+    <div class="row isave"><button class="btn primary sm" data-a="save" type="button">Save</button></div>
   </div>`).join("");
 }
+function imgSavedHTML(sc){const id=esc(sc.id);const meta=[sc.ab1?`Primary: ${sc.ab1}`:"",sc.ab2?`Secondary: ${sc.ab2}`:"",sc.exp?`Detection: ${sc.exp}`:""].filter(Boolean);
+  return `<div class="isec saved" data-s="${id}">
+    <div class="ihead"><span class="tag">${IT_L[sc.type]||"Image"}</span><b class="ititle">${esc(sc.title||IT_L[sc.type]||"Images")}</b><span class="note icount">${(sc.images||[]).length} image${(sc.images||[]).length===1?"":"s"}</span><button class="btn sm ghost" data-a="edit" type="button">✎ Edit</button></div>
+    ${meta.length?`<div class="imeta">${meta.map(esc).join(" · ")}</div>`:""}
+    <div class="thumbs">${(sc.images||[]).map(im=>{const src=imgSrc(im);const n=(im.ann||[]).length;return `<div class="thumb" data-i="${esc(im.id)}">${src?`<img src="${esc(src)}" alt="${esc(sc.title||"")}" data-a="view">`:`<span class="up">Loading…</span>`}${src&&n?`<button class="annb" data-a="view" type="button">🏷 ${n} label${n>1?"s":""}</button>`:""}</div>`}).join("")}</div>
+    ${sc.notes?`<div class="inotes">${esc(sc.notes)}</div>`:""}
+  </div>`}
 const AB_TYPES=["membrane","section","region","control","overview"];
 function abFields(sc){if(!AB_TYPES.includes(sc.type))return "";const id=esc(sc.id);
   return `<div class="abrow"><label class="f">Primary antibody<input id="is-${id}-a1" data-k="ab1" type="text" list="ab-list" value="${esc(sc.ab1||"")}" placeholder="e.g. anti-pIRS1 (Ser307) 1:1000"></label><label class="f">Secondary antibody<input id="is-${id}-a2" data-k="ab2" type="text" list="ab-list" value="${esc(sc.ab2||"")}" placeholder="e.g. anti-rabbit HRP 1:5000"></label>${sc.type==="membrane"?`<label class="f">Exposure / detection<input id="is-${id}-ex" data-k="exp" type="text" value="${esc(sc.exp||"")}" placeholder="e.g. ECL, 30 s"></label>`:""}</div>`}
@@ -5196,7 +5213,7 @@ function abSuggest(){const set=new Map();const add=v=>{v=String(v||"").trim();if
   try{Object.values(Inv.items||{}).forEach(x=>{if(/antibod|protutij/i.test(x.type||"")||/^anti[- ]/i.test(x.name||""))add(x.name)})}catch(e){}
   protList().forEach(p=>{(p.imgs||[]).forEach(sc=>{add(sc.ab1);add(sc.ab2)});stepAbs(p).forEach(add)});
   const dl=$("#ab-list");if(dl)dl.innerHTML=[...set.values()].sort((a,b)=>a.localeCompare(b)).map(v=>`<option value="${esc(v)}"></option>`).join("")}
-function addSection(type){const L=secs();const n=L.filter(x=>x.type===type).length+1;const sc={id:uid(),type,title:`${IT_L[type]} ${n}`,notes:"",images:[],created:Date.now()};{const P=stepAbs(S.prot,"p"),Q=stepAbs(S.prot,"s");if(type!=="gel"&&P[n-1]){sc.ab1=P[n-1];if(Q[n-1])sc.ab2=Q[n-1]}}L.push(sc);S.imgTarget=sc.id;queueSave("protocols");renderImages();
+function addSection(type){const L=secs();const n=L.filter(x=>x.type===type).length+1;const sc={id:uid(),type,title:`${IT_L[type]} ${n}`,notes:"",images:[],created:Date.now(),saved:false};{const P=stepAbs(S.prot,"p"),Q=stepAbs(S.prot,"s");if(type!=="gel"&&P[n-1]){sc.ab1=P[n-1];if(Q[n-1])sc.ab2=Q[n-1]}}L.push(sc);S.imgTarget=sc.id;queueSave("protocols");renderImages();
   const el=document.querySelector(`.isec[data-s="${sc.id}"]`);if(el){el.scrollIntoView({block:"center"});const t=el.querySelector('input[data-k="title"]');t&&t.select()}}
 function blobToImage(blob){return new Promise((ok,no)=>{const u=URL.createObjectURL(blob);const im=new Image();im.onload=()=>ok({im,u});im.onerror=()=>{URL.revokeObjectURL(u);no(new Error("That file is not an image"))};im.src=u})}
 async function compressToDataURL(blob,maxBytes){const {im,u}=await blobToImage(blob);let W=im.naturalWidth,H=im.naturalHeight,side=1600,q=.85,out="";
@@ -5221,6 +5238,8 @@ $("#img-list").addEventListener("focusin",e=>{const c=e.target.closest("[data-s]
 $("#img-list").addEventListener("beforeinput",e=>{if(e.target.closest&&e.target.closest("[data-drop]")&&e.inputType!=="insertFromPaste")e.preventDefault()});
 $("#img-list").addEventListener("click",async e=>{const c=e.target.closest("[data-s]");if(!c)return;const sc=secs().find(x=>x.id===c.dataset.s);const b=e.target.closest("[data-a]");if(!b||!sc)return;const a=b.dataset.a;
   if(a==="pick"){e.preventDefault();S.imgTarget=sc.id;$("#img-file").click()}
+  else if(a==="save"){sc.saved=true;if(S.imgTarget===sc.id)S.imgTarget=null;queueSave("protocols");renderImages();setStatus(`${sc.title||"Images"} saved`);const el=document.querySelector(`.isec[data-s="${CSS.escape(sc.id)}"]`);el&&el.scrollIntoView({block:"nearest",behavior:"smooth"})}
+  else if(a==="edit"){sc.saved=false;S.imgTarget=sc.id;queueSave("protocols");renderImages();const el=document.querySelector(`.isec[data-s="${CSS.escape(sc.id)}"]`);if(el){const t=el.querySelector("textarea");t&&t.focus({preventScroll:true})}}
   else if(a==="view"){const id=b.closest("[data-i]").dataset.i;Ann.open(sc.id,id)}
   else if(a==="delimg"){if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Delete?";setTimeout(()=>{b.classList.remove("armed");b.textContent="×"},3000);return}
     const id=b.closest("[data-i]").dataset.i;const im=(sc.images||[]).find(x=>x.id===id);sc.images=(sc.images||[]).filter(x=>x.id!==id);queueSave("protocols");renderImages();
