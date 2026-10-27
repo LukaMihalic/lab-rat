@@ -5350,7 +5350,7 @@ const collapsedSet=new Set(lsGet("bb.collapsed",[]));const ckUpd=new Map();
 function collapseInside(){["gel","assay","prot","qset","qres","smp","img","quant","hist"].forEach(t=>{const sec=$("#tab-"+t);if(!sec)return;
     const cards=[...sec.querySelectorAll(".card.collapsible")];const dets=[...sec.querySelectorAll("details.card")];
     if(cards.length+dets.length<2)return;
-    cards.forEach(c=>{const keep=c.dataset.ck==="vis";keep?collapsedSet.delete(c.dataset.ck):collapsedSet.add(c.dataset.ck);const u=ckUpd.get(c.dataset.ck);u&&u()});dets.forEach(d=>d.open=false)});
+    cards.forEach(c=>{const keep=c.dataset.ck==="vis"||!!c.querySelector("#prot-steps");keep?collapsedSet.delete(c.dataset.ck):collapsedSet.add(c.dataset.ck);const u=ckUpd.get(c.dataset.ck);u&&u()});dets.forEach(d=>d.open=false)});
   const pc=$("#plate-card");if(pc){collapsedSet.add("plate");const u=ckUpd.get("plate");u&&u()}
   lsSet("bb.collapsed",[...collapsedSet])}
 $$(".card.collapsible").forEach(card=>{const k=card.dataset.ck,h=card.querySelector(".chead");const b=document.createElement("button");b.className="ctog";b.type="button";
