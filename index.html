@@ -4708,16 +4708,21 @@ async function invImport(file){try{
   if(!rows){setStatus("Couldn't find the columns. Use the same columns as Export (Item, Lab / room, Fridge / cabinet…)",true);return}
   const TR={};Object.entries(TEMP_N).forEach(([k,v])=>{TR[norm(v)]=k;TR[norm(k)]=k});Object.assign(TR,{rt:"",sobna:"",sobnatemperatura:"",fridge:"4",frizider:"4","20":"-20",freezer:"-20",zamrzivac:"-20","80":"-80"});
   const SK={ok:"ok",runninglow:"low",low:"low",empty:"empty",nema:"empty",malo:"low"};
-  const byKey=new Map();Object.values(Inv.items).forEach(x=>byKey.set(norm(x.name)+"|"+norm(x.room),x));
+  const fk=x=>[x.name,x.room,x.unit,x.place].map(norm).join("|"),nk=x=>norm(x.name)+"|"+norm(x.room);
+  const byKey=new Map(),loose=new Map(),claimed=new Set();Object.values(Inv.items).forEach(x=>{byKey.set(fk(x),x);const k=nk(x);if(!loose.has(k))loose.set(k,[]);loose.get(k).push(x)});
+  const cell=(r,k)=>map[k]!=null?String(r[map[k]]??"").trim():"";const fileCnt=new Map();rows.forEach(r=>{const nm=cell(r,"name");if(nm){const k=norm(nm)+"|"+norm(cell(r,"room"));fileCnt.set(k,(fileCnt.get(k)||0)+1)}});
   const out=[];let nNew=0,nUpd=0;
-  rows.forEach(r=>{const g=k=>map[k]!=null?String(r[map[k]]??"").trim():"";const name=g("name");if(!name)return;
-    const room=g("room");const ex=byKey.get(norm(name)+"|"+norm(room));const x=Object.assign({},ex||{id:uid(),created:Date.now(),stock:"ok"});
+  rows.forEach(r=>{const g=k=>cell(r,k);const name=g("name");if(!name)return;
+    const room=g("room");const probe={name,room,unit:g("unit"),place:g("place")};let ex=byKey.get(fk(probe));
+    if(!ex){const C=(loose.get(nk(probe))||[]).filter(c=>!claimed.has(c.id));ex=C.find(c=>!c.unit&&!c.place)||(C.length===1&&fileCnt.get(nk(probe))===1?C[0]:null)}
+    if(ex)claimed.add(ex.id);const x=Object.assign({},ex||{id:uid(),created:Date.now(),stock:"ok"});
     x.name=name;["room","unit","place","type","amt","cat","note"].forEach(k=>{const v=g(k);if(v||!ex)x[k]=v});
     if(map.temp!=null){const v=g("temp");const t=TR[norm(v)];x.temp=t!==undefined?t:(ex?ex.temp||"":"")}
     if(map.stock!=null){const v=SK[norm(g("stock"))];if(v)x.stock=v}
     if(map.tags!=null){const v=g("tags");if(v||!ex)x.tags=ivTags(v)}
-    if(ex){nUpd++}else{nNew++;byKey.set(norm(name)+"|"+norm(room),x)}out.push(x)});
+    const dupIdx=out.findIndex(o=>o.id===x.id);if(ex){nUpd++}else nNew++;byKey.set(fk(x),x);if(dupIdx>=0)out[dupIdx]=x;else out.push(x)});
   if(!out.length){setStatus("No items found in that file",true);return}
+  {const had=new Set(Object.keys(Inv.items));nNew=out.filter(x=>!had.has(x.id)).length;nUpd=out.length-nNew}
   const lab=(Inv.labs||[]).find(l=>l.code===Inv.lab);
   if(!confirm(`Import ${out.length} item${out.length===1?"":"s"}${lab?` into ${lab.name}`:""}?\n\n${nNew} new · ${nUpd} already in the list (updated)`))return;
   out.forEach(x=>Inv.put(x));Inv.renderList();setStatus(`Imported ${out.length} items (${nNew} new, ${nUpd} updated)`)
