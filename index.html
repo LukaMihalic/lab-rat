@@ -1524,7 +1524,7 @@ html.oncal #cal-btn{background:var(--accent);border-color:var(--accent);color:va
 
   <!-- STORAGE (shared with the lab) -->
   <section class="tab" id="tab-inv" hidden>
-    <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h2>Storage</h2><div class="row" style="flex-wrap:nowrap"><button class="btn" id="inv-selbtn">Select</button><button class="btn primary" id="inv-add">+ Add</button></div></div>
+    <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h2>Storage</h2><div class="row" style="flex-wrap:nowrap"><button class="btn" id="inv-exp" aria-haspopup="menu" title="Export the list">⤓ Export</button><button class="btn" id="inv-selbtn">Select</button><button class="btn primary" id="inv-add">+ Add</button></div></div>
     <div class="invlab" id="inv-labbar"></div>
     <div class="card" id="inv-setup" hidden></div>
     <div class="seg ivseg" id="inv-view"><button data-v="items" aria-pressed="true">Items</button><button data-v="order" aria-pressed="false">To order <span class="cnt" id="inv-ocnt"></span></button></div>
@@ -1560,6 +1560,7 @@ html.oncal #cal-btn{background:var(--accent);border-color:var(--accent);color:va
       <div class="row" style="justify-content:flex-end"><button class="btn primary" id="or-save">Add to list</button></div>
     </div>
     <div id="inv-items">
+      <div class="menu" id="inv-expmenu" hidden role="menu"><button data-ivx="xlsx" role="menuitem">Excel (.xlsx)</button><button data-ivx="csv" role="menuitem">CSV</button><button data-ivx="pdf" role="menuitem">PDF (to print)</button><div class="note" id="inv-expnote" style="padding:4px 12px 6px"></div></div>
       <div class="ivsearch"><input id="inv-q" type="search" placeholder="Search name, tag, fridge, cat. no.…" autocomplete="off"><button class="btn" id="inv-fbtn" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"/></svg>Filter<span class="cnt" id="inv-fcnt"></span></button></div>
       <div class="ivfp card" id="inv-fp" hidden></div>
       <div class="chips ivact" id="inv-rooms"></div>
@@ -4688,6 +4689,13 @@ function compLocHtml(name){const L=storageFor(name);if(!L.length)return "";const
   return `<button type="button" class="clocb" data-loc="${esc(x.id)}" title="Where it is in Storage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span>${esc(where)}</span>${st}${L.length>1?`<span class="more">+${L.length-1}</span>`:""}</button>`}
 function refreshCompLocs(){if(!S.sol||!$("#r-table"))return;S.sol.comps.forEach((c,i)=>{const l=$(`#rc-${i}-loc`);if(l)l.innerHTML=compLocHtml(c.name)})}
 const IV_TYPES=["Antibody – primary","Antibody – secondary","Chemical","Buffer / solution","Enzyme","Kit","Primer / oligo","Standard / ladder","Cell culture","Consumable","Other"];
+function invExportModel(){const all=Object.values(Inv.items||{}).filter(x=>!x.onlyOrder);const ids=new Set(Inv.shown||[]);const filtered=ids.size&&ids.size<all.length;
+  const L=(filtered?all.filter(x=>ids.has(x.id)):all).slice().sort((a,b)=>[a.room||"~",a.unit||"~",a.place||"",a.name||""].join("|").localeCompare([b.room||"~",b.unit||"~",b.place||"",b.name||""].join("|"),undefined,{sensitivity:"base",numeric:true}));
+  const lab=(Inv.labs||[]).find(l=>l.code===Inv.lab);const d=ms=>ms?new Date(ms).toLocaleDateString("en-GB"):"";
+  const ST={ok:"OK",low:"Running low",empty:"Empty"};const OR=o=>!o?"":o.state==="ordered"?"Ordered":"On order list";
+  const rows=L.map(x=>[x.name||"",x.room||"",x.unit||"",x.place||"",x.type||"",TEMP_N[x.temp||""]||x.temp||"",x.amt||"",ST[x.stock||"ok"]||x.stock||"",(x.tags||[]).join(", "),x.cat||"",x.note||"",OR(x.order),d(x.updatedAt),x.by&&x.by!=="you"?x.by:""]);
+  const B=[{p:`Storage${lab?" · "+lab.name:""}`},{p:`${L.length} item${L.length===1?"":"s"}${filtered?" (filtered)":""} · exported ${new Date().toLocaleString("en-GB")} from Lab Rat`},{table:{name:"Storage",head:["Item","Lab / room","Fridge / cabinet","Shelf / box","Type","Storage","Amount","Stock","Tags","Cat. no. / CAS","Note","Order","Last change","Changed by"],rows}}];
+  return {title:`Lab Rat · Storage${lab?" · "+lab.name:""}`,blocks:B,n:L.length,filtered}}
 function ivTags(s){const out=[],seen=new Set();String(s||"").split(/[,;]+/).map(t=>t.trim().replace(/^#/,"")).filter(Boolean).forEach(t=>{const k=t.toLowerCase();if(!seen.has(k)){seen.add(k);out.push(t)}});return out}
 function ivWhere(x){return [x.room,x.unit,x.place].filter(Boolean).join(" · ")}
 const Inv={
@@ -4958,6 +4966,12 @@ $("#inv-form").addEventListener("contextmenu",e=>{const s=e.target.closest("sele
   $("#inv-fp").addEventListener("click",e=>{if(lpDone){lpDone=false;e.stopImmediatePropagation();e.preventDefault()}},true)}
 $("#inv-fp").addEventListener("keydown",e=>{if(e.target.id!=="iv-ren")return;if(e.key==="Enter"){e.preventDefault();const go=$("#inv-fp [data-ren-go]");go&&go.click()}if(e.key==="Escape"){Inv.renOpen=null;Inv.renderList()}});
 $("#inv-fbtn").addEventListener("click",()=>{Inv.fOpen=!Inv.fOpen;Inv.renderList()});
+$("#inv-exp").addEventListener("click",e=>{e.stopPropagation();const m=$("#inv-expmenu");if(!m.hidden){m.hidden=true;return}const md=invExportModel();if(!md.n){setStatus("Nothing in storage to export yet",true);return}
+  $("#inv-expnote").textContent=md.filtered?`Exports the ${md.n} item${md.n===1?"":"s"} shown by your filter or search.`:`Exports all ${md.n} items.`;
+  const r=e.currentTarget.getBoundingClientRect();m.hidden=false;m.style.top=(r.bottom+6)+"px";m.style.left=Math.max(8,Math.min(innerWidth-m.offsetWidth-8,r.right-m.offsetWidth))+"px"});
+$("#inv-expmenu").addEventListener("click",async e=>{const b=e.target.closest("[data-ivx]");if(!b)return;$("#inv-expmenu").hidden=true;const md=invExportModel();const lab=(Inv.labs||[]).find(l=>l.code===Inv.lab);
+  await exportModel(md,b.dataset.ivx,`Storage${lab?" - "+lab.name:""} ${new Date().toISOString().slice(0,10)}`)});
+document.addEventListener("click",e=>{const m=$("#inv-expmenu");if(m&&!m.hidden&&!e.target.closest("#inv-expmenu,#inv-exp"))m.hidden=true});
 $("#inv-selbtn").addEventListener("click",()=>Inv.setSel(!Inv.selMode));
 $("#inv-selbar").addEventListener("click",e=>{const b=e.target.closest("[data-sl]");if(!b)return;if(b.dataset.sl==="all")Inv.shown.forEach(i=>Inv.sel.add(i));else Inv.sel.clear();Inv.renderList()});
 $("#inv-bulk").addEventListener("click",e=>{const a=e.target.closest("[data-bk]");if(a){Inv.bk=Inv.bk===a.dataset.bk?null:a.dataset.bk;Inv.renderSel();return}
