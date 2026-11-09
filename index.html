@@ -2403,6 +2403,43 @@ Hist.inv=function(a,b){if(!b)return;const prevH=a&&Array.isArray(a._h)?a._h.slic
   const now=Date.now(),last=b._h[b._h.length-1],me=this.who();
   if(last&&now-last.t<10*60e3&&(last.by||"")===me){last.t=now;last.c=[...new Set([...(last.c||[]).filter(x=>!c.some(y=>y.split(":")[0]===x.split(":")[0])),...c])].slice(-8);return}
   b._h.push(this.entry(c));if(b._h.length>40)b._h.splice(0,b._h.length-40)};
+/* ---------- open in a new browser tab (middle click / Ctrl-click) + keep tabs in sync ---------- */
+function routeFor(el){
+  let b;
+  if((b=el.closest("nav.tabs button[data-tab]")))return "#/tab/"+b.dataset.tab;
+  if((b=el.closest("#cal-btn")))return "#/tab/cal";
+  if((b=el.closest("#pbar-tabs button[data-tab]"))&&S.prot)return "#/p/"+encodeURIComponent(S.prot.id)+"/"+b.dataset.tab;
+  if((b=el.closest("[data-p]"))&&Store.data.protocols[b.dataset.p])return "#/p/"+encodeURIComponent(b.dataset.p);
+  if((b=el.closest("[data-go]")))return "#/nav/"+encodeURIComponent(b.dataset.go);
+  if((b=el.closest("[data-lib]")))return "#/r/"+encodeURIComponent(b.dataset.lib);
+  return null}
+function openNewTab(hash){try{flushProt();flushSol()}catch(e){}const w=window.open(location.pathname+location.search+hash,"_blank");if(!w)setStatus("Your browser blocked the new tab",true)}
+document.addEventListener("mousedown",e=>{if(e.button===1&&routeFor(e.target))e.preventDefault()},true);
+document.addEventListener("auxclick",e=>{if(e.button!==1)return;const h=routeFor(e.target);if(!h)return;e.preventDefault();e.stopPropagation();openNewTab(h)},true);
+document.addEventListener("click",e=>{if(e.button!==0||!(e.ctrlKey||e.metaKey))return;const h=routeFor(e.target);if(!h)return;e.preventDefault();e.stopImmediatePropagation();openNewTab(h)},true);
+function applyRoute(){const h=decodeURI(location.hash||"");if(!h.startsWith("#/"))return;const [_,kind,a,b]=location.hash.split("/");try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
+  try{const A=a?decodeURIComponent(a):"";
+    if(kind==="tab"&&A)showTab(A);
+    else if(kind==="p"){const p=Store.data.protocols[A];if(p){openProtocol(clone(p),b||undefined);if(b)showTab(b)}}
+    else if(kind==="nav"){showTab("home");setNav(JSON.parse(A))}
+    else if(kind==="r"){const r=Store.data.solutions[A];showTab("sol");if(r){S.sol=clone(r);const sel=$("#sol-select");if(sel)sel.value=r.id;fillSol();renderSolLib()}}
+  }catch(e){console.warn(e)}}
+setTimeout(function routeWhenReady(){if(!String(location.hash).startsWith("#/"))return;if(!booted){setTimeout(routeWhenReady,80);return}setTimeout(applyRoute,120)},0);
+const TabBus=(()=>{let ch=null;try{ch=new BroadcastChannel("labrat-tabs")}catch(e){}
+  const send=m=>{try{ch&&ch.postMessage(m)}catch(e){}};
+  if(ch)ch.onmessage=ev=>{const m=ev.data||{};try{
+    if(m.t==="doc"&&Store.data[m.kind]){const cur=Store.data[m.kind][m.id];
+      if(m.del){if(cur){delete Store.data[m.kind][m.id];onData(m.kind,false)}}
+      else if(m.body&&(!cur||(cur.updatedAt||0)<(m.body.updatedAt||0))){Store.data[m.kind][m.id]=m.body;onData(m.kind,false)}}
+    else if(m.t==="inv"&&typeof Inv!=="undefined"){if(m.del)delete Inv.items[m.id];else if(m.item&&(!Inv.items[m.id]||(Inv.items[m.id].updatedAt||0)<=(m.item.updatedAt||0)))Inv.items[m.id]=m.item;if(Inv.renderList)Inv.renderList()}
+  }catch(e){console.warn(e)}};
+  return{send}})();
+(function(){const _s=Store.save,_r=Store.remove;
+  Store.save=function(kind,obj){const r=_s.call(Store,kind,obj);try{const b=Store.data[kind]&&Store.data[kind][obj.id];if(b)TabBus.send({t:"doc",kind,id:obj.id,body:b})}catch(e){}return r};
+  Store.remove=function(kind,id){const r=_r.call(Store,kind,id);TabBus.send({t:"doc",kind,id,del:true});return r}})();
+setTimeout(()=>{if(typeof Inv==="undefined")return;const _p=Inv.put.bind(Inv),_d=Inv.del.bind(Inv);
+  Inv.put=function(item){const r=_p(item);try{if(item&&item.id)TabBus.send({t:"inv",id:item.id,item:this.items[item.id]})}catch(e){}return r};
+  Inv.del=function(id){const r=_d(id);TabBus.send({t:"inv",id,del:true});return r}},0);
 function openHist(title,html){$("#hist2-title").textContent=title;$("#hist2-body").innerHTML=html;$("#hist2-scrim").hidden=false;$("#hist2-sheet").hidden=false;$("#hist2-sheet").scrollTop=0}
 function plCenter(){const card=$("#plate-card");if(!card)return;card.style.paddingLeft=card.style.paddingRight="";
   if(!card.classList.contains("fs")||!matchMedia("(orientation:landscape)").matches)return;
