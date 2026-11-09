@@ -15,8 +15,15 @@ self.addEventListener("fetch", e => {
   if (url.hostname.endsWith("supabase.co") || url.hostname.endsWith("supabase.in")) return; // sync traffic always goes to the network
   // App pages: network first so updates arrive, cache when offline
   if (url.origin === location.origin) {
-    e.respondWith(fetch(req, { cache: "no-cache" }).then(res => { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); return res; })
-      .catch(() => caches.match(req).then(r => r || caches.match("index.html"))));
+    // Slow lab Wi-Fi: if the network takes longer than 4 s, open from the cache and let the update finish in the background
+    const net = fetch(req, { cache: "no-cache" }).then(res => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); } return res; });
+    const cached = () => caches.match(req).then(r => r || caches.match("index.html"));
+    e.respondWith(new Promise(resolve => {
+      let done = false; const finish = r => { if (!done && r) { done = true; resolve(r); } };
+      const t = setTimeout(() => cached().then(r => r && finish(r)), 4000);
+      net.then(r => { clearTimeout(t); finish(r); }).catch(() => { clearTimeout(t); cached().then(r => finish(r || Response.error())); });
+    }));
+    e.waitUntil(net.catch(() => {}));
     return;
   }
   // Fonts and the sync library: cache first

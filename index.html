@@ -789,7 +789,14 @@ nav.tabs button{position:relative}
 .calcard{gap:10px}
 .calhead{display:flex;align-items:center;justify-content:space-between}
 .calhead b{font-size:17px}
-.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+/* bigger tap targets on touch screens */
+@media (pointer:coarse){.stab .abadd,[data-nall]{display:inline-block;padding:7px 0}
+  button.rm{min-width:34px;min-height:34px}
+  .scrow button[data-open]{padding:8px 0}}
+@media (max-width:359px){.calgrid{gap:2px}.calgrid .dy{min-height:0;padding:3px 1px 2px;font-size:12.5px}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+  #inv-exp,#inv-selbtn,#inv-add{padding-left:8px;padding-right:8px}}
 .calgrid .wd{font:600 11px var(--sans);color:var(--muted);text-align:center;padding:2px 0;text-transform:uppercase;letter-spacing:.04em}
 .calgrid .dy{aspect-ratio:1/1;min-height:40px;border:1px solid transparent;border-radius:10px;background:var(--surface-2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:5px 2px 3px;gap:3px;font:600 13.5px var(--sans);color:var(--ink)}
 .calgrid .dy.out{background:none;color:var(--muted);opacity:.5}
@@ -2440,6 +2447,10 @@ const TabBus=(()=>{let ch=null;try{ch=new BroadcastChannel("labrat-tabs")}catch(
 setTimeout(()=>{if(typeof Inv==="undefined")return;const _p=Inv.put.bind(Inv),_d=Inv.del.bind(Inv);
   Inv.put=function(item){const r=_p(item);try{if(item&&item.id)TabBus.send({t:"inv",id:item.id,item:this.items[item.id]})}catch(e){}return r};
   Inv.del=function(id){const r=_d(id);TabBus.send({t:"inv",id,del:true});return r}},0);
+function saveNowAll(){try{flushAll()}catch(e){}
+  try{if(Store._st&&typeof idbSet==="function"){clearTimeout(Store._st);Store._st=null;idbSet("data",Store.data).catch(()=>{});lsSet("labrat.v1",Object.assign({},Store.data,{imgdata:{}}))}}catch(e){}
+  try{if(typeof Sync!=="undefined"&&Sync.flush)Sync.flush()}catch(e){}try{if(typeof Inv!=="undefined"&&Inv.flush)Inv.flush()}catch(e){}}
+addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveNowAll()});addEventListener("pagehide",saveNowAll);
 function openHist(title,html){$("#hist2-title").textContent=title;$("#hist2-body").innerHTML=html;$("#hist2-scrim").hidden=false;$("#hist2-sheet").hidden=false;$("#hist2-sheet").scrollTop=0}
 function plCenter(){const card=$("#plate-card");if(!card)return;card.style.paddingLeft=card.style.paddingRight="";
   if(!card.classList.contains("fs")||!matchMedia("(orientation:landscape)").matches)return;
@@ -3100,7 +3111,7 @@ function folderIcon(st,muted,col){const id="fg"+(++fidN);const C=!muted&&col&&FC
   const c=muted?["#B7BCCB","#9097AB","#7C8398"]:C||FCOL.blue;
   return `<svg viewBox="0 0 34 28"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c[0]}"/><stop offset="1" stop-color="${c[1]}"/></linearGradient></defs><path d="M2 5a3 3 0 0 1 3-3h7.5l3 3H29a3 3 0 0 1 3 3v2H2z" fill="${c[2]}"/><rect x="2" y="7.5" width="30" height="18.5" rx="3" fill="url(#${id})"/><rect x="2" y="7.5" width="30" height="2" rx="1" fill="#fff" opacity=".35"/></svg>`}
 function renderHome(){
-  const every=protList();ensureFolderDocs(every);let n=hNav();const q=($("#home-q").value||"").trim().toLowerCase();
+  const every=protList();ensureFolderDocs(every);let n=hNav();const q=($("#home-q").value||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d");
   const projects=allProjects(every);
   if(n.p&&n.p!=="__none"&&!projects.includes(n.p))n={p:null,f:null};
   if(n.p==="__none"&&!every.some(p=>!pj(p)))n={p:null,f:null};
@@ -3120,7 +3131,7 @@ function renderHome(){
   else if(!q&&n.p!=null&&n.p!=="__none")tiles=folders.map(f=>{const path=(n.f?n.f+"/":"")+f;return tile(f,{p:n.p,f:path},every.filter(p=>pj(p)===n.p&&under(pf(p),path)))}).join("");
   $("#home-folders").innerHTML=tiles;
   // list
-  let base=q?every.filter(p=>[p.name,p.group,p.folder,methodLabel(p),p.notes,stepAbs(p).join(" "),(p.imgs||[]).map(s=>[s.ab1,s.ab2].join(" ")).join(" ")].join(" ").toLowerCase().includes(q)):n.p==null?every:every.filter(p=>inNav(p,n));
+  let base=q?every.filter(p=>[p.name,p.group,p.folder,methodLabel(p),p.notes,stepAbs(p).join(" "),(p.imgs||[]).map(s=>[s.ab1,s.ab2].join(" ")).join(" ")].join(" ").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").includes(q)):n.p==null?every:every.filter(p=>inNav(p,n));
   const root=!q&&n.p==null;
   let f=lsGet("bb.hstatus","all");let so=lsGet("bb.hsort2",null)||"status";if(so==="project")so="used";$("#home-sort").value=so;
   const na=base.filter(p=>!expDone(p)).length,nd=base.length-na;
@@ -3156,14 +3167,14 @@ function renderHome(){
 }
 function renderTplList(){
   const n=hNav();$("#tpl-where").textContent=n.p&&n.p!=="__none"?`It will go into ${n.p}${n.f?" › "+showPath(n.f):""}.`:"";
-  const q=($("#tpl-q").value||"").trim().toLowerCase();const mine=protList();
+  const q=($("#tpl-q").value||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d");const mine=protList();
   const tbInner=([k,T])=>`<span class="tph">${micon(k==="custom"?"other":catOfTpl(k,T),1)}<b>${esc(k==="custom"?"Blank experiment":T.name)}</b></span><span>${esc(T.desc)}</span>`;
   const tb=([k,T])=>k==="custom"?`<button class="tpl" data-tpl="${k}">${tbInner([k,T])}</button>`:`<div class="tpl mytpl"><button class="tplmain" data-tpl="${k}">${tbInner([k,T])}</button><button class="mtdel mted" data-editbi="${k}" title="Edit (makes your own copy)" aria-label="Edit ${esc(T.name)}">✎</button><button class="mtdel" data-hide="${k}" title="Remove from this list (you can bring it back)" aria-label="Remove ${esc(T.name)}">×</button></div>`;
   const HID=hiddenBuiltins();
   const eb=t=>`<button class="tpl" data-ce="${esc(t.id)}"><span class="tph">${micon(catOfExp(t),1)}<b>${esc(t.name)}</b></span><span>${esc(methodLabel(t))} · ${(t.steps||[]).length} steps${t.group?" · "+esc([pj(t),pf(t)].filter(Boolean).join(" › ")):""}</span></button>`;
   const ents=Object.entries(TEMPLATES).filter(([k])=>k!=="custom"&&!HID.has(k));const myT=tplList();
   const mb=t=>`<div class="tpl mytpl${t.isDefault?" def":""}"><button class="tplmain" data-mt="${esc(t.id)}"><span class="tph">${micon(catOfExp(t),1)}<b>${esc(t.name||"Untitled")}</b></span><span>${t.isDefault?"★ Your default · ":"Your protocol · "}${(t.steps||[]).length} steps</span></button><button class="mtdel mted" data-editt="${esc(t.id)}" title="Edit steps, name and tools" aria-label="Edit">✎</button><button class="mtdel" data-tdelp="${esc(t.id)}" title="Delete this protocol" aria-label="Delete">×</button><button class="mtstar" data-star="${esc(t.id)}" aria-pressed="${!!t.isDefault}" title="${t.isDefault?"Your default for this method (tap to undo)":"Make this your default for this method"}" aria-label="Default">${t.isDefault?"★":"☆"}</button></div>`;
-  if(q){const m=ents.filter(([k,T])=>(T.name+" "+T.desc+" "+(T.label||"")).toLowerCase().includes(q)),e=mine.filter(t=>[t.name,t.group,t.folder,methodLabel(t)].join(" ").toLowerCase().includes(q)),mt=myT.filter(t=>[t.name,methodLabel(t),t.notes].join(" ").toLowerCase().includes(q));
+  if(q){const m=ents.filter(([k,T])=>(T.name+" "+T.desc+" "+(T.label||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").includes(q)),e=mine.filter(t=>[t.name,t.group,t.folder,methodLabel(t)].join(" ").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").includes(q)),mt=myT.filter(t=>[t.name,methodLabel(t),t.notes].join(" ").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").includes(q));
     $("#tpl-list").innerHTML=(mt.length?`<div class="tplh" style="margin-top:4px">Your protocols</div><div class="tpls">${mt.map(mb).join("")}</div>`:"")+(m.length?`<div class="tpls">${m.map(tb).join("")}</div>`:"")+(e.length?`<div class="tplh" style="margin-top:10px">Copy the steps of an earlier experiment</div><div class="tpls">${e.map(eb).join("")}</div>`:"")||`<p class="note">Nothing found.</p>`;return}
   const open=S.tplOpen||"";
   let h="";const AI=autoImported();
@@ -3381,7 +3392,7 @@ $("#p-tools").addEventListener("change",e=>{const k=e.target.dataset.tool;if(!k)
 $("#prot-dup").addEventListener("click",()=>{flushProt();if(isTpl()){const t=clone(S.prot);t.id=uid();t.name+=" (copy)";t.created=Date.now();t.steps=freshSteps(t.steps);delete t.updatedAt;Store.save("templates",t);openTemplate(clone(t));setStatus("Protocol copied");return}const c=copyProtocol(S.prot);openProtocol(clone(c));$("#prot-params").open=true;$("#p-name").focus();$("#p-name").select();setStatus("Copy created; rename and adjust it")});
 armDelete("#prot-del","Delete",async()=>{clearTimeout(saveT.protocols);dirty.protocols=false;if(isTpl()){await Store.remove("templates",S.prot.id);S.protKind="protocols";S.prot=draftProt();showTab("lib");setStatus("Protocol deleted");return}await deleteProtocol(S.prot.id);lsSet("bb.proto",null);showTab("home");renderHome();setStatus("Experiment deleted")});
 $("#prot-all").addEventListener("click",()=>{const arr=new Set(S.prot.done||[]);(S.prot.steps||[]).forEach(x=>{if(!arr.has(x.id)){arr.add(x.id);logStep(x.id,true)}});S.prot.done=[...arr];queueSave("protocols");renderSteps();setStatus("All steps checked")});
-$("#prot-reset").addEventListener("click",()=>{S.prot.done=[];queueSave("protocols");Object.keys(S.timers).forEach(k=>{if(k.startsWith(S.prot.id+"|"))delete S.timers[k]});renderSteps()});
+$("#prot-reset").addEventListener("click",()=>{S.prot.done=[];queueSave("protocols");Object.keys(S.timers).forEach(k=>{if(k.startsWith(S.prot.id+"|"))delete S.timers[k]});saveStepTimers();renderSteps()});
 $("#prot-edit").addEventListener("click",()=>{S.editSteps=!S.editSteps;renderSteps()});
 $("#step-addab").addEventListener("click",()=>{const last=S.prot.steps[S.prot.steps.length-1];S.prot.steps.push({id:uid(),phase:last?last.phase:"",t:"Primary antibody",d:"",min:null,rep:0,abk:"p"});renderSteps();queueSave("protocols");const ins=$$("#prot-steps .sedit input[data-k='t']");if(ins.length){const i=ins[ins.length-1];i.scrollIntoView({block:"center"});i.focus();i.select()}});
 $("#step-add").addEventListener("click",()=>{const last=S.prot.steps[S.prot.steps.length-1];for(let k=0,K=Math.max(1,Math.min(200,parseInt($("#step-add-n").value)||1));k<K;k++)S.prot.steps.push({id:uid()+k,phase:last?last.phase:"",t:"",d:"",min:null,rep:0});renderSteps();queueSave("protocols");const ins=$$("#prot-steps .sedit input[data-k='t']");ins.length&&ins[ins.length-1].focus()});
@@ -3502,15 +3513,17 @@ $("#prot-steps").addEventListener("click",e=>{const a=e.target.closest("[data-ab
   const ok=e.target.closest("[data-abok]");if(ok){e.preventDefault();abCommit(ok.dataset.abok)}});
 $("#prot-steps").addEventListener("keydown",e=>{const i=e.target.closest("[data-abin]");if(!i)return;if(e.key==="Enter"){e.preventDefault();abCommit(i.dataset.abin)}else if(e.key==="Escape"){e.preventDefault();abCommit(i.dataset.abin,true)}});
 $("#prot-steps").addEventListener("focusout",e=>{const i=e.target.closest("[data-abin]");if(!i)return;setTimeout(()=>{if(S.abEdit===i.dataset.abin&&!document.activeElement?.closest?.(".stab.ed"))abCommit(i.dataset.abin)},150)});
+function saveStepTimers(){try{const now=Date.now(),o={};for(const [k,t] of Object.entries(S.timers))if(t.end>now-3600e3)o[k]=t;lsSet("bb.stimers",o)}catch(e){}}
+try{const st=lsGet("bb.stimers",{})||{},now=Date.now();for(const [k,t] of Object.entries(st))if(t&&t.end>now-3600e3&&!S.timers[k])S.timers[k]=t}catch(e){}
 function stepTimerClick(b){const tk=b.dataset.timer,min=+b.dataset.min,rep=+b.dataset.rep;const tm=S.timers[tk];
   try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume&&audio.resume()}catch(er){}
   if(tm&&tm.end>Date.now()){delete S.timers[tk];wakeOff()}
   else{const round=tm&&rep&&tm.round<rep?tm.round+1:1;S.timers[tk]={end:Date.now()+min*60000,round,rung:false};wakeOn()}
-  renderSteps()}
+  saveStepTimers();renderSteps()}
 setInterval(()=>{let any=false;const now=Date.now();
   for(const [tk,tm] of Object.entries(S.timers)){
     if(tm.end>now){any=true;document.querySelectorAll(`.timer[data-tk="${CSS.escape(tk)}"] .clock`).forEach(el=>{el.textContent=clock((tm.end-now)/1000)})}
-    else if(!tm.rung){tm.rung=true;const sid=tk.split("|")[1];const stp=S.prot&&(S.prot.steps||[]).find(x=>x.id===sid);beep(stp?stp.t:"Step timer");renderSteps();const st=document.getElementById("st-"+tk.replace(/[^a-z0-9]/gi,"_"));if(st){st.classList.add("ring");st.scrollIntoView({block:"center",behavior:"smooth"})}wakeOff()}
+    else if(!tm.rung){tm.rung=true;saveStepTimers();const sid=tk.split("|")[1];const stp=S.prot&&(S.prot.steps||[]).find(x=>x.id===sid);beep(stp?stp.t:"Step timer");renderSteps();const st=document.getElementById("st-"+tk.replace(/[^a-z0-9]/gi,"_"));if(st){st.classList.add("ring");st.scrollIntoView({block:"center",behavior:"smooth"})}wakeOff()}
   }},1000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Object.values(S.timers).some(t=>t.end>Date.now()))wakeOn()});
 
@@ -4041,8 +4054,8 @@ function renderSolSelect(){
     SOL_TPL.map((t,i)=>`<button class="tpl" data-st="${i}"><b>${esc(t.name)}</b><span>${t.comps.map(c=>esc(c.name)).join(", ")}</span></button>`).join("");
 }
 const fmtD=d=>{try{return new Date(d+"T12:00").toLocaleDateString("en-GB")}catch(e){return d}};
-function renderSolLib(){const box=$("#sol-lib");const sc=solScope();box.hidden=!!sc;if(sc)return;const q=($("#sol-lib-q").value||"").trim().toLowerCase();
-  const L=allRecipes().filter(r=>!q||String(r.name||"").toLowerCase().includes(q));
+function renderSolLib(){const box=$("#sol-lib");const sc=solScope();box.hidden=!!sc;if(sc)return;const q=($("#sol-lib-q").value||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d");
+  const L=allRecipes().filter(r=>!q||String(r.name||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").includes(q));
   $("#sol-lib-list").innerHTML=L.map(r=>{const nm=(S.sol&&S.sol.id===r.id?S.sol:r).name;const comps=(r.comps||[]).map(c=>c.name).filter(Boolean);return `<button class="slrow${S.sol&&S.sol.id===r.id?" cur":""}" data-lib="${esc(r.id)}"><b>${esc(nm||"Untitled")}</b><span>${esc([r.vol?`${r.vol} ${r.vunit||"mL"}`:"",comps.slice(0,4).join(", ")+(comps.length>4?"…":"")].filter(Boolean).join(" · "))}</span></button>`}).join("")||`<p class="note" style="margin:0">${q?"No recipe matches.":"No recipes yet."}</p>`}
 $("#sol-lib-q").addEventListener("input",renderSolLib);
 $("#sol-lib-list").addEventListener("click",e=>{const b=e.target.closest("[data-lib]");if(!b)return;const r=Store.data.solutions[b.dataset.lib];if(!r)return;flushSol();S.sol=clone(r);$("#sol-select").value=r.id;fillSol();renderSolLib()});
@@ -4183,7 +4196,7 @@ function buildRecord(){
 $("#prot-finish").addEventListener("click",openFinish);$("#hist-new").addEventListener("click",openFinish);
 $("#fin-close").addEventListener("click",closeFinish);$("#fin-scrim").addEventListener("click",closeFinish);
 $("#fin-save").addEventListener("click",()=>{const rec=buildRecord();Store.save("records",rec);
-  if($("#fin-reset").checked){psList().forEach(e=>{e.prepared=null;e.done=[]});queueSave("protocols");S.checks[S.prot.id]=[];lsSet("bb.checks",S.checks);Object.keys(S.timers).forEach(k=>{if(k.startsWith(S.prot.id+"|"))delete S.timers[k]});renderSteps()}
+  if($("#fin-reset").checked){psList().forEach(e=>{e.prepared=null;e.done=[]});queueSave("protocols");S.checks[S.prot.id]=[];lsSet("bb.checks",S.checks);Object.keys(S.timers).forEach(k=>{if(k.startsWith(S.prot.id+"|"))delete S.timers[k]});saveStepTimers();renderSteps()}
   closeFinish();S.rec=clone(Store.data.records[rec.id]);showTab("hist");S.rec=clone(Store.data.records[rec.id]);renderHist();setStatus("Run saved")});
 function recHTML(r){
   let h=`<div><div style="font-weight:700;font-size:18px">${esc(r.name)}</div><div class="note">${esc(r.method||"")} · saved ${new Date(r.created).toLocaleString("en-GB")}</div></div>`;
@@ -4341,7 +4354,7 @@ function toXlsx(m){
     ...sheets.map((s,i)=>({name:`xl/worksheets/sheet${i+1}.xml`,data:sx(s)}))]);
 }
 function toCsv(m){const q=v=>{const s=String(v??"");return /[",\n;]/.test(s)?`"${s.replace(/"/g,'""')}"`:s};const L=[q(m.title)];
-  m.blocks.forEach(b=>{if(b.table){L.push("",q(b.table.name),b.table.head.map(q).join(","),...b.table.rows.map(r=>r.map(q).join(",")))}});return "﻿"+L.join("\r\n")}
+  const SEP=(1.5).toLocaleString().includes(",")?";":",";m.blocks.forEach(b=>{if(b.table){L.push("",q(b.table.name),b.table.head.map(q).join(SEP),...b.table.rows.map(r=>r.map(q).join(SEP)))}});return "﻿"+L.join("\r\n")}
 function loadScript(src){return new Promise((ok,no)=>{if([...document.scripts].some(s=>s.src===src))return ok();const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>no(new Error("Could not load the PDF library. Check your internet connection."));document.head.appendChild(s)})}
 async function toPdf(m){
   if(!(window.jspdf&&window.jspdf.jsPDF))await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
@@ -4849,7 +4862,7 @@ const Inv={
     if(skip!=="low"&&f.low&&!(x.stock==="low"||x.stock==="empty"))return false;
     if(skip!=="unplaced"&&f.unplaced&&String(x.unit||"").trim())return false;
     if(f.tags.length){const T=(x.tags||[]).map(k);if(!f.tags.every(t=>skip==="tag:"+k(t)||T.includes(k(t))))return false}
-    if(q&&![x.name,x.cat,x.room,x.unit,x.place,x.type,(x.tags||[]).join(" "),x.note,x.amt,TEMP_N[x.temp||""]].join(" ").toLowerCase().includes(q))return false;return true},
+    if(q&&![x.name,x.cat,x.room,x.unit,x.place,x.type,(x.tags||[]).join(" "),x.note,x.amt,TEMP_N[x.temp||""]].join(" ").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").includes(q))return false;return true},
   nF(){const f=this.f;return (f.room?1:0)+(f.unit?1:0)+(f.type?1:0)+(f.low?1:0)+(f.unplaced?1:0)+f.tags.length},
   renOpen:null,
   bulkRename(g,from,to){const k=s=>String(s||"").trim().toLowerCase();to=String(to||"").trim();if(g==="tag")to=to.replace(/^#/,"");let n=0;
@@ -4954,7 +4967,7 @@ const Inv={
   pickTemp(){if(this.editing!=="__new")return;const u=$("#iv-unit").value.trim().toLowerCase();if(!u)return;const c={};Object.values(this.items).forEach(x=>{if(String(x.unit||"").trim().toLowerCase()===u){const t=x.temp||"";c[t]=(c[t]||0)+1}});const best=Object.entries(c).sort((a,b)=>b[1]-a[1])[0];if(best)$("#iv-temp").value=best[0]},
   allTags(){const m=new Map();Object.values(this.items).forEach(x=>(x.tags||[]).forEach(t=>{const k=t.toLowerCase();m.set(k,{t,n:((m.get(k)||{}).n||0)+1})}));return [...m.values()].sort((a,b)=>b.n-a.n||a.t.localeCompare(b.t)).map(o=>o.t)},
   tagSug(){const cur=ivTags($("#iv-tags").value).map(t=>t.toLowerCase());$("#iv-tagsug").innerHTML=this.allTags().filter(t=>!cur.includes(t.toLowerCase())).slice(0,14).map(t=>`<button type="button" data-tag="${esc(t)}">+ ${esc(t)}</button>`).join("")},
-  renderList(){const all=Object.values(this.items);const q=($("#inv-q").value||"").trim().toLowerCase();
+  renderList(){const all=Object.values(this.items);const q=($("#inv-q").value||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d");
     const k=s=>String(s||"").trim().toLowerCase();
     const {rooms}=this.renderFilters(all,q);
     let L=all.filter(x=>this.match(x,null,q));
@@ -5447,7 +5460,7 @@ const Ann={sec:null,img:null,tool:"band",sel:null,lanePts:[],
 
 /* ================= QUICK NOTES ================= */
 const noteDirty=new Map();
-function noteList(){const q=($("#note-search").value||"").toLowerCase().trim();return Object.values(Store.data.notes).filter(n=>!q||String(n.text||"").toLowerCase().includes(q)).sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||(b.created||0)-(a.created||0))}
+function noteList(){const q=($("#note-search").value||"").toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d");return Object.values(Store.data.notes).filter(n=>!q||String(n.text||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").includes(q)).sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||(b.created||0)-(a.created||0))}
 function renderNotes(){
   const L=noteList();const ex=protList();
   $("#note-list").innerHTML=L.length?L.map(n=>`<div class="note-card${n.pin?" pin":""}" data-n="${esc(n.id)}">
