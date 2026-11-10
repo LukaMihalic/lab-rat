@@ -4099,11 +4099,18 @@ function renderSolRows(){
 }
 function renderSolOut(){
   const r=S.sol;const V=volML(r);let liq=0,lines=[];
-  r.comps.forEach((c,i)=>{const res=compAmt(c,V);const el=$(`#rc-${i}-a`);let t="";
-    if(res&&res.err)t=`<span style="color:var(--warn);font-size:12px">${res.err}</span>`;else if(res){t=fmtAmt(res.a,res.u);if(res.u==="mL")liq+=res.a;lines.push(`${c.name||"Component "+(i+1)}: ${fmtAmt(res.a,res.u)}`)}
+  const probs=[];let pctV=0;
+  r.comps.forEach((c,i)=>{const res=compAmt(c,V);const el=$(`#rc-${i}-a`);let t="";const v=num(c.val),x=num(c.extra),nm=c.name||"Component "+(i+1);let bad="";
+    if(c.type==="vv"&&v>100)bad="over 100%";else if(c.type==="wv"&&v>100)bad="over 100% w/v (more than 1 g per mL)";else if(c.type==="stock"&&x>0&&v>x)bad="higher than the stock";else if(c.type==="stock"&&x>0&&v===x)bad="same as the stock: nothing to dilute";else if(v<0)bad="negative";
+    if(c.type==="vv"&&v>0)pctV+=v;
+    if(bad)probs.push(`${esc(nm)}: ${bad}`);
+    if(res&&res.err)t=`<span style="color:var(--warn);font-size:12px">${res.err}</span>`;else if(res){t=fmtAmt(res.a,res.u);if(res.u==="mL")liq+=res.a;lines.push(`${nm}: ${fmtAmt(res.a,res.u)}`)}
+    if(bad)t=`<span style="color:var(--bad)">${t||"–"}</span>`;
+    const tr=el&&el.closest("tr");if(tr)tr.classList.toggle("x",!!bad);
     if(el)el.innerHTML=t});
+  if(pctV>100)probs.push(`The % v/v components add up to ${fmt(pctV,pctV%1?1:0)}%, more than 100%`);
   const vl=V>=1000?fmt(V/1000,V%1000?2:0)+" L":V>=1?String(parseFloat(V.toFixed(3)))+" mL":fmt(V*1000,0)+" µL";
-  $("#r-out").innerHTML=V>0?`Dissolve in about 80% of the volume, then top up with ${esc(r.diluent||"water")} to <b>${vl}</b>.${liq>0?` <span class="muted">Liquids above add up to ${fmtAmt(liq,"mL")}.</span>`:""}${liq>V?`<div style="color:var(--bad);margin-top:4px">The liquid components exceed the final volume. Check the values.</div>`:""}`:"Enter the volume to make.";
+  $("#r-out").innerHTML=V>0?`Dissolve in about 80% of the volume, then top up with ${esc(r.diluent||"water")} to <b>${vl}</b>.${liq>0?` <span class="muted">Liquids above add up to ${fmtAmt(liq,"mL")}.</span>`:""}${probs.length?`<div style="color:var(--bad);margin-top:4px">Can't be made like this: ${probs.join("; ")}.</div>`:""}${liq>V&&!(pctV>100)?`<div style="color:var(--bad);margin-top:4px">The liquid components add up to more than the final volume (${fmtAmt(liq,"mL")} of ${vl}). Check the values.</div>`:""}`:"Enter the volume to make.";
   S._solText=[`${r.name} (${vl})`,...lines,`${r.diluent?r.diluent[0].toUpperCase()+r.diluent.slice(1):"Water"} to ${vl}`,r.notes?`Note: ${r.notes}`:""].filter(Boolean).join("\n");
 }
 $("#r-table").addEventListener("input",e=>{const tr=e.target.closest("tr[data-i]"),k=e.target.dataset.k;if(!tr||!k)return;const c=S.sol.comps[+tr.dataset.i];c[k]=e.target.value;if(k==="name"){const l=$(`#rc-${tr.dataset.i}-loc`);if(l)l.innerHTML=compLocHtml(c.name)}
