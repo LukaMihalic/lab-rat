@@ -4612,6 +4612,11 @@ document.addEventListener("keydown",e=>{if(!plActive()||typing())return;if((e.ke
 $("#pl-cp").addEventListener("click",async()=>{const c=plCopySel();if(!c)return;try{await navigator.clipboard.writeText(c.tsv)}catch(_){}setStatus(`Copied ${c.cells.length} well${c.cells.length===1?"":"s"}: select a well and tap Paste here`)});
 $("#pl-ps").addEventListener("click",()=>{if(S.plClip)plPasteCells(S.plClip.cells)});
 $("#pl-desel").addEventListener("click",()=>{S.plSel.clear();renderPlate()});
+let plDownIn=false;document.addEventListener("pointerdown",e=>{plDownIn=!!(e.target instanceof Element&&e.target.closest("#pl-grid,.pledit"))},true);
+document.addEventListener("click",e=>{if(plDownIn)return;if(!(S.plSel&&S.plSel.size)&&!S.plCopied)return;if(S.plFill)return;const card=$("#plate-card");if(!card||!card.offsetParent)return;
+  const t=e.target;if(!(t instanceof Element)||!t.isConnected)return;
+  if(t.closest("#pl-grid,.pledit,button,a,input,select,textarea,label,.menu,.sheet,.scrim,.toast,[role=dialog]"))return;
+  S.plSel.clear();S.plCopied=null;S.plCopyMode=false;renderPlate()});
 $("#pl-fmt").addEventListener("input",e=>{const P=plate();P.fmt=e.target.value;const ok=new Set(plIds());Object.keys(P.w).forEach(id=>{if(!ok.has(id))delete P.w[id]});S.plSel.clear();plSave()});
 armDelete("#pl-clear","Clear plate",()=>{plate().w={};S.plSel.clear();plSave()});
 $("#pl-fill").addEventListener("click",()=>{S.plFill=!S.plFill;S.plSel.clear();renderPlate();if(S.plFill){collapsedSet.delete("plate");lsSet("bb.collapsed",[...collapsedSet]);$("#plate-card").classList.remove("collapsed");fsOn();wakeOn()}else{fsOff();wakeOff()}});
