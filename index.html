@@ -4109,6 +4109,7 @@ function renderSolOut(){
     const tr=el&&el.closest("tr");if(tr)tr.classList.toggle("x",!!bad);
     if(el)el.innerHTML=t});
   if(pctV>100)probs.push(`The % v/v components add up to ${fmt(pctV,pctV%1?1:0)}%, more than 100%`);
+  {const over=pctV>100,lq=liq>V;if(over||lq)r.comps.forEach((c,i)=>{const res=compAmt(c,V);if(!res||res.err)return;if(!((over&&c.type==="vv")||(lq&&res.u==="mL")))return;const el=$(`#rc-${i}-a`);if(!el)return;el.innerHTML=`<span style="color:var(--bad)">${fmtAmt(res.a,res.u)}</span>`;const tr=el.closest("tr");if(tr)tr.classList.add("x")})}
   const vl=V>=1000?fmt(V/1000,V%1000?2:0)+" L":V>=1?String(parseFloat(V.toFixed(3)))+" mL":fmt(V*1000,0)+" µL";
   $("#r-out").innerHTML=V>0?`Dissolve in about 80% of the volume, then top up with ${esc(r.diluent||"water")} to <b>${vl}</b>.${liq>0?` <span class="muted">Liquids above add up to ${fmtAmt(liq,"mL")}.</span>`:""}${probs.length?`<div style="color:var(--bad);margin-top:4px">Can't be made like this: ${probs.join("; ")}.</div>`:""}${liq>V&&!(pctV>100)?`<div style="color:var(--bad);margin-top:4px">The liquid components add up to more than the final volume (${fmtAmt(liq,"mL")} of ${vl}). Check the values.</div>`:""}`:"Enter the volume to make.";
   S._solText=[`${r.name} (${vl})`,...lines,`${r.diluent?r.diluent[0].toUpperCase()+r.diluent.slice(1):"Water"} to ${vl}`,r.notes?`Note: ${r.notes}`:""].filter(Boolean).join("\n");
