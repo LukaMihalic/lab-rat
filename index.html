@@ -790,6 +790,25 @@ nav.tabs button{position:relative}
 .calhead{display:flex;align-items:center;justify-content:space-between}
 .calhead b{font-size:17px}
 .calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.strow{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--surface-2)}
+.strow.used{opacity:.55}
+.st1{display:flex;gap:8px;align-items:center}.st1 .stn{flex:1;min-width:0;font-weight:600}
+.st2{display:grid;grid-template-columns:5rem 1fr 1fr 1fr 1.4fr;gap:6px}
+.st2 label{display:flex;flex-direction:column;gap:2px;font-size:11.5px;color:var(--muted)}.st2 input{padding:6px 8px;font-size:13.5px}
+@media (max-width:620px){.st2{grid-template-columns:1fr 1fr}.st2 .stnote{grid-column:1/-1}}
+.stmeta{margin-top:-2px}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface);flex:none}
+.stepper button{background:none;border:0;width:34px;height:34px;font:700 17px var(--sans);color:var(--accent);cursor:pointer}
+.stepper button:hover{background:var(--accent-soft)}
+.stepper .stv{padding:0 6px;font-size:13px;color:var(--muted);white-space:nowrap}.stepper .stv b{color:var(--ink);font:700 15px var(--mono)}
+.stepper.sm button{width:30px;height:30px}
+#st-list{display:flex;flex-direction:column;gap:8px}
+.smbg{gap:4px}.smbh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.smbr{display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}.smbr:last-child{border-bottom:0}
+#inv-view{grid-template-columns:repeat(3,1fr)}
+.smbm .linkbtn{display:inline;text-align:left;font-weight:500}
+.smbr.used{opacity:.5}.smbm{flex:1;min-width:0;display:flex;flex-direction:column}.smbm b{font-size:14.5px}
+
 .otabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:8px 0 0;position:sticky;top:calc(58px + env(safe-area-inset-top,0px));z-index:4;background:var(--bg)}
 .otabs::-webkit-scrollbar{display:none}
 .otab{display:flex;align-items:stretch;flex:0 1 auto;min-width:0;max-width:220px;border:1px solid var(--line);border-radius:9px;background:var(--surface);overflow:hidden}
@@ -1320,6 +1339,7 @@ html.oncal #cal-btn{background:var(--accent);border-color:var(--accent);color:va
           <label class="chk"><input type="checkbox" data-tool="quant"> Densitometry</label>
           <label class="chk"><input type="checkbox" data-tool="qpcr"> qPCR</label>
           <label class="chk"><input type="checkbox" data-tool="solutions"> Recipes</label>
+          <label class="chk"><input type="checkbox" data-tool="stored"> Stored samples</label>
         </div>
       </div>
       <label class="f">Notes<textarea id="p-notes" style="min-height:70px;font-family:var(--sans);font-size:14px"></textarea></label>
@@ -1428,6 +1448,21 @@ html.oncal #cal-btn{background:var(--accent);border-color:var(--accent);color:va
   </section>
 
   <!-- HISTORY -->
+  <section class="tab" id="tab-stor" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2>Stored samples</h2></div>
+      <p class="note" style="margin:0" id="st-sum"></p>
+      <div class="pledit" style="gap:8px">
+        <b style="font-size:14px">Add samples</b>
+        <label class="f">Sample names, one per line<textarea id="st-names" style="min-height:70px;font-family:var(--sans);font-size:14px" placeholder="e.g.&#10;HC rat 1&#10;HC rat 2&#10;OB rat 1"></textarea></label>
+        <div class="grid3"><label class="f">Aliquots each<input id="st-n" type="number" min="1" value="1" inputmode="numeric"></label><label class="f">µL per aliquot<input id="st-vol" inputmode="decimal" placeholder="e.g. 50"></label><label class="f">Freezer<input id="st-fr" list="st-frs"></label></div>
+        <div class="row" style="align-items:flex-end"><label class="f" style="flex:1">Box / rack<input id="st-box" list="st-boxes" placeholder="e.g. Box 3, rack B"></label><button class="btn primary" id="st-add" type="button">Store</button></div>
+        <datalist id="st-frs"></datalist><datalist id="st-boxes"></datalist>
+      </div>
+      <div id="st-list"></div>
+      <p class="note" style="margin:0">Tap <b>−</b> when you take an aliquot out. All your stored samples are also listed in <b>Storage → My samples</b>.</p>
+    </div>
+  </section>
   <section class="tab" id="tab-hist" hidden>
     <div class="card" id="rep-card">
       <div class="row" style="justify-content:space-between"><h2>Report</h2><span class="chip" id="rep-status"></span></div>
@@ -1543,7 +1578,7 @@ html.oncal #cal-btn{background:var(--accent);border-color:var(--accent);color:va
     <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h2>Storage</h2><div class="row" style="flex-wrap:nowrap"><button class="btn" id="inv-exp" aria-haspopup="menu" title="Export or import the list">⇅ Excel</button><button class="btn" id="inv-selbtn">Select</button><button class="btn primary" id="inv-add">+ Add</button></div></div>
     <div class="invlab" id="inv-labbar"></div>
     <div class="card" id="inv-setup" hidden></div>
-    <div class="seg ivseg" id="inv-view"><button data-v="items" aria-pressed="true">Items</button><button data-v="order" aria-pressed="false">To order <span class="cnt" id="inv-ocnt"></span></button></div>
+    <div class="seg ivseg" id="inv-view"><button data-v="items" aria-pressed="true">Items</button><button data-v="order" aria-pressed="false">To order <span class="cnt" id="inv-ocnt"></span></button><button data-v="samples" aria-pressed="false">My samples</button></div>
     <div class="card" id="inv-form" hidden>
       <div class="row" style="justify-content:space-between"><b id="inv-form-t">New item</b><button class="btn sm ghost" id="inv-cancel">Cancel</button></div>
       <div class="grid2">
@@ -1586,6 +1621,11 @@ html.oncal #cal-btn{background:var(--accent);border-color:var(--accent);color:va
     <div class="ivbulk" id="inv-bulk" hidden>
       <div class="ivbk-sheet" id="inv-bsheet" hidden></div>
       <div class="ivbk-bar"><b id="inv-bn">0 selected</b><div class="ivbk-acts"><button class="btn sm primary" data-bk="move">Move</button><button class="btn sm" data-bk="type">Type</button><button class="btn sm" data-bk="tag">Tag</button><button class="btn sm" data-bk="temp">Storage</button><button class="btn sm" data-bk="stock">Stock</button><button class="btn sm ghost danger" data-bk="del">Delete</button></div></div>
+    </div>
+    <div id="inv-samples" hidden>
+      <div class="ivsearch"><input id="smb-q" type="search" placeholder="Search sample, box, experiment…" autocomplete="off"></div>
+      <div class="row" style="justify-content:space-between;margin:8px 0"><span class="note" id="smb-sum"></span><label class="chk" style="font-size:13px"><input type="checkbox" id="smb-used"> Show used up</label></div>
+      <div id="smb-list" style="display:flex;flex-direction:column;gap:10px"></div>
     </div>
     <div id="inv-orders" hidden>
       <div class="row" style="justify-content:space-between;align-items:center"><span class="note" id="ord-sum"></span><div class="row"><button class="btn sm ghost" id="ord-copy">Copy list</button><button class="btn sm" id="ord-add">+ Add</button></div></div>
@@ -2370,6 +2410,8 @@ const Hist={open:new Map(),
         else if(k==="steps"){const d=(b.steps||[]).length-(a.steps||[]).length;const abc=d===0?(b.steps||[]).filter((x,i)=>(x.ab||"")!==(((a.steps||[])[i]||{}).ab||"")):[];if(abc.length&&JSON.stringify((b.steps||[]).map(x=>Object.assign({},x,{ab:0})))===JSON.stringify((a.steps||[]).map(x=>Object.assign({},x,{ab:0})))){abc.forEach(x=>out.push(x.ab?`Antibody: ${String(x.ab).slice(0,50)}`:"Removed antibody"));return}out.push(d>0?`Added ${this.plur(d,"step")}`:d<0?`Removed ${this.plur(-d,"step")}`:"Edited steps")}
         else if(k==="imgs"){const d=this.imgN(b)-this.imgN(a);out.push(d>0?`Added ${this.plur(d,"image")}`:d<0?`Removed ${this.plur(-d,"image")}`:"Edited images or band labels")}
         else if(k==="plan")out.push("Changed planned days");
+        else if(k==="stored"){const A=a.stored||[],B=b.stored||[];const al=L=>L.reduce((s,x)=>s+(+x.n||0),0);if(B.length>A.length)out.push(`Stored ${B.length-A.length} sample${B.length-A.length>1?"s":""}`);else if(B.length<A.length)out.push(`Removed ${A.length-B.length} stored sample${A.length-B.length>1?"s":""}`);else if(al(B)<al(A))out.push(`Took ${al(A)-al(B)} aliquot${al(A)-al(B)>1?"s":""} out`);else out.push("Updated stored samples")}
+        else if(k==="storeDef"){}
         else if(k==="notes")out.push("Edited notes");
         else if(k==="sols"){if(solSig(a.sols)!==solSig(b.sols))out.push("Updated recipe checklist")}
         else if(k==="tools")out.push("Changed tools");
@@ -2492,6 +2534,41 @@ addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")
 document.addEventListener("click",e=>{const x=e.target.closest("[data-otx]");if(x){e.preventDefault();e.stopPropagation();OT.close(+x.dataset.otx);return}const b=e.target.closest("[data-ot]");if(b){e.preventDefault();OT.switchTo(+b.dataset.ot)}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-opentab]");if(!b)return;e.preventDefault();e.stopPropagation();const m=b.closest(".menu");if(m)m.hidden=true;OT.open("#/p/"+encodeURIComponent(b.dataset.opentab),false)},true);
 document.addEventListener("auxclick",e=>{if(e.button!==1)return;const b=e.target.closest("[data-ot]");if(b){e.preventDefault();OT.close(+b.dataset.ot)}});
+
+/* ---------- stored samples (−80 °C bank) ---------- */
+function storedOn(p){const t=p&&p.tools||{};return t.stored!==undefined?!!t.stored:(catOfExp(p)==="prep"||((p&&p.stored)||[]).length>0)}
+function stDef(){const d=Object.assign({fr:"−80 °C",box:""},lsGet("bb.stdef",{})||{},(S.prot&&S.prot.storeDef)||{});return d}
+function stSum(L){const live=L.filter(x=>(+x.n||0)>0);const al=L.reduce((s,x)=>s+(+x.n||0),0);const boxes=[...new Set(L.map(x=>[x.fr,x.box].filter(Boolean).join(", ")).filter(Boolean))];
+  return `${L.length} sample${L.length===1?"":"s"} · ${al} aliquot${al===1?"":"s"} left${live.length<L.length?` · ${L.length-live.length} used up`:""}${boxes.length?` · ${boxes.slice(0,3).map(esc).join(" / ")}${boxes.length>3?"…":""}`:""}`}
+function stRowHTML(x){const id=esc(x.id),u=(+x.n||0)<=0;
+  return `<div class="strow${u?" used":""}" data-si="${id}">
+    <div class="st1"><input class="stn" data-sk="name" value="${esc(x.name||"")}" placeholder="Sample" aria-label="Sample name">
+      <div class="stepper" role="group" aria-label="Aliquots left"><button type="button" data-sd="-1" aria-label="One aliquot used">−</button><span class="stv"><b>${+x.n||0}</b> aliq.</span><button type="button" data-sd="1" aria-label="Add an aliquot">+</button></div>
+      <button type="button" class="rm" data-sx aria-label="Remove sample">×</button></div>
+    <div class="st2"><label>µL<input data-sk="vol" inputmode="decimal" value="${esc(x.vol||"")}" placeholder="each"></label><label>Freezer<input data-sk="fr" value="${esc(x.fr||"")}" list="st-frs"></label><label>Box<input data-sk="box" value="${esc(x.box||"")}" list="st-boxes"></label><label>Position<input data-sk="pos" value="${esc(x.pos||"")}" placeholder="e.g. A1–A3"></label><label class="stnote">Note<input data-sk="note" value="${esc(x.note||"")}"></label></div>
+    <div class="note stmeta">Stored ${esc(x.date?new Date(x.date).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):"")}${u?" · used up":""}</div>
+  </div>`}
+function stDatalists(){const fr=new Set(["−80 °C","−20 °C","+4 °C","Liquid nitrogen"]),bx=new Set();protList().forEach(p=>(p.stored||[]).forEach(x=>{if(x.fr)fr.add(x.fr);if(x.box)bx.add(x.box)}));
+  $("#st-frs").innerHTML=[...fr].map(v=>`<option value="${esc(v)}">`).join("");$("#st-boxes").innerHTML=[...bx].sort().map(v=>`<option value="${esc(v)}">`).join("")}
+function renderStored(){if(!S.prot)return;const L=S.prot.stored||[];const d=stDef();$("#st-fr").value=d.fr||"";$("#st-box").value=d.box||"";stDatalists();
+  $("#st-sum").innerHTML=L.length?stSum(L):"Nothing stored yet. Add the samples you put in the freezer.";
+  $("#st-list").innerHTML=L.map(stRowHTML).join("")}
+function stAdd(){const names=$("#st-names").value.split(/\n|;/).map(s=>s.trim()).filter(Boolean);const n=Math.max(1,parseInt($("#st-n").value)||1),vol=$("#st-vol").value.trim();
+  if(!names.length){setStatus("Write at least one sample name",true);$("#st-names").focus();return}
+  const fr=$("#st-fr").value.trim(),box=$("#st-box").value.trim();S.prot.storeDef={fr,box};lsSet("bb.stdef",{fr,box});
+  S.prot.stored=(S.prot.stored||[]).concat(names.map(nm=>({id:uid(),name:nm,n,vol,fr,box,pos:"",note:"",date:Date.now()})));
+  $("#st-names").value="";queueSave("protocols");renderStored();setStatus(`${names.length} sample${names.length>1?"s":""} stored`)}
+function stEdit(pid,sid,fn){const cur=S.prot&&S.prot.id===pid?S.prot:null;if(cur){const x=(cur.stored||[]).find(y=>y.id===sid);if(x){fn(x);queueSave("protocols");try{flushProt()}catch(e){}}return}
+  const p=Store.data.protocols[pid];if(!p)return;const c=clone(p);const x=(c.stored||[]).find(y=>y.id===sid);if(!x)return;fn(x);Store.save("protocols",c)}
+function renderSampleBank(){const q=($("#smb-q").value||"").trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d");const showUsed=$("#smb-used").checked;
+  const rows=[];protList().forEach(p=>(p.stored||[]).forEach(x=>rows.push({p,x})));
+  const F=rows.filter(({p,x})=>(showUsed||(+x.n||0)>0)&&(!q||[x.name,x.fr,x.box,x.pos,x.note,p.name,p.group,p.folder].join(" ").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").includes(q)));
+  const al=F.reduce((s,r)=>s+(+r.x.n||0),0);$("#smb-sum").textContent=rows.length?`${F.length} sample${F.length===1?"":"s"} · ${al} aliquot${al===1?"":"s"}`:"";
+  if(!rows.length){$("#smb-list").innerHTML=`<div class="card"><p class="note" style="margin:0">No stored samples yet. In an experiment, open the <b>Stored</b> tab and add what you put in the freezer. Lysate and homogenisation experiments have it on; for others, turn on <b>Stored samples</b> in the experiment's settings.</p></div>`;return}
+  const G=new Map();F.forEach(r=>{const k=(r.x.fr||"No freezer")+"\u0000"+(r.x.box||"");if(!G.has(k))G.set(k,[]);G.get(k).push(r)});
+  const keys=[...G.keys()].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+  $("#smb-list").innerHTML=keys.map(k=>{const [fr,box]=k.split("\u0000");const L=G.get(k).sort((a,b)=>((a.x.pos?0:1)-(b.x.pos?0:1))||String(a.x.pos||"").localeCompare(String(b.x.pos||""),undefined,{numeric:true})||String(a.x.name).localeCompare(String(b.x.name),undefined,{numeric:true}));
+    return `<div class="card smbg"><div class="smbh"><b>${esc(fr)}${box?` · ${esc(box)}`:""}</b><span class="note">${L.length} · ${L.reduce((s,r)=>s+(+r.x.n||0),0)} aliq.</span></div>${L.map(({p,x})=>`<div class="smbr${(+x.n||0)<=0?" used":""}"><div class="smbm"><b>${esc(x.name||"Sample")}</b><span class="note">${x.pos?esc(x.pos)+" · ":""}${x.vol?esc(x.vol)+" µL · ":""}<button type="button" class="linkbtn" data-smbp="${esc(p.id)}">${esc(p.name||"Experiment")}</button>${x.note?" · "+esc(x.note):""}</span></div><div class="stepper sm"><button type="button" data-smbd="-1" data-p2="${esc(p.id)}" data-s2="${esc(x.id)}" aria-label="One aliquot used">−</button><span class="stv"><b>${+x.n||0}</b></span><button type="button" data-smbd="1" data-p2="${esc(p.id)}" data-s2="${esc(x.id)}" aria-label="Add an aliquot">+</button></div></div>`).join("")}</div>`}).join("")||`<p class="note">Nothing matches.</p>`}
 function openHist(title,html){$("#hist2-title").textContent=title;$("#hist2-body").innerHTML=html;$("#hist2-scrim").hidden=false;$("#hist2-sheet").hidden=false;$("#hist2-sheet").scrollTop=0}
 function plCenter(){const card=$("#plate-card");if(!card)return;card.style.paddingLeft=card.style.paddingRight="";
   if(!card.classList.contains("fs")||!matchMedia("(orientation:landscape)").matches)return;
@@ -2681,13 +2758,13 @@ window.addEventListener("scroll",()=>{if($(".menu:not([hidden])"))closeMenus()},
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMenus()});
 /* ---------- tabs ---------- */
 function showTab(t){document.documentElement.classList.toggle("oncal",t==="cal");
-  const inside=["prot","assay","smp","qset","qres","gel","img","quant","psol","hist"].includes(t);if(inside&&!S.prot)t="home";if(t==="lib"&&isTpl()===false){}
+  const inside=["prot","assay","smp","qset","qres","gel","img","quant","psol","stor","hist"].includes(t);if(inside&&!S.prot)t="home";if(t==="lib"&&isTpl()===false){}
   if(["home","lib","sol","calc","clock","notes","inv","cal"].includes(t)){flushProt()}if(t!=="notes")flushNotes();
   if(!["sol","psol"].includes(t))flushSol();
   S.tab=t;lsSet("bb.tab",t);navRec(t);
   const navKey=inside?(isTpl()?"lib":"home"):t==="cal"?"home":t;$$("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===navKey)));
   $("#pbar").hidden=!inside;
-  $("#tab-home").hidden=t!=="home";$("#tab-lib").hidden=t!=="lib";if(t==="lib"){$("#lib-tpl").hidden=true;renderLib()}$("#tab-gel").hidden=t!=="gel";$("#tab-prot").hidden=t!=="prot";$("#tab-calc").hidden=t!=="calc";$("#tab-clock").hidden=t!=="clock";if(t==="clock")renderClock();$("#tab-notes").hidden=t!=="notes";$("#tab-inv").hidden=t!=="inv";if(t==="inv")Inv.open();$("#tab-cal").hidden=t!=="cal";if(t==="cal")renderCal();if(t==="notes")renderNotes();$("#tab-assay").hidden=t!=="assay";$("#tab-sol").hidden=!(t==="sol"||t==="psol");$("#tab-hist").hidden=t!=="hist";$("#tab-img").hidden=t!=="img";$("#tab-smp").hidden=t!=="smp";if(t==="smp")renderSamples();
+  $("#tab-home").hidden=t!=="home";$("#tab-lib").hidden=t!=="lib";if(t==="lib"){$("#lib-tpl").hidden=true;renderLib()}$("#tab-gel").hidden=t!=="gel";$("#tab-prot").hidden=t!=="prot";$("#tab-calc").hidden=t!=="calc";$("#tab-clock").hidden=t!=="clock";if(t==="clock")renderClock();$("#tab-notes").hidden=t!=="notes";$("#tab-inv").hidden=t!=="inv";if(t==="inv")Inv.open();$("#tab-cal").hidden=t!=="cal";if(t==="cal")renderCal();if(t==="notes")renderNotes();$("#tab-assay").hidden=t!=="assay";$("#tab-sol").hidden=!(t==="sol"||t==="psol");$("#tab-hist").hidden=t!=="hist";$("#tab-stor").hidden=t!=="stor";if(t==="stor")renderStored();$("#tab-img").hidden=t!=="img";$("#tab-smp").hidden=t!=="smp";if(t==="smp")renderSamples();
   $("#tab-qset").hidden=t!=="qset";$("#tab-qres").hidden=t!=="qres";$("#tab-quant").hidden=t!=="quant";if(t==="quant")renderQuant();
   if(t==="qset"){S.plateCtx="qpcr";S.plSel=new Set();$("#qp-plate-slot").appendChild($("#plate-card"));$("#plate-card").hidden=false;$("#pl-auto").textContent="Fill from setup";renderQSetup();renderPlate()}
   else if(S.plateCtx==="qpcr"){S.plateCtx="assay";S.plSel=new Set();$("#plate-home").after($("#plate-card"));$("#pl-auto").textContent="Fill from tables"}
@@ -3057,7 +3134,7 @@ const TEMPLATES={
     st("Clarify","Centrifuge","12 000–15 000 × g, 4 °C",15),
     st("Clarify","Collect supernatant","Middle, clear layer: avoid the fat on top (pancreas is fatty) and the pellet. Into clean cold tubes, on ice"),
     st("Store","Aliquot","Keep one aliquot for protein concentration (Lowry); rest at −80 °C")]},
-  homogbrain:{name:"Brain and olfactory tissue lysate (lysis buffer + DTT)",method:"custom",label:"Homogenization",desc:"Brain, olfactory bulb, olfactory and respiratory epithelium. Same steps as the pancreas lysate, with the brain lysis buffer (Tris pH 8.0, NP-40, deoxycholate, SDS, vanadate, DTT).",tools:{protein:false,gel:false,solutions:true},sols:["Brain lysis buffer (RIPA + DTT)","Tris 1 M, pH 8.0","NaCl 1 M","EDTA 5 mM","DTT 1 M","Sodium vanadate 10 mM"],steps:()=>[
+  homogbrain:{name:"Brain and olfactory tissue lysate (lysis buffer + DTT)",method:"custom",label:"Homogenization",desc:"Brain, olfactory bulb, olfactory and respiratory epithelium. Same steps as the pancreas lysate, with the brain lysis buffer (Tris pH 8.0, NP-40, deoxycholate, SDS, vanadate, DTT).",tools:{protein:false,gel:false,solutions:true,stored:true},sols:["Brain lysis buffer (RIPA + DTT)","Tris 1 M, pH 8.0","NaCl 1 M","EDTA 5 mM","DTT 1 M","Sodium vanadate 10 mM"],steps:()=>[
     st("Days before","Stocks","Tris 1 M pH 8.0, NaCl 1 M, EDTA 5 mM, DTT 1 M and sodium vanadate 10 mM (see Recipes)"),
     st("Days before","Lysis buffer","25 mL brain lysis buffer from the stocks + NP-40, deoxycholate and SDS, topped up with ddH₂O (see Recipes). Store at 4 °C"),
     st("Day of","Pre-cool","Buffer, ice / ice water, centrifuge rotor at 4 °C"),
@@ -3391,11 +3468,11 @@ $("#prot-savetpl").addEventListener("click",()=>{flushProt();const p=S.prot;cons
   Store.save("templates",t);setStatus(t.isDefault?`“${t.name}” is now your default for ${lab}`:`Saved as protocol “${t.name}”`)});
 
 function hasQuant(p){const t=(p&&p.tools)||{};return t.quant===undefined?p&&p.method==="wb":!!t.quant}
-function protTabs(){if(isTpl())return [["prot","Steps"]];const t=S.prot.tools||{};const linkedSmp=S.prot.method!=="wb"&&S.prot.smp&&S.prot.smp.src;return [["prot","Steps"],linkedSmp&&["smp","Samples"],t.protein&&(S.prot.method==="wb"?["smp","Samples"]:["assay",S.prot.method==="elisa"?"Assay":"Protein concentration"]),t.qpcr&&["qset","Setup"],t.qpcr&&["qres","Results"],t.gel&&["gel","Gel"],t.images&&["img","Images"],hasQuant(S.prot)&&["quant","Quant"],t.solutions&&["psol","Recipes"],["hist","Report"]].filter(Boolean)}
+function protTabs(){if(isTpl())return [["prot","Steps"]];const t=S.prot.tools||{};const linkedSmp=S.prot.method!=="wb"&&S.prot.smp&&S.prot.smp.src;return [["prot","Steps"],linkedSmp&&["smp","Samples"],t.protein&&(S.prot.method==="wb"?["smp","Samples"]:["assay",S.prot.method==="elisa"?"Assay":"Protein concentration"]),t.qpcr&&["qset","Setup"],t.qpcr&&["qres","Results"],t.gel&&["gel","Gel"],t.images&&["img","Images"],hasQuant(S.prot)&&["quant","Quant"],t.solutions&&["psol","Recipes"],storedOn(S.prot)&&["stor","Stored"],["hist","Report"]].filter(Boolean)}
 const TI=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 const TICON={prot:TI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/>'),smp:TI('<path d="M9 2.5h6M10 2.5V18a2 2 0 0 0 4 0V2.5"/><path d="M10 10h4"/>'),assay:MICON.protein.replace('stroke-width="2"','stroke-width="2"'),
   qset:TI('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M8 5v14"/>'),qres:TI('<path d="M3 3v18h18"/><path d="M6 17c4 0 5-.5 7-5s3-6 7-6"/>'),gel:TI('<rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M7 8h3M14 8h3M7 12.5h3M14 14h3M7 17h3"/>'),
-  img:TI('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>'),quant:TI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),psol:TI('<path d="M9 3h6M10 3v6.5L5.2 18.2A1.8 1.8 0 0 0 6.8 21h10.4a1.8 1.8 0 0 0 1.6-2.8L14 9.5V3"/>'),hist:TI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')};
+  img:TI('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>'),quant:TI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),psol:TI('<path d="M9 3h6M10 3v6.5L5.2 18.2A1.8 1.8 0 0 0 6.8 21h10.4a1.8 1.8 0 0 0 1.6-2.8L14 9.5V3"/>'),stor:TI('<path d="M12 2v20M4.9 4.9l14.2 14.2M2 12h20M4.9 19.1 19.1 4.9"/>'),hist:TI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')};
 const TSHORT={"Protein concentration":"Protein"};
 function tabsFade(scroll){const el=$("#pbar-tabs");if(!el)return;const upd=()=>{const l=el.scrollLeft>2,r=el.scrollLeft+el.clientWidth<el.scrollWidth-2;el.style.setProperty("--fl",l?"28px":"0px");el.style.setProperty("--fr",r?"28px":"0px")};
   if(scroll){const a=el.querySelector('[aria-selected="true"]');if(a&&el.scrollWidth>el.clientWidth){const x=a.offsetLeft-(el.clientWidth-a.offsetWidth)/2;el.scrollLeft=Math.max(0,x)}}requestAnimationFrame(upd)}
@@ -3419,7 +3496,7 @@ function openProtocol(p,tab){
 function renderProtSelect(){renderHome();renderPbar()}
 function fillProtForm(){
   const p=S.prot;$("#p-name").value=p.name||"";$("#p-group").value=p.group||"";$("#p-folder").value=p.folder||"";pFolders();$("#p-notes").value=p.notes||"";
-  $$("#p-tools input").forEach(i=>i.checked=i.dataset.tool==="quant"?hasQuant(p):!!(p.tools||{})[i.dataset.tool]);
+  $$("#p-tools input").forEach(i=>i.checked=i.dataset.tool==="quant"?hasQuant(p):i.dataset.tool==="stored"?storedOn(p):!!(p.tools||{})[i.dataset.tool]);
   $("#prot-del").classList.remove("armed");$("#prot-del").textContent="Delete";renderPbar();
   $("#p-tool-prot").textContent=p.method==="wb"?"Samples (from protein concentration)":p.method==="elisa"?"Assay (plate and standard curve)":"Protein concentration";
   const T=isTpl();$("#p-sum").textContent=T?"Protocol settings":"Experiment settings";$("#p-group-w").hidden=T;$("#prot-savetpl").hidden=T;$("#tpl-start").hidden=!T;$("#prot-reset").hidden=T||!!S.editSteps;$("#p-tools").parentElement.querySelector(".note").textContent=T?"Tools in experiments started from this protocol":"Tools in this experiment";
@@ -5047,7 +5124,7 @@ const Inv={
     if(x.room)lsSet("bb.inv.lastRoom",x.room);this.put(x);this.close();setStatus(msg)},
   setStock(v){this.formStock=v;$$("#iv-stock button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===v)))},
   view:"items",
-  setView(v){this.view=v;if(v!=="items"&&this.selMode){this.selMode=false;this.sel.clear();this.bk=null;this.renderSel()}$("#inv-selbtn").hidden=v!=="items";$$("#inv-view button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===v)));$("#inv-items").hidden=v!=="items";$("#inv-orders").hidden=v!=="order";$("#inv-add").hidden=v!=="items";if(v!=="items")$("#inv-form").hidden=true;if(v!=="order")$("#ord-form").hidden=true;this.renderOrders()},
+  setView(v){this.view=v;if(v!=="items"&&this.selMode){this.selMode=false;this.sel.clear();this.bk=null;this.renderSel()}$("#inv-selbtn").hidden=v!=="items";$$("#inv-view button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===v)));$("#inv-items").hidden=v!=="items";$("#inv-orders").hidden=v!=="order";$("#inv-samples").hidden=v!=="samples";if(v==="samples")renderSampleBank();$("#inv-exp").hidden=v==="samples";$("#inv-add").hidden=v!=="items";if(v!=="items")$("#inv-form").hidden=true;if(v!=="order")$("#ord-form").hidden=true;this.renderOrders()},
   orders(){return Object.values(this.items).filter(x=>x.order)},
   renderOrders(){const O=this.orders();const need=O.filter(x=>x.order.state!=="ordered"),ord=O.filter(x=>x.order.state==="ordered");
     $("#inv-ocnt").textContent=need.length||"";
@@ -5091,6 +5168,17 @@ document.addEventListener("click",e=>{const pop=$("#locpop");if(!pop||pop.hidden
   if(e.target.closest("[data-lpx]")||(!e.target.closest("#locpop")&&!e.target.closest("[data-loc]")))pop.hidden=true},true);
 window.addEventListener("scroll",()=>{const pop=$("#locpop");if(pop&&!pop.hidden)pop.hidden=true},{passive:true,capture:true});
 $("#inv-view").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b)Inv.setView(b.dataset.v)});
+$("#st-add").addEventListener("click",stAdd);
+$("#st-fr").addEventListener("change",()=>{S.prot.storeDef=Object.assign({},S.prot.storeDef,{fr:$("#st-fr").value.trim()});queueSave("protocols")});
+$("#st-box").addEventListener("change",()=>{S.prot.storeDef=Object.assign({},S.prot.storeDef,{box:$("#st-box").value.trim()});queueSave("protocols")});
+$("#st-list").addEventListener("input",e=>{const i=e.target.closest("[data-sk]");if(!i)return;const r=i.closest("[data-si]");const x=(S.prot.stored||[]).find(y=>y.id===r.dataset.si);if(!x)return;x[i.dataset.sk]=i.value;queueSave("protocols");$("#st-sum").innerHTML=stSum(S.prot.stored)});
+$("#st-list").addEventListener("click",e=>{const r=e.target.closest("[data-si]");if(!r)return;const L=S.prot.stored||[];const x=L.find(y=>y.id===r.dataset.si);if(!x)return;
+  const d=e.target.closest("[data-sd]");if(d){x.n=Math.max(0,(+x.n||0)+(+d.dataset.sd));queueSave("protocols");renderStored();if(+d.dataset.sd<0)setStatus(x.n?`${x.name}: ${x.n} aliquot${x.n>1?"s":""} left`:`${x.name}: used up`);return}
+  const rm=e.target.closest("[data-sx]");if(rm){if(rm.classList.contains("armed")){S.prot.stored=L.filter(y=>y!==x);queueSave("protocols");renderStored()}else{rm.classList.add("armed");rm.textContent="Remove?";setTimeout(()=>{if(rm.isConnected){rm.classList.remove("armed");rm.textContent="×"}},2500)}}});
+$("#smb-q").addEventListener("input",renderSampleBank);$("#smb-used").addEventListener("change",renderSampleBank);
+$("#smb-list").addEventListener("click",e=>{const o=e.target.closest("[data-smbp]");if(o){const p=Store.data.protocols[o.dataset.smbp];if(p){openProtocol(clone(p),"stor");showTab("stor")}return}
+  const d=e.target.closest("[data-smbd]");if(d){stEdit(d.dataset.p2,d.dataset.s2,x=>{x.n=Math.max(0,(+x.n||0)+(+d.dataset.smbd))});setTimeout(renderSampleBank,0)}});
+
 $("#iv-stock").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b)Inv.setStock(b.dataset.v)});
 $("#ord-add").addEventListener("click",()=>Inv.ordEdit(null));
 $("#ord-cancel").addEventListener("click",()=>{$("#ord-form").hidden=true;Inv.ordEditing=null});
