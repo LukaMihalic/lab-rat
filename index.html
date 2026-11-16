@@ -1075,6 +1075,19 @@ html.oncal #cal-btn{background:var(--accent);border-color:var(--accent);color:va
 .seasond{position:absolute;inset:0;pointer-events:none}
 .seasond svg{width:100%;height:100%;overflow:visible;display:block}
 .brand .seasonw{margin:-4px 0}.brand .seasonw .brandimg{margin:0}
+.todocard h2 small{font-weight:500;color:var(--muted);font-size:13px;margin-left:4px}
+ul.todo{list-style:none;margin:6px 0 4px;padding:0}
+ul.todo li{display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid var(--line)}
+ul.todo li:last-child{border-bottom:0}
+ul.todo li input[type=checkbox]{width:18px;height:18px;flex:none;accent-color:var(--accent);margin:0}
+ul.todo li .tt{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;font-size:14px;padding:5px 2px;border-radius:6px}
+ul.todo li .tt:focus{outline:2px solid var(--accent-soft);background:var(--surface-2)}
+ul.todo li.dn .tt{text-decoration:line-through;color:var(--muted)}
+ul.todo li .tx{flex:none;border:0;background:transparent;color:var(--muted);font-size:18px;line-height:1;width:28px;height:28px;border-radius:6px;cursor:pointer}
+ul.todo li .tx:hover{color:var(--bad);background:var(--bad-soft)}
+ul.todo li small{flex:none;color:var(--muted);font-size:11px}
+.todoadd{display:flex;gap:8px;margin-top:6px}
+.todoadd input{flex:1;min-width:0}
 </style>
 
 <div class="wrap">
@@ -1314,6 +1327,11 @@ html.oncal #cal-btn{background:var(--accent);border-color:var(--accent);color:va
     <div class="card nextcard" id="prot-next" hidden></div>
     <div class="planbar" id="plan-bar"></div>
     <div class="card plancard" id="plan-card" hidden></div>
+    <div class="card todocard" id="todo-card" hidden>
+      <div class="row" style="justify-content:space-between"><h2>To do <small id="todo-n"></small></h2><button class="btn sm ghost" id="todo-donetog" hidden></button></div>
+      <ul class="todo" id="todo-list"></ul>
+      <form class="todoadd" id="todo-form" autocomplete="off"><input id="todo-in" type="text" placeholder="Add a task… (Enter)" aria-label="New task"><button class="btn sm" type="submit">Add</button></form>
+    </div>
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <h2>Steps</h2>
@@ -3209,7 +3227,7 @@ const MICON={
 const MCOL={ihc:"#A23B8C",page:"#2E7DB8",wb:"#4F5BD5",protein:"#0E8A9A",elisa:"#C2570C",qpcr:"#2F8A4E",prep:"#A86A12",other:"#6B7489"};
 function shortD(ms){const d=new Date(ms);if(isNaN(d))return "";return d.toLocaleDateString("en-GB",d.getFullYear()===new Date().getFullYear()?{day:"numeric",month:"short"}:{day:"numeric",month:"short",year:"numeric"})}
 function micon(cat,sm){cat=MICON[cat]?cat:"other";return `<span class="mic${sm?" sm":""}" style="--mc:${MCOL[cat]}" aria-hidden="true">${MICON[cat]}</span>`}
-function methodLabel(p){if(p.cat==="page")return "SDS-PAGE";return p.method==="qpcr"?"qPCR":p.method==="elisa"?"ELISA"+(p.elisaType?" · "+ELISA_T[p.elisaType]:""):p.method==="wb"?"Western blot":p.method==="protein"?({lowry:"Protein concentration · Lowry",bca:"Protein concentration · BCA",bradford:"Protein concentration · Bradford",direct:"Protein concentration · direct reading"})[p.assayMethod]||"Protein concentration":p.cat==="ihc"?"Immunohistochemistry":p.cat==="prep"?"Sample preparation":"Custom"}
+function methodLabel(p){if(p.cat==="page")return "SDS-PAGE";if(p.method==="custom"&&/^dot blot/i.test(p.templateName||""))return "Dot blot";return p.method==="qpcr"?"qPCR":p.method==="elisa"?"ELISA"+(p.elisaType?" · "+ELISA_T[p.elisaType]:""):p.method==="wb"?"Western blot":p.method==="protein"?({lowry:"Protein concentration · Lowry",bca:"Protein concentration · BCA",bradford:"Protein concentration · Bradford",direct:"Protein concentration · direct reading"})[p.assayMethod]||"Protein concentration":p.cat==="ihc"?"Immunohistochemistry":p.cat==="prep"?"Sample preparation":"Custom"}
 /* ---- Experiments list (home) ---- */
 const isTpl=()=>S.protKind==="templates";
 const expDone=p=>p.status==="done";
@@ -3266,7 +3284,7 @@ function renderHome(){
   else if(!q&&n.p!=null&&n.p!=="__none")tiles=folders.map(f=>{const path=(n.f?n.f+"/":"")+f;return tile(f,{p:n.p,f:path},every.filter(p=>pj(p)===n.p&&under(pf(p),path)))}).join("");
   $("#home-folders").innerHTML=tiles;
   // list
-  let base=q?every.filter(p=>[p.name,p.group,p.folder,methodLabel(p),p.notes,stepAbs(p).join(" "),(p.imgs||[]).map(s=>[s.ab1,s.ab2].join(" ")).join(" ")].join(" ").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").includes(q)):n.p==null?every:every.filter(p=>inNav(p,n));
+  let base=q?every.filter(p=>[p.name,p.group,p.folder,methodLabel(p),p.notes,stepAbs(p).join(" "),(p.todo||[]).map(x=>x.t).join(" "),(p.imgs||[]).map(s=>[s.ab1,s.ab2].join(" ")).join(" ")].join(" ").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").includes(q)):n.p==null?every:every.filter(p=>inNav(p,n));
   const root=!q&&n.p==null;
   let f=lsGet("bb.hstatus","all");let so=lsGet("bb.hsort2",null)||"status";if(so==="project")so="used";$("#home-sort").value=so;
   const na=base.filter(p=>!expDone(p)).length,nd=base.length-na;
@@ -3280,7 +3298,7 @@ function renderHome(){
   const abs=p=>{const m=new Map();[...stepAbs(p,"p").map(v=>({ab1:v})),...(p.imgs||[])].forEach(s=>{const v=String(s.ab1||"").replace(/\s*\b1\s*:\s*[\d\s.,]+$/,"").replace(/^anti[- ]?/i,"").trim();if(v&&!m.has(v.toLowerCase()))m.set(v.toLowerCase(),v)});return [...m.values()]};
   const card=p=>{const nG=Object.values(Store.data.experiments).filter(x=>x.protoId===p.id).reduce((n,x)=>n+gelsOf(x.id).filter(g=>!g.draft).length,0),nA=Object.values(Store.data.assays).filter(x=>x.protoId===p.id).length;
     const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const where=[pj(p),showPath(pf(p))].filter(Boolean).join(" › ");
-    const cat=catOfExp(p);return `<div class="pcard"><button class="pmain" data-p="${esc(p.id)}"><span class="th">${micon(cat)}<span class="t">${esc(p.name||"Untitled")}${(()=>{const A=abs(p);return A.length?`<small class="abl" title="Primary antibodies">${esc(A.join(" · "))}</small>`:""})()}</span></span><span class="m">${outcomeTag(p)}<span class="tag mt" style="--mc:${MCOL[cat]||MCOL.other}">${esc(methodLabel(p))}</span>${(q||root)&&where?`<span class="tag" style="background:var(--surface-2);color:var(--ink)">${esc(where)}</span>`:""}</span>${steps.length?`<span class="prog${expDone(p)||dn===steps.length?" full":""}" role="img" aria-label="${dn} of ${steps.length} steps done"><i style="width:${Math.round(100*dn/steps.length)}%"></i></span>`:""}<span class="m">${[steps.length?`${dn}/${steps.length} steps`:"no steps",nA?`${nA} assay${nA>1?"s":""}`:"",nG?`${nG} gel${nG>1?"s":""}`:"",expDone(p)&&p.completed?`${expFailed(p)?"failed":"done"} ${shortD(p.completed)}`:p.created?`started ${shortD(p.created)}`:""].filter(Boolean).join(" · ")}${(()=>{if(expDone(p))return "";const n=nextPlan(p);if(!n)return "";return ` · <b class="plnext">📅 ${n.d===dkey(Date.now())?"today":esc(planDayLabel(n.d))}</b>`})()}</span>${(()=>{const u=usedIn(p.id);return u.length?`<span class="m usedin">→ used in ${u.map(q=>esc(q.name)).join(", ")}</span>`:""})()}</button><span class="mwrap"><button class="pm" data-menu aria-label="More actions">⋯</button><div class="menu" hidden><button data-opentab="${esc(p.id)}">Open in new tab</button><button data-copy="${esc(p.id)}">Copy experiment</button>${expDone(p)?`<button data-setout="active" data-sp="${esc(p.id)}">Back to in progress</button>`:""}${!expDone(p)||expFailed(p)?`<button data-setout="ok" data-sp="${esc(p.id)}">✓ Mark as worked</button>`:""}${!expFailed(p)?`<button data-setout="fail" data-sp="${esc(p.id)}">✗ Mark as didn't work</button>`:""}<button class="danger" data-del="${esc(p.id)}">Delete</button></div></span></div>`};
+    const cat=catOfExp(p);return `<div class="pcard"><button class="pmain" data-p="${esc(p.id)}"><span class="th">${micon(cat)}<span class="t">${esc(p.name||"Untitled")}${(()=>{const A=abs(p);return A.length?`<small class="abl" title="Primary antibodies">${esc(A.join(" · "))}</small>`:""})()}</span></span><span class="m">${outcomeTag(p)}<span class="tag mt" style="--mc:${MCOL[cat]||MCOL.other}">${esc(methodLabel(p))}</span>${(q||root)&&where?`<span class="tag" style="background:var(--surface-2);color:var(--ink)">${esc(where)}</span>`:""}</span>${steps.length?`<span class="prog${expDone(p)||dn===steps.length?" full":""}" role="img" aria-label="${dn} of ${steps.length} steps done"><i style="width:${Math.round(100*dn/steps.length)}%"></i></span>`:""}<span class="m">${[steps.length?`${dn}/${steps.length} steps`:"no steps",todoOpenN(p)?`${todoOpenN(p)} to do`:"",nA?`${nA} assay${nA>1?"s":""}`:"",nG?`${nG} gel${nG>1?"s":""}`:"",expDone(p)&&p.completed?`${expFailed(p)?"failed":"done"} ${shortD(p.completed)}`:p.created?`started ${shortD(p.created)}`:""].filter(Boolean).join(" · ")}${(()=>{if(expDone(p))return "";const n=nextPlan(p);if(!n)return "";return ` · <b class="plnext">📅 ${n.d===dkey(Date.now())?"today":esc(planDayLabel(n.d))}</b>`})()}</span>${(()=>{const u=usedIn(p.id);return u.length?`<span class="m usedin">→ used in ${u.map(q=>esc(q.name)).join(", ")}</span>`:""})()}</button><span class="mwrap"><button class="pm" data-menu aria-label="More actions">⋯</button><div class="menu" hidden><button data-opentab="${esc(p.id)}">Open in new tab</button><button data-copy="${esc(p.id)}">Copy experiment</button>${expDone(p)?`<button data-setout="active" data-sp="${esc(p.id)}">Back to in progress</button>`:""}${!expDone(p)||expFailed(p)?`<button data-setout="ok" data-sp="${esc(p.id)}">✓ Mark as worked</button>`:""}${!expFailed(p)?`<button data-setout="fail" data-sp="${esc(p.id)}">✗ Mark as didn't work</button>`:""}<button class="danger" data-del="${esc(p.id)}">Delete</button></div></span></div>`};
   const lh=$("#home-lhead");lh.hidden=!(root&&L.length)&&!(n.p!=null&&n.p!=="__none"&&folders.length&&L.length&&!q);
   lh.innerHTML=root?`<span>Continue</span><span></span>`:`<span>${n.f?"In this folder":"Not in a folder"}</span><span>${L.length}</span>`;
   const mini=p=>{const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const cat=catOfExp(p);
@@ -3506,7 +3524,7 @@ function openProtocol(p,tab){
   S.protKind="protocols";S.prot=p;lsSet("bb.proto",p.id);S.editSteps=false;if(!Array.isArray(p.done))p.done=(S.checks[p.id]||[]).slice();
   const xs=expList();S.exp=xs.length?clone(xs[0]):draftExp();const gs=gelsOf(S.exp.id).filter(g=>!g.draft);S.gel=gs.length?clone(gs[0]):draftGel(S.exp.id);S.loadMode=false;
   const as=assaysOf(p.id);S.assay=as.length?clone(as[0]):draftAssay();
-  fillProtForm();renderSteps();fillGelForm();renderGelSelect();renderGel();fillAssay();renderAssaySelect();
+  fillProtForm();renderSteps();try{renderTodo()}catch(e){}fillGelForm();renderGelSelect();renderGel();fillAssay();renderAssaySelect();
   if(typeof collapseInside==="function"&&lsGet("bb.collapseOnOpen",true))collapseInside();
   const ok=protTabs().map(x=>x[0]);showTab(tab&&ok.includes(tab)?tab:"prot");
 }
@@ -3535,6 +3553,24 @@ $("#prot-steps").addEventListener("input",e=>{const row=e.target.closest(".sedit
   s[k]=k==="min"?(num(e.target.value)>0?num(e.target.value):null):k==="rep"?(parseInt(e.target.value)||0):e.target.value;if(k==="abk"&&!s.abk)delete s.abk;queueSave("protocols")});
 
 function clock(sec){sec=Math.max(0,Math.round(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(s).padStart(2,"0")}
+function todoOpenN(p){return ((p&&p.todo)||[]).filter(x=>!x.done).length}
+function renderTodo(){const c=$("#todo-card");if(!c)return;const p=S.prot;if(!p||isTpl()){c.hidden=true;return}c.hidden=false;
+  const L=p.todo||[],open=L.filter(x=>!x.done),dn=L.filter(x=>x.done);const sd=!!S.todoShowDone;
+  $("#todo-n").textContent=L.length?`${open.length} open`:"";
+  const tg=$("#todo-donetog");tg.hidden=!dn.length;tg.textContent=sd?"Hide done":`Show done (${dn.length})`;
+  const fd=t=>{try{return new Date(t).toLocaleDateString(undefined,{day:"numeric",month:"short"})}catch(e){return ""}};
+  const li=x=>`<li data-td="${esc(x.id)}"${x.done?' class="dn"':""}><input type="checkbox"${x.done?" checked":""} aria-label="Done"><input class="tt" type="text" value="${esc(x.t)}" aria-label="Task">${x.done&&x.doneAt?`<small>${esc(fd(x.doneAt))}</small>`:""}<button class="tx" type="button" title="Delete" aria-label="Delete">×</button></li>`;
+  const fa=document.activeElement;if(fa&&fa.classList&&fa.classList.contains("tt")&&$("#todo-list").contains(fa))return;
+  $("#todo-list").innerHTML=open.map(li).join("")+(sd?dn.map(li).join(""):"");
+  $("#todo-list").hidden=!open.length&&!(sd&&dn.length)}
+function todoEdit(fn){const p=S.prot;if(!p)return;p.todo=p.todo||[];fn(p.todo);p.updatedAt=Date.now();queueSave("protocols");try{flushProt()}catch(e){}renderTodo()}
+$("#todo-form").addEventListener("submit",e=>{e.preventDefault();const i=$("#todo-in"),t=i.value.trim();if(!t)return;todoEdit(L=>L.push({id:uid(),t,done:false,at:Date.now()}));i.value="";i.focus()});
+$("#todo-donetog").addEventListener("click",()=>{S.todoShowDone=!S.todoShowDone;renderTodo()});
+$("#todo-list").addEventListener("change",e=>{const r=e.target.closest("[data-td]");if(!r)return;const id=r.dataset.td;
+  if(e.target.type==="checkbox"){const v=e.target.checked;todoEdit(L=>{const x=L.find(y=>y.id===id);if(x){x.done=v;x.doneAt=v?Date.now():null}})}
+  else if(e.target.classList.contains("tt")){const v=e.target.value.trim();todoEdit(L=>{const k=L.findIndex(y=>y.id===id);if(k<0)return;if(v)L[k].t=v;else L.splice(k,1)})}});
+$("#todo-list").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.classList.contains("tt")){e.preventDefault();e.target.blur()}});
+$("#todo-list").addEventListener("click",e=>{const b=e.target.closest(".tx");if(!b)return;const id=b.closest("[data-td]").dataset.td;todoEdit(L=>{const k=L.findIndex(y=>y.id===id);if(k>=0)L.splice(k,1)})});
 function openStepsCard(){const c=$("#prot-steps").closest(".card.collapsible");if(c&&collapsedSet.has(c.dataset.ck)){collapsedSet.delete(c.dataset.ck);lsSet("bb.collapsed",[...collapsedSet]);const u=ckUpd.get(c.dataset.ck);u&&u()}}
 /* ---- planned days for an experiment ---- */
 function planOf(p){return Array.isArray(p&&p.plan)?p.plan:[]}
@@ -3579,7 +3615,7 @@ function stepAbHTML(x,T){const k=stepAbKind(x);if(!k||T)return "";const lab=k===
   if(S.abEdit===x.id)return `<div class="stab ed"><input type="text" data-abin="${esc(x.id)}" list="ab-dl-${k}" value="${esc(x.ab||"")}" placeholder="${k==="s"?"e.g. anti-rabbit IgG-HRP":"e.g. anti-pIRS1 (Ser307)"}" aria-label="${lab}" autocomplete="off"><button class="btn sm primary" data-abok="${esc(x.id)}">OK</button><datalist id="ab-dl-${k}">${stepAbList(k).map(v=>`<option value="${esc(v)}"></option>`).join("")}</datalist></div>`;
   return x.ab?`<div class="stab"><button type="button" class="abchip" data-abset="${esc(x.id)}" title="${lab}: tap to change">${esc(x.ab)}</button></div>`:`<div class="stab"><button type="button" class="linkbtn abadd" data-abset="${esc(x.id)}">+ Which antibody?</button></div>`}
 function renderSteps(){
-  const p=S.prot;if(!p)return;const steps=p.steps||[];try{renderPlanBar()}catch(e){}
+  const p=S.prot;if(!p)return;const steps=p.steps||[];try{renderPlanBar()}catch(e){}try{renderTodo()}catch(e){}
   $("#prot-edit").textContent=S.editSteps?"Done":"Edit steps";$("#prot-edit").classList.toggle("primary",!!S.editSteps);
   $("#prot-editbar").hidden=!S.editSteps;$("#prot-reset").hidden=!!S.editSteps;
   {const dn=new Set(p.done||[]);const all=steps.length&&steps.every(x=>dn.has(x.id));$("#prot-all").hidden=!!S.editSteps||isTpl()||!steps.length||all;$("#prot-reset").hidden=!!S.editSteps||!dn.size}
@@ -5650,7 +5686,7 @@ const collapsedSet=new Set(lsGet("bb.collapsed",[]));const ckUpd=new Map();
 function collapseInside(){["gel","assay","prot","qset","qres","smp","img","quant","hist"].forEach(t=>{const sec=$("#tab-"+t);if(!sec)return;
     const cards=[...sec.querySelectorAll(".card.collapsible")];const dets=[...sec.querySelectorAll("details.card")];
     if(cards.length+dets.length<2)return;
-    cards.forEach(c=>{const keep=c.dataset.ck==="vis"||!!c.querySelector("#prot-steps");keep?collapsedSet.delete(c.dataset.ck):collapsedSet.add(c.dataset.ck);const u=ckUpd.get(c.dataset.ck);u&&u()});dets.forEach(d=>d.open=false)});
+    cards.forEach(c=>{const keep=c.dataset.ck==="vis"||!!c.querySelector("#prot-steps")||!!c.querySelector("#todo-list");keep?collapsedSet.delete(c.dataset.ck):collapsedSet.add(c.dataset.ck);const u=ckUpd.get(c.dataset.ck);u&&u()});dets.forEach(d=>d.open=false)});
   const pc=$("#plate-card");if(pc){collapsedSet.add("plate");const u=ckUpd.get("plate");u&&u()}
   lsSet("bb.collapsed",[...collapsedSet])}
 $$(".card.collapsible").forEach(card=>{const k=card.dataset.ck,h=card.querySelector(".chead");const b=document.createElement("button");b.className="ctog";b.type="button";
