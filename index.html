@@ -1085,6 +1085,14 @@ ul.todo li .tt:focus{outline:2px solid var(--accent-soft);background:var(--surfa
 ul.todo li.dn .tt{text-decoration:line-through;color:var(--muted)}
 ul.todo li .tx{flex:none;border:0;background:transparent;color:var(--muted);font-size:18px;line-height:1;width:28px;height:28px;border-radius:6px;cursor:pointer}
 ul.todo li .tx:hover{color:var(--bad);background:var(--bad-soft)}
+ul.todo li{flex-wrap:wrap}
+ul.todo li .tl{flex:none;width:auto;max-width:9.5em;font-size:12px;padding:4px 6px;height:auto;min-height:0;color:var(--muted);border-radius:6px}
+ul.todo .tlink{flex-basis:100%;display:flex;align-items:center;gap:6px;margin:-2px 0 4px 26px;font-size:12.5px;color:var(--muted);min-width:0}
+ul.todo .tlink button.go{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:999px;padding:3px 10px;font:inherit;font-size:12.5px;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+ul.todo .tlink button.go:hover{border-color:var(--accent)}
+ul.todo .tlink .ok{color:var(--ok);font-weight:600;flex:none}
+ul.todo .tlink .un{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;flex:none;padding:2px 4px}
+ul.todo li .tw{flex:none;font-size:11px;color:var(--muted);max-width:8em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 ul.todo li small{flex:none;color:var(--muted);font-size:11px}
 .todoadd{display:flex;gap:8px;margin-top:6px}
 .todoadd input{flex:1;min-width:0}
@@ -1126,6 +1134,11 @@ ul.todo li small{flex:none;color:var(--muted);font-size:11px}
       <div class="row" style="justify-content:space-between;align-items:center"><span class="note" id="mk-msg"></span><button class="btn primary sm" id="mk-ok">Create</button></div>
     </div>
     <div class="card shcard" id="home-share" hidden></div>
+    <div class="card todocard" id="ftodo-card" hidden>
+      <div class="row" style="justify-content:space-between"><h2>To do <small id="ftodo-n"></small></h2><button class="btn sm ghost" id="ftodo-donetog" hidden></button></div>
+      <ul class="todo" id="ftodo-list"></ul>
+      <form class="todoadd" id="ftodo-form" autocomplete="off"><input id="ftodo-in" type="text" placeholder="Add a task to this project… (Enter)" aria-label="New task"><button class="btn sm" type="submit">Add</button></form>
+    </div>
     <div class="row" id="home-bar" style="justify-content:space-between;align-items:center">
       <div class="row"><select id="home-filter" style="width:auto" aria-label="Status"></select><select id="home-sort" style="width:auto" aria-label="Sort experiments"><option value="status">By status</option><option value="used">Recently used</option><option value="new">Newest first</option><option value="old">Oldest first</option><option value="name">Name A–Z</option></select></div>
       <div class="row" id="home-acts"></div>
@@ -3303,6 +3316,7 @@ function renderHome(){
   lh.innerHTML=root?`<span>Continue</span><span></span>`:`<span>${n.f?"In this folder":"Not in a folder"}</span><span>${L.length}</span>`;
   const mini=p=>{const steps=p.steps||[],dn=(p.done||[]).filter(id=>steps.some(x=>x.id===id)).length;const cat=catOfExp(p);
     return `<button class="minirow pmain" data-p="${esc(p.id)}">${micon(cat,1)}<span class="mn">${esc(p.name||"Untitled")}</span>${steps.length?`<span class="mp"><span class="prog"><i style="width:${Math.round(100*dn/steps.length)}%"></i></span><span class="mc">${dn}/${steps.length}</span></span>`:""}</button>`};
+  try{renderFTodo(n,q)}catch(e){}
   $("#home-list").classList.toggle("minilist",root);
   const byStatus=()=>{const G=[["active","In progress",L.filter(p=>!expDone(p))],["ok","Worked",L.filter(p=>expDone(p)&&!expFailed(p))],["fail","Didn't work",L.filter(expFailed)]].filter(g=>g[2].length);
       return G.map(([k,t,ps])=>`<div class="ghead sthead st-${k}"><span>${t}</span><span>${ps.length}</span></div>`+ps.map(card).join("")).join("")};
@@ -3553,8 +3567,38 @@ $("#prot-steps").addEventListener("input",e=>{const row=e.target.closest(".sedit
   s[k]=k==="min"?(num(e.target.value)>0?num(e.target.value):null):k==="rep"?(parseInt(e.target.value)||0):e.target.value;if(k==="abk"&&!s.abk)delete s.abk;queueSave("protocols")});
 
 function clock(sec){sec=Math.max(0,Math.round(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(s).padStart(2,"0")}
+let FT={n:null,showDone:false};
+function ftDoc(n){return fdocs().find(d=>d.project===n.p&&(d.path||"")===(n.f||""))}
+function ftExps(n){return protList().filter(p=>pj(p)===n.p&&under(pf(p),n.f||"")).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))}
+function renderFTodo(n,q){const c=$("#ftodo-card");if(!c)return;const on=!q&&n&&n.p!=null&&n.p!=="__none";c.hidden=!on;if(!on){FT.n=null;return}FT.n={p:n.p,f:n.f||null};
+  const d=ftDoc(n),L=(d&&d.todo)||[],open=L.filter(x=>!x.done),dn=L.filter(x=>x.done);
+  // tasks from subfolders
+  const sub=n.f!==undefined?fdocs().filter(x=>x.project===n.p&&(x.path||"")!==(n.f||"")&&under(x.path||"",n.f||"")&&(x.todo||[]).some(t=>!t.done)):[];
+  $("#ftodo-n").textContent=L.length?`${open.length} open`:"";
+  const tg=$("#ftodo-donetog");tg.hidden=!dn.length;tg.textContent=FT.showDone?"Hide done":`Show done (${dn.length})`;
+  const E=ftExps(n),P=Store.data.protocols;
+  const fd=t=>{try{return new Date(t).toLocaleDateString(undefined,{day:"numeric",month:"short"})}catch(e){return ""}};
+  const st=p=>{if(!p)return "";if(expDone(p))return expFailed(p)?"✗ didn't work":"✓ done";const s=p.steps||[],k=(p.done||[]).filter(id=>s.some(x=>x.id===id)).length;return s.length?`${k}/${s.length} steps`:""};
+  const sel=x=>`<select class="tl" aria-label="Link an experiment"><option value="">🔗 Link</option>${E.map(p=>`<option value="${esc(p.id)}">${esc(p.name||"Untitled")}${pf(p)&&pf(p)!==(n.f||"")?" · "+esc(showPath(pf(p).slice(n.f?n.f.length+1:0))):""}</option>`).join("")}</select>`;
+  const li=x=>{const p=x.exp&&P[x.exp];return `<li data-td="${esc(x.id)}"${x.done?' class="dn"':""}><input type="checkbox"${x.done?" checked":""} aria-label="Done"><input class="tt" type="text" value="${esc(x.t)}" aria-label="Task">${x.done&&x.doneAt?`<small>${esc(fd(x.doneAt))}</small>`:""}${p?"":sel(x)}<button class="tx" type="button" title="Delete" aria-label="Delete">×</button>${p?`<div class="tlink"><span>↳</span><button class="go" type="button" data-go-exp="${esc(p.id)}" title="Open experiment">${esc(p.name||"Untitled")}</button><span class="${expDone(p)&&!expFailed(p)?"ok":""}">${esc(st(p))}</span><button class="un" type="button" title="Unlink" aria-label="Unlink">×</button></div>`:x.exp?`<div class="tlink">↳ linked experiment was deleted <button class="un" type="button" aria-label="Unlink">×</button></div>`:""}</li>`};
+  const subH=sub.map(x=>(x.todo||[]).filter(t=>!t.done).map(t=>`<li class="subt"><span class="tw" title="${esc(showPath(x.path))}">${esc(x.path.split("/").pop())}</span><span class="tt" style="padding:5px 2px">${esc(t.t)}</span></li>`).join("")).join("");
+  const fa=document.activeElement;if(fa&&$("#ftodo-list").contains(fa)&&fa.classList.contains("tt"))return;
+  $("#ftodo-list").innerHTML=open.map(li).join("")+(FT.showDone?dn.map(li).join(""):"")+subH;
+  $("#ftodo-list").hidden=!$("#ftodo-list").children.length}
+function ftEdit(fn){const n=FT.n;if(!n)return;let d=ftDoc(n);d=d?clone(d):{id:uid(),project:n.p,path:n.f||""};d.todo=d.todo||[];fn(d.todo,d);Store.save("folders",d);renderFTodo(n,"")}
+$("#ftodo-form").addEventListener("submit",e=>{e.preventDefault();const i=$("#ftodo-in"),t=i.value.trim();if(!t)return;ftEdit(L=>L.push({id:uid(),t,done:false,at:Date.now()}));i.value="";i.focus()});
+$("#ftodo-donetog").addEventListener("click",()=>{FT.showDone=!FT.showDone;FT.n&&renderFTodo(FT.n,"")});
+$("#ftodo-list").addEventListener("change",e=>{const r=e.target.closest("[data-td]");if(!r)return;const id=r.dataset.td;
+  if(e.target.type==="checkbox"){const v=e.target.checked;ftEdit(L=>{const x=L.find(y=>y.id===id);if(x){x.done=v;x.doneAt=v?Date.now():null}})}
+  else if(e.target.classList.contains("tl")){const v=e.target.value;ftEdit(L=>{const x=L.find(y=>y.id===id);if(x)x.exp=v||null})}
+  else if(e.target.classList.contains("tt")){const v=e.target.value.trim();ftEdit(L=>{const k=L.findIndex(y=>y.id===id);if(k<0)return;if(v)L[k].t=v;else L.splice(k,1)})}});
+$("#ftodo-list").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.classList.contains("tt")){e.preventDefault();e.target.blur()}});
+$("#ftodo-list").addEventListener("click",e=>{const g=e.target.closest("[data-go-exp]");if(g){const p=Store.data.protocols[g.dataset.goExp];if(p)openProtocol(clone(p));return}
+  const r=e.target.closest("[data-td]");if(!r)return;const id=r.dataset.td;
+  if(e.target.closest(".un")){ftEdit(L=>{const x=L.find(y=>y.id===id);if(x)x.exp=null});return}
+  if(e.target.closest(".tx"))ftEdit(L=>{const k=L.findIndex(y=>y.id===id);if(k>=0)L.splice(k,1)})});
 function todoOpenN(p){return ((p&&p.todo)||[]).filter(x=>!x.done).length}
-function renderTodo(){const c=$("#todo-card");if(!c)return;const p=S.prot;if(!p||isTpl()){c.hidden=true;return}c.hidden=false;
+function renderTodo(){const c=$("#todo-card");if(!c)return;const p=S.prot;if(!p||isTpl()||!(p.todo&&p.todo.length)){c.hidden=true;return}c.hidden=false;
   const L=p.todo||[],open=L.filter(x=>!x.done),dn=L.filter(x=>x.done);const sd=!!S.todoShowDone;
   $("#todo-n").textContent=L.length?`${open.length} open`:"";
   const tg=$("#todo-donetog");tg.hidden=!dn.length;tg.textContent=sd?"Hide done":`Show done (${dn.length})`;
