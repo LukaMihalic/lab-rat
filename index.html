@@ -3064,6 +3064,20 @@ function buildSteps(p){
 const st=(phase,t,d,min,rep)=>({phase,t,d,min:min||null,rep:rep||0});
 const TEMPLATES={
   wb:{name:"Western blot",method:"wb",label:"Western blot",desc:"Electrophoresis, transfer and immunodetection, with protein concentration and gel planner.",tools:{protein:true,gel:true,images:true,quant:true,solutions:true},sols:["10× running buffer (Tris-glycine-SDS)","4× Laemmli buffer","1× Bjerrum Schafer-Nielsen transfer buffer","LSWB (low-salt wash buffer)","5% milk blocking buffer"],steps:()=>buildSteps(legacyWB())},
+  dotblot:{name:"Dot blot",method:"custom",label:"Dot blot",desc:"Samples spotted onto the membrane with a capillary, no gel. Ponceau S as loading control, then antibodies and ECL on the ChemiDoc.",tools:{protein:false,gel:false,images:true,quant:false,solutions:true},sols:["5% milk blocking buffer","LSWB (low-salt wash buffer)"],steps:()=>[
+    st("Spot","Membrane","Cut to size and mark the spots with a soft pencil; write the sample order down. Handle with tweezers only"),
+    st("Spot","Spot the samples","Take up each sample into a narrow capillary (capillary action) and touch the marked spot for the same time for every sample, so each dot gets the same amount. New capillary for each sample"),
+    st("Spot","Dry","Until the dots are completely dry",30),
+    st("Loading control","Ponceau S","Incubate the membrane in Ponceau S",5),
+    st("Loading control","Rinse","Distilled water until the dots stand out from the background"),
+    st("Loading control","Photo","Photograph the membrane with your phone; add it under Images as the loading control"),
+    st("Loading control","Wash out Ponceau","With LSWB until the membrane is completely clear"),
+    st("Immunodetection","Blocking","5% milk in LSWB, room temp., gentle rocking",60),
+    st("Immunodetection","Primary antibody","In blocking buffer, overnight at 4 °C, rocking"),
+    st("Day 2","Wash","3 × 5 min in LSWB",5,3),
+    st("Day 2","Secondary antibody","HRP conjugate in blocking buffer, room temp., rocking",60),
+    st("Day 2","Wash","3 × 5 min in LSWB",5,3),
+    st("Detection","Develop and image","ECL, then image on the ChemiDoc. Start with a short exposure: dots saturate quickly. Add the image under Images")]},
   page:{name:"SDS-PAGE (electrophoresis only)",method:"wb",label:"SDS-PAGE",desc:"Gel electrophoresis without transfer: sample prep, gel plan, run, then stain-free imaging or Coomassie.",tools:{protein:true,gel:true,images:true,quant:false,solutions:true},sols:["10× running buffer (Tris-glycine-SDS)","4× Laemmli buffer"],steps:()=>[
     st("Preparation","Denature samples","95 °C, 5 min in Laemmli buffer",5),
     st("Preparation","Load the gel","Ladder and samples per the gel plan; spin down before loading"),
@@ -3205,8 +3219,8 @@ function sourceOf(q){const a=q&&q.smp&&Store.data.assays[q.smp.src];if(!a)return
 function outcomeTag(p){return expDone(p)?(expFailed(p)?`<span class="tag fail">✗ Didn't work</span>`:`<span class="tag done">✓ Worked</span>`):""}
 function setOutcome(p,o){if(o==="active"){p.status="active";delete p.completed;delete p.outcome}else{if(p.status!=="done")p.completed=Date.now();p.status="done";p.outcome=o}}
 const CATS=[["prep","Sample preparation"],["protein","Protein concentration"],["page","SDS-PAGE (electrophoresis)"],["wb","Western blot"],["elisa","ELISA"],["qpcr","qPCR"],["ihc","Immunohistochemistry"],["other","Other"]];
-function catOfTpl(k,T){return (k==="homog"||k==="homogbrain")?"prep":k==="ihc"?"ihc":k==="page"?"page":T.method==="protein"?"protein":T.method==="wb"?"wb":T.method==="elisa"?"elisa":T.method==="qpcr"?"qpcr":"other"}
-function catOfExp(p){if(p.cat)return p.cat;if(p.method==="custom"&&/lysate|homogen/i.test((p.templateName||"")+" "+(p.name||"")))return "prep";return ({protein:"protein",wb:"wb",elisa:"elisa",qpcr:"qpcr"})[p.method]||"other"}
+function catOfTpl(k,T){return k==="dotblot"?"wb":(k==="homog"||k==="homogbrain")?"prep":k==="ihc"?"ihc":k==="page"?"page":T.method==="protein"?"protein":T.method==="wb"?"wb":T.method==="elisa"?"elisa":T.method==="qpcr"?"qpcr":"other"}
+function catOfExp(p){if(p.cat)return p.cat;if(p.method==="custom"&&/^dot blot/i.test(p.templateName||""))return "wb";if(p.method==="custom"&&/lysate|homogen/i.test((p.templateName||"")+" "+(p.name||"")))return "prep";return ({protein:"protein",wb:"wb",elisa:"elisa",qpcr:"qpcr"})[p.method]||"other"}
 const pj=p=>(p.group||"").trim(),pf=p=>(p.folder||"").trim();
 function hNav(){const n=lsGet("bb.hnav",null);return n&&typeof n==="object"?n:{p:null,f:null}}
 function setNav(n){lsSet("bb.hnav",n);$("#home-mk").hidden=true;renderHome();window.scrollTo(0,0)}
