@@ -1093,6 +1093,20 @@ ul.todo .tlink button.go:hover{border-color:var(--accent)}
 ul.todo .tlink .ok{color:var(--ok);font-weight:600;flex:none}
 ul.todo .tlink .un{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;flex:none;padding:2px 4px}
 ul.todo li .tw{flex:none;font-size:11px;color:var(--muted);max-width:8em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ftab{position:fixed;right:0;top:42%;z-index:60;border:0;cursor:pointer;background:#F5C211;color:#3a2c00;font:600 13px var(--sans);padding:12px 7px 10px;border-radius:10px 0 0 10px;box-shadow:-2px 2px 8px rgba(0,0,0,.18);display:flex;flex-direction:column;align-items:center;gap:6px}
+.ftab .ftab-t{writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.5px}
+.ftab b{background:#3a2c00;color:#F5C211;border-radius:999px;font-size:11px;min-width:18px;height:18px;line-height:18px;text-align:center;padding:0 4px}
+.ftab:hover{padding-right:10px}
+.fdbd{position:fixed;inset:0;z-index:69;background:rgba(0,0,0,.25)}
+.fdrawer{position:fixed;top:0;right:0;bottom:0;z-index:70;width:min(380px,92vw);box-sizing:border-box;overflow:auto;padding:calc(14px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));background:color-mix(in srgb,#FFE07A 16%,var(--surface));border-left:4px solid #F5C211;box-shadow:-6px 0 24px rgba(0,0,0,.18)}
+.fdhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.fdhead h2{margin:0;font-size:18px}
+.fdhead h2 small{font-weight:500;color:var(--muted);font-size:13px;margin-left:4px}
+.fdsub{color:var(--muted);font-size:12.5px;margin-top:2px}
+.fdx{border:0;background:none;color:var(--muted);font-size:26px;line-height:1;cursor:pointer;width:36px;height:36px;border-radius:8px}
+.fdx:hover{background:var(--surface-2);color:var(--ink)}
+#ftodo-donetog{margin-top:10px}
+@media (min-width:1100px){.fdbd{display:none!important}body.ft-open{padding-right:min(380px,92vw)!important;box-sizing:border-box}}
 ul.todo li small{flex:none;color:var(--muted);font-size:11px}
 .todoadd{display:flex;gap:8px;margin-top:6px}
 .todoadd input{flex:1;min-width:0}
@@ -1134,11 +1148,6 @@ ul.todo li small{flex:none;color:var(--muted);font-size:11px}
       <div class="row" style="justify-content:space-between;align-items:center"><span class="note" id="mk-msg"></span><button class="btn primary sm" id="mk-ok">Create</button></div>
     </div>
     <div class="card shcard" id="home-share" hidden></div>
-    <div class="card todocard" id="ftodo-card" hidden>
-      <div class="row" style="justify-content:space-between"><h2>To do <small id="ftodo-n"></small></h2><button class="btn sm ghost" id="ftodo-donetog" hidden></button></div>
-      <ul class="todo" id="ftodo-list"></ul>
-      <form class="todoadd" id="ftodo-form" autocomplete="off"><input id="ftodo-in" type="text" placeholder="Add a task to this project… (Enter)" aria-label="New task"><button class="btn sm" type="submit">Add</button></form>
-    </div>
     <div class="row" id="home-bar" style="justify-content:space-between;align-items:center">
       <div class="row"><select id="home-filter" style="width:auto" aria-label="Status"></select><select id="home-sort" style="width:auto" aria-label="Sort experiments"><option value="status">By status</option><option value="used">Recently used</option><option value="new">Newest first</option><option value="old">Oldest first</option><option value="name">Name A–Z</option></select></div>
       <div class="row" id="home-acts"></div>
@@ -1147,6 +1156,14 @@ ul.todo li small{flex:none;color:var(--muted);font-size:11px}
     <div class="ghead" id="home-lhead" hidden></div>
     <div class="plist" id="home-list"></div>
   </section>
+<button class="ftab" id="ftodo-tab" type="button" hidden aria-label="Project to-do"><span class="ftab-t">To do</span><b id="ftodo-badge" hidden></b></button>
+<div class="fdbd" id="ftodo-bd" hidden></div>
+<aside class="fdrawer" id="ftodo-card" hidden aria-label="Project to-do">
+  <div class="fdhead"><div><h2>To do <small id="ftodo-n"></small></h2><div class="fdsub" id="ftodo-where"></div></div><button class="fdx" id="ftodo-close" type="button" aria-label="Close">×</button></div>
+  <ul class="todo" id="ftodo-list"></ul>
+  <form class="todoadd" id="ftodo-form" autocomplete="off"><input id="ftodo-in" type="text" placeholder="Add a task… (Enter)" aria-label="New task"><button class="btn sm" type="submit">Add</button></form>
+  <button class="btn sm ghost" id="ftodo-donetog" hidden></button>
+</aside>
 
   <!-- PROTOCOL LIBRARY -->
   <section class="tab" id="tab-lib" hidden>
@@ -2798,7 +2815,7 @@ function showTab(t){document.documentElement.classList.toggle("oncal",t==="cal")
   S.tab=t;lsSet("bb.tab",t);navRec(t);
   const navKey=inside?(isTpl()?"lib":"home"):t==="cal"?"home":t;$$("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===navKey)));
   $("#pbar").hidden=!inside;
-  $("#tab-home").hidden=t!=="home";$("#tab-lib").hidden=t!=="lib";if(t==="lib"){$("#lib-tpl").hidden=true;renderLib()}$("#tab-gel").hidden=t!=="gel";$("#tab-prot").hidden=t!=="prot";$("#tab-calc").hidden=t!=="calc";$("#tab-clock").hidden=t!=="clock";if(t==="clock")renderClock();$("#tab-notes").hidden=t!=="notes";$("#tab-inv").hidden=t!=="inv";if(t==="inv")Inv.open();$("#tab-cal").hidden=t!=="cal";if(t==="cal")renderCal();if(t==="notes")renderNotes();$("#tab-assay").hidden=t!=="assay";$("#tab-sol").hidden=!(t==="sol"||t==="psol");$("#tab-hist").hidden=t!=="hist";$("#tab-stor").hidden=t!=="stor";if(t==="stor")renderStored();$("#tab-img").hidden=t!=="img";$("#tab-smp").hidden=t!=="smp";if(t==="smp")renderSamples();
+  $("#tab-home").hidden=t!=="home";try{ftVis(t)}catch(e){}$("#tab-lib").hidden=t!=="lib";if(t==="lib"){$("#lib-tpl").hidden=true;renderLib()}$("#tab-gel").hidden=t!=="gel";$("#tab-prot").hidden=t!=="prot";$("#tab-calc").hidden=t!=="calc";$("#tab-clock").hidden=t!=="clock";if(t==="clock")renderClock();$("#tab-notes").hidden=t!=="notes";$("#tab-inv").hidden=t!=="inv";if(t==="inv")Inv.open();$("#tab-cal").hidden=t!=="cal";if(t==="cal")renderCal();if(t==="notes")renderNotes();$("#tab-assay").hidden=t!=="assay";$("#tab-sol").hidden=!(t==="sol"||t==="psol");$("#tab-hist").hidden=t!=="hist";$("#tab-stor").hidden=t!=="stor";if(t==="stor")renderStored();$("#tab-img").hidden=t!=="img";$("#tab-smp").hidden=t!=="smp";if(t==="smp")renderSamples();
   $("#tab-qset").hidden=t!=="qset";$("#tab-qres").hidden=t!=="qres";$("#tab-quant").hidden=t!=="quant";if(t==="quant")renderQuant();
   if(t==="qset"){S.plateCtx="qpcr";S.plSel=new Set();$("#qp-plate-slot").appendChild($("#plate-card"));$("#plate-card").hidden=false;$("#pl-auto").textContent="Fill from setup";renderQSetup();renderPlate()}
   else if(S.plateCtx==="qpcr"){S.plateCtx="assay";S.plSel=new Set();$("#plate-home").after($("#plate-card"));$("#pl-auto").textContent="Fill from tables"}
@@ -3568,13 +3585,22 @@ $("#prot-steps").addEventListener("input",e=>{const row=e.target.closest(".sedit
 
 function clock(sec){sec=Math.max(0,Math.round(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(s).padStart(2,"0")}
 let FT={n:null,showDone:false};
+function ftVis(t){const tab=$("#ftodo-tab"),dr=$("#ftodo-card"),bd=$("#ftodo-bd");if(!tab)return;const on=(t||S.tab)==="home"&&!!FT.n;
+  const op=on&&!!lsGet("bb.ftOpen",false);tab.hidden=!on||op;dr.hidden=!op;bd.hidden=!op;document.body.classList.toggle("ft-open",op)}
+function ftOpen(v){lsSet("bb.ftOpen",!!v);ftVis();if(v)setTimeout(()=>{try{$("#ftodo-in").focus({preventScroll:true})}catch(e){}},50)}
+$("#ftodo-tab").addEventListener("click",()=>ftOpen(true));
+$("#ftodo-close").addEventListener("click",()=>ftOpen(false));
+$("#ftodo-bd").addEventListener("click",()=>ftOpen(false));
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#ftodo-card").hidden)ftOpen(false)});
+
 function ftDoc(n){return fdocs().find(d=>d.project===n.p&&(d.path||"")===(n.f||""))}
 function ftExps(n){return protList().filter(p=>pj(p)===n.p&&under(pf(p),n.f||"")).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))}
-function renderFTodo(n,q){const c=$("#ftodo-card");if(!c)return;const on=!q&&n&&n.p!=null&&n.p!=="__none";c.hidden=!on;if(!on){FT.n=null;return}FT.n={p:n.p,f:n.f||null};
+function renderFTodo(n,q){const c=$("#ftodo-card");if(!c)return;const on=!q&&n&&n.p!=null&&n.p!=="__none";if(!on){FT.n=null;ftVis();return}FT.n={p:n.p,f:n.f||null};ftVis();
+  $("#ftodo-where").textContent=[n.p,n.f?showPath(n.f):""].filter(Boolean).join(" › ");
   const d=ftDoc(n),L=(d&&d.todo)||[],open=L.filter(x=>!x.done),dn=L.filter(x=>x.done);
   // tasks from subfolders
   const sub=n.f!==undefined?fdocs().filter(x=>x.project===n.p&&(x.path||"")!==(n.f||"")&&under(x.path||"",n.f||"")&&(x.todo||[]).some(t=>!t.done)):[];
-  $("#ftodo-n").textContent=L.length?`${open.length} open`:"";
+  $("#ftodo-n").textContent=L.length?`${open.length} open`:"";{const k=open.length+sub.reduce((a,x)=>a+(x.todo||[]).filter(t=>!t.done).length,0);const bg=$("#ftodo-badge");bg.hidden=!k;bg.textContent=k}
   const tg=$("#ftodo-donetog");tg.hidden=!dn.length;tg.textContent=FT.showDone?"Hide done":`Show done (${dn.length})`;
   const E=ftExps(n),P=Store.data.protocols;
   const fd=t=>{try{return new Date(t).toLocaleDateString(undefined,{day:"numeric",month:"short"})}catch(e){return ""}};
