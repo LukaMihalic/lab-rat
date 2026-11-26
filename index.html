@@ -794,7 +794,7 @@ nav.tabs button{position:relative}
 .strow{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--surface-2)}
 .strow.used{opacity:.55}
 .st1{display:flex;gap:8px;align-items:center}.st1 .stn{flex:1;min-width:0;font-weight:600}
-.st2{display:grid;grid-template-columns:5rem 1fr 1fr 1fr 1.4fr;gap:6px}
+.st2{display:grid;grid-template-columns:5rem 1fr 1fr 1fr 1fr;gap:6px}.st2 .stnote{grid-column:1/-1}
 .st2 label{display:flex;flex-direction:column;gap:2px;font-size:11.5px;color:var(--muted)}.st2 input{padding:6px 8px;font-size:13.5px}
 @media (max-width:620px){.st2{grid-template-columns:1fr 1fr}.st2 .stnote{grid-column:1/-1}}
 .stmeta{margin-top:-2px}
@@ -807,7 +807,7 @@ nav.tabs button{position:relative}
 .smbg{gap:4px}.smbh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
 .smbr{display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}.smbr:last-child{border-bottom:0}
 .smbe{flex:none;width:32px;height:32px;border:1px solid transparent;background:none;color:var(--muted);border-radius:8px;cursor:pointer;display:grid;place-items:center}.smbe svg{width:16px;height:16px}.smbe:hover,.smbe.on{color:var(--accent);border-color:var(--line);background:var(--surface-2)}
-.smbed{border:1px solid var(--line);border-radius:12px;padding:10px;margin:2px 0 8px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px}.smbed .st2{grid-template-columns:1.6fr 5rem 1fr 1fr 1fr 5rem}.smbed .st2 .stnote{grid-column:1/-1}
+.smbed{border:1px solid var(--line);border-radius:12px;padding:10px;margin:2px 0 8px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px}.smbed .st2{grid-template-columns:repeat(4,1fr)}.smbed .st2 .stnm{grid-column:span 2}.smbed .st2 .stnote{grid-column:1/-1}
 .smbedb{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}.smbedb .note{flex:1;min-width:10em}
 @media (max-width:620px){.smbed .st2{grid-template-columns:1fr 1fr}.smbed .st2 .stnm{grid-column:1/-1}}
 #inv-view{grid-template-columns:repeat(3,1fr)}
@@ -1508,9 +1508,9 @@ ul.todo li small{flex:none;color:var(--muted);font-size:11px}
       <div class="pledit" style="gap:8px">
         <b style="font-size:14px">Add samples</b>
         <label class="f">Sample names, one per line<textarea id="st-names" style="min-height:70px;font-family:var(--sans);font-size:14px" placeholder="e.g.&#10;HC rat 1&#10;HC rat 2&#10;OB rat 1"></textarea></label>
-        <div class="grid3"><label class="f">Aliquots each<input id="st-n" type="number" min="1" value="1" inputmode="numeric"></label><label class="f">µL per aliquot<input id="st-vol" inputmode="decimal" placeholder="e.g. 50"></label><label class="f">Freezer<input id="st-fr" list="st-frs"></label></div>
-        <div class="row" style="align-items:flex-end"><label class="f" style="flex:1">Box / rack<input id="st-box" list="st-boxes" placeholder="e.g. Box 3, rack B"></label><button class="btn primary" id="st-add" type="button">Store</button></div>
-        <datalist id="st-frs"></datalist><datalist id="st-boxes"></datalist>
+        <div class="grid3"><label class="f">Aliquots each<input id="st-n" type="number" min="1" value="1" inputmode="numeric"></label><label class="f">µL per aliquot<input id="st-vol" inputmode="decimal" placeholder="e.g. 50"></label><label class="f">Lab<input id="st-lab" list="st-labs" placeholder="e.g. Lab 3"></label></div>
+        <div class="row" style="align-items:flex-end;flex-wrap:wrap"><label class="f" style="flex:1;min-width:8em">Freezer<input id="st-fr" list="st-frs"></label><label class="f" style="flex:1.4;min-width:10em">Box / rack<input id="st-box" list="st-boxes" placeholder="e.g. Box 3, rack B"></label><button class="btn primary" id="st-add" type="button">Store</button></div>
+        <datalist id="st-frs"></datalist><datalist id="st-boxes"></datalist><datalist id="st-labs"></datalist>
       </div>
       <div id="st-list"></div>
       <p class="note" style="margin:0">Tap <b>−</b> when you take an aliquot out. All your stored samples are also listed in <b>Storage → My samples</b>.</p>
@@ -2590,44 +2590,45 @@ document.addEventListener("auxclick",e=>{if(e.button!==1)return;const b=e.target
 
 /* ---------- stored samples (−80 °C bank) ---------- */
 function storedOn(p){const t=p&&p.tools||{};return t.stored!==undefined?!!t.stored:(catOfExp(p)==="prep"||((p&&p.stored)||[]).length>0)}
-function stDef(){const d=Object.assign({fr:"−80 °C",box:""},lsGet("bb.stdef",{})||{},(S.prot&&S.prot.storeDef)||{});return d}
-function stSum(L){const live=L.filter(x=>(+x.n||0)>0);const al=L.reduce((s,x)=>s+(+x.n||0),0);const boxes=[...new Set(L.map(x=>[x.fr,x.box].filter(Boolean).join(", ")).filter(Boolean))];
+function stDef(){const d=Object.assign({fr:"−80 °C",box:"",lab:""},lsGet("bb.stdef",{})||{},(S.prot&&S.prot.storeDef)||{});return d}
+function stSum(L){const live=L.filter(x=>(+x.n||0)>0);const al=L.reduce((s,x)=>s+(+x.n||0),0);const boxes=[...new Set(L.map(x=>[x.lab,x.fr,x.box].filter(Boolean).join(", ")).filter(Boolean))];
   return `${L.length} sample${L.length===1?"":"s"} · ${al} aliquot${al===1?"":"s"} left${live.length<L.length?` · ${L.length-live.length} used up`:""}${boxes.length?` · ${boxes.slice(0,3).map(esc).join(" / ")}${boxes.length>3?"…":""}`:""}`}
 function stRowHTML(x){const id=esc(x.id),u=(+x.n||0)<=0;
   return `<div class="strow${u?" used":""}" data-si="${id}">
     <div class="st1"><input class="stn" data-sk="name" value="${esc(x.name||"")}" placeholder="Sample" aria-label="Sample name">
       <div class="stepper" role="group" aria-label="Aliquots left"><button type="button" data-sd="-1" aria-label="One aliquot used">−</button><span class="stv"><b>${+x.n||0}</b> aliq.</span><button type="button" data-sd="1" aria-label="Add an aliquot">+</button></div>
       <button type="button" class="rm" data-sx aria-label="Remove sample">×</button></div>
-    <div class="st2"><label>µL<input data-sk="vol" inputmode="decimal" value="${esc(x.vol||"")}" placeholder="each"></label><label>Freezer<input data-sk="fr" value="${esc(x.fr||"")}" list="st-frs"></label><label>Box<input data-sk="box" value="${esc(x.box||"")}" list="st-boxes"></label><label>Position<input data-sk="pos" value="${esc(x.pos||"")}" placeholder="e.g. A1–A3"></label><label class="stnote">Note<input data-sk="note" value="${esc(x.note||"")}"></label></div>
+    <div class="st2"><label>µL<input data-sk="vol" inputmode="decimal" value="${esc(x.vol||"")}" placeholder="each"></label><label>Lab<input data-sk="lab" value="${esc(x.lab||"")}" list="st-labs"></label><label>Freezer<input data-sk="fr" value="${esc(x.fr||"")}" list="st-frs"></label><label>Box<input data-sk="box" value="${esc(x.box||"")}" list="st-boxes"></label><label>Position<input data-sk="pos" value="${esc(x.pos||"")}" placeholder="e.g. A1–A3"></label><label class="stnote">Note<input data-sk="note" value="${esc(x.note||"")}"></label></div>
     <div class="note stmeta">Stored ${esc(x.date?new Date(x.date).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):"")}${u?" · used up":""}</div>
   </div>`}
-function stDatalists(){const fr=new Set(["−80 °C","−20 °C","+4 °C","Liquid nitrogen"]),bx=new Set();protList().forEach(p=>(p.stored||[]).forEach(x=>{if(x.fr)fr.add(x.fr);if(x.box)bx.add(x.box)}));
+function stDatalists(){const fr=new Set(["−80 °C","−20 °C","+4 °C","Liquid nitrogen"]),bx=new Set(),lb=new Set();protList().forEach(p=>(p.stored||[]).forEach(x=>{if(x.fr)fr.add(x.fr);if(x.box)bx.add(x.box);if(x.lab)lb.add(x.lab)}));try{Object.values(Inv.items||{}).forEach(x=>{if(x.room)lb.add(String(x.room).trim())})}catch(e){}
+  $("#st-labs").innerHTML=[...lb].filter(Boolean).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).map(v=>`<option value="${esc(v)}">`).join("");
   $("#st-frs").innerHTML=[...fr].map(v=>`<option value="${esc(v)}">`).join("");$("#st-boxes").innerHTML=[...bx].sort().map(v=>`<option value="${esc(v)}">`).join("")}
-function renderStored(){if(!S.prot)return;const L=S.prot.stored||[];const d=stDef();$("#st-fr").value=d.fr||"";$("#st-box").value=d.box||"";stDatalists();
+function renderStored(){if(!S.prot)return;const L=S.prot.stored||[];const d=stDef();$("#st-fr").value=d.fr||"";$("#st-lab").value=d.lab||"";$("#st-box").value=d.box||"";stDatalists();
   $("#st-sum").innerHTML=L.length?stSum(L):"Nothing stored yet. Add the samples you put in the freezer.";
   $("#st-list").innerHTML=L.map(stRowHTML).join("")}
 function stAdd(){const names=$("#st-names").value.split(/\n|;/).map(s=>s.trim()).filter(Boolean);const n=Math.max(1,parseInt($("#st-n").value)||1),vol=$("#st-vol").value.trim();
   if(!names.length){setStatus("Write at least one sample name",true);$("#st-names").focus();return}
-  const fr=$("#st-fr").value.trim(),box=$("#st-box").value.trim();S.prot.storeDef={fr,box};lsSet("bb.stdef",{fr,box});
-  S.prot.stored=(S.prot.stored||[]).concat(names.map(nm=>({id:uid(),name:nm,n,vol,fr,box,pos:"",note:"",date:Date.now()})));
+  const fr=$("#st-fr").value.trim(),box=$("#st-box").value.trim(),lab=$("#st-lab").value.trim();S.prot.storeDef={fr,box,lab};lsSet("bb.stdef",{fr,box,lab});
+  S.prot.stored=(S.prot.stored||[]).concat(names.map(nm=>({id:uid(),name:nm,n,vol,lab,fr,box,pos:"",note:"",date:Date.now()})));
   $("#st-names").value="";queueSave("protocols");renderStored();setStatus(`${names.length} sample${names.length>1?"s":""} stored`)}
 function stEdit(pid,sid,fn){const cur=S.prot&&S.prot.id===pid?S.prot:null;if(cur){const x=(cur.stored||[]).find(y=>y.id===sid);if(x){fn(x);queueSave("protocols");try{flushProt()}catch(e){}}return}
   const p=Store.data.protocols[pid];if(!p)return;const c=clone(p);const x=(c.stored||[]).find(y=>y.id===sid);if(!x)return;fn(x);Store.save("protocols",c)}
 const SMB={open:null};
 function smbEdHTML(p,x){const P=`data-p2="${esc(p.id)}" data-s2="${esc(x.id)}"`;
-  return `<div class="smbed" ${P}><div class="st2"><label class="stnm">Sample<input data-sk="name" value="${esc(x.name||"")}"></label><label>µL<input data-sk="vol" inputmode="decimal" value="${esc(x.vol||"")}" placeholder="each"></label><label>Freezer<input data-sk="fr" value="${esc(x.fr||"")}" list="st-frs"></label><label>Box<input data-sk="box" value="${esc(x.box||"")}" list="st-boxes"></label><label>Position<input data-sk="pos" value="${esc(x.pos||"")}" placeholder="e.g. A1–A3"></label><label>Aliquots<input data-sk="n" type="number" min="0" inputmode="numeric" value="${+x.n||0}"></label><label class="stnote">Note<input data-sk="note" value="${esc(x.note||"")}"></label></div>
+  return `<div class="smbed" ${P}><div class="st2"><label class="stnm">Sample<input data-sk="name" value="${esc(x.name||"")}"></label><label>µL<input data-sk="vol" inputmode="decimal" value="${esc(x.vol||"")}" placeholder="each"></label><label>Aliquots<input data-sk="n" type="number" min="0" inputmode="numeric" value="${+x.n||0}"></label><label>Lab<input data-sk="lab" value="${esc(x.lab||"")}" list="st-labs"></label><label>Freezer<input data-sk="fr" value="${esc(x.fr||"")}" list="st-frs"></label><label>Box<input data-sk="box" value="${esc(x.box||"")}" list="st-boxes"></label><label>Position<input data-sk="pos" value="${esc(x.pos||"")}" placeholder="e.g. A1–A3"></label><label class="stnote">Note<input data-sk="note" value="${esc(x.note||"")}"></label></div>
     <div class="smbedb"><span class="note">Stored ${esc(x.date?new Date(x.date).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):"")} · ${esc(p.name||"")}</span><button type="button" class="btn sm ghost danger" data-smbx>Remove</button><button type="button" class="btn sm" data-smbok>Done</button></div></div>`}
 function stRemove(pid,sid){const cur=S.prot&&S.prot.id===pid?S.prot:null;if(cur){cur.stored=(cur.stored||[]).filter(y=>y.id!==sid);queueSave("protocols");try{flushProt()}catch(e){}return}
   const p=Store.data.protocols[pid];if(!p)return;const c=clone(p);c.stored=(c.stored||[]).filter(y=>y.id!==sid);Store.save("protocols",c)}
 function renderSampleBank(){try{stDatalists()}catch(e){}const q=($("#smb-q").value||"").trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d");const showUsed=$("#smb-used").checked;
   const rows=[];protList().forEach(p=>(p.stored||[]).forEach(x=>rows.push({p,x})));
-  const F=rows.filter(({p,x})=>(showUsed||(+x.n||0)>0)&&(!q||[x.name,x.fr,x.box,x.pos,x.note,p.name,p.group,p.folder].join(" ").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").includes(q)));
+  const F=rows.filter(({p,x})=>(showUsed||(+x.n||0)>0)&&(!q||[x.name,x.lab,x.fr,x.box,x.pos,x.note,p.name,p.group,p.folder].join(" ").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").includes(q)));
   const al=F.reduce((s,r)=>s+(+r.x.n||0),0);$("#smb-sum").textContent=rows.length?`${F.length} sample${F.length===1?"":"s"} · ${al} aliquot${al===1?"":"s"}`:"";
   if(!rows.length){$("#smb-list").innerHTML=`<div class="card"><p class="note" style="margin:0">No stored samples yet. In an experiment, open the <b>Stored</b> tab and add what you put in the freezer. Lysate and homogenisation experiments have it on; for others, turn on <b>Stored samples</b> in the experiment's settings.</p></div>`;return}
-  const G=new Map();F.forEach(r=>{const k=(r.x.fr||"No freezer")+"\u0000"+(r.x.box||"");if(!G.has(k))G.set(k,[]);G.get(k).push(r)});
-  const keys=[...G.keys()].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
-  $("#smb-list").innerHTML=keys.map(k=>{const [fr,box]=k.split("\u0000");const L=G.get(k).sort((a,b)=>((a.x.pos?0:1)-(b.x.pos?0:1))||String(a.x.pos||"").localeCompare(String(b.x.pos||""),undefined,{numeric:true})||String(a.x.name).localeCompare(String(b.x.name),undefined,{numeric:true}));
-    return `<div class="card smbg"><div class="smbh"><b>${esc(fr)}${box?` · ${esc(box)}`:""}</b><span class="note">${L.length} · ${L.reduce((s,r)=>s+(+r.x.n||0),0)} aliq.</span></div>${L.map(({p,x})=>`<div class="smbr${(+x.n||0)<=0?" used":""}"><div class="smbm"><b>${esc(x.name||"Sample")}</b><span class="note">${x.pos?esc(x.pos)+" · ":""}${x.vol?esc(x.vol)+" µL · ":""}<button type="button" class="linkbtn" data-smbp="${esc(p.id)}">${esc(p.name||"Experiment")}</button>${x.note?" · "+esc(x.note):""}</span></div><div class="stepper sm"><button type="button" data-smbd="-1" data-p2="${esc(p.id)}" data-s2="${esc(x.id)}" aria-label="One aliquot used">−</button><span class="stv"><b>${+x.n||0}</b></span><button type="button" data-smbd="1" data-p2="${esc(p.id)}" data-s2="${esc(x.id)}" aria-label="Add an aliquot">+</button></div><button type="button" class="smbe${SMB.open===x.id?" on":""}" data-smbe data-p2="${esc(p.id)}" data-s2="${esc(x.id)}" title="Edit" aria-label="Edit sample"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button></div>${SMB.open===x.id?smbEdHTML(p,x):""}`).join("")}</div>`}).join("")||`<p class="note">Nothing matches.</p>`}
+  const G=new Map();F.forEach(r=>{const k=(r.x.lab||"")+"\u0000"+(r.x.fr||"No freezer")+"\u0000"+(r.x.box||"");if(!G.has(k))G.set(k,[]);G.get(k).push(r)});
+  const keys=[...G.keys()].sort((a,b)=>(a.startsWith("\u0000")-b.startsWith("\u0000"))||a.localeCompare(b,undefined,{numeric:true}));
+  $("#smb-list").innerHTML=keys.map(k=>{const [lab,fr,box]=k.split("\u0000");const L=G.get(k).sort((a,b)=>((a.x.pos?0:1)-(b.x.pos?0:1))||String(a.x.pos||"").localeCompare(String(b.x.pos||""),undefined,{numeric:true})||String(a.x.name).localeCompare(String(b.x.name),undefined,{numeric:true}));
+    return `<div class="card smbg"><div class="smbh"><b>${lab?`${esc(lab)} · `:""}${esc(fr)}${box?` · ${esc(box)}`:""}</b><span class="note">${L.length} · ${L.reduce((s,r)=>s+(+r.x.n||0),0)} aliq.</span></div>${L.map(({p,x})=>`<div class="smbr${(+x.n||0)<=0?" used":""}"><div class="smbm"><b>${esc(x.name||"Sample")}</b><span class="note">${x.pos?esc(x.pos)+" · ":""}${x.vol?esc(x.vol)+" µL · ":""}<button type="button" class="linkbtn" data-smbp="${esc(p.id)}">${esc(p.name||"Experiment")}</button>${x.note?" · "+esc(x.note):""}</span></div><div class="stepper sm"><button type="button" data-smbd="-1" data-p2="${esc(p.id)}" data-s2="${esc(x.id)}" aria-label="One aliquot used">−</button><span class="stv"><b>${+x.n||0}</b></span><button type="button" data-smbd="1" data-p2="${esc(p.id)}" data-s2="${esc(x.id)}" aria-label="Add an aliquot">+</button></div><button type="button" class="smbe${SMB.open===x.id?" on":""}" data-smbe data-p2="${esc(p.id)}" data-s2="${esc(x.id)}" title="Edit" aria-label="Edit sample"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button></div>${SMB.open===x.id?smbEdHTML(p,x):""}`).join("")}</div>`}).join("")||`<p class="note">Nothing matches.</p>`}
 function openHist(title,html){$("#hist2-title").textContent=title;$("#hist2-body").innerHTML=html;$("#hist2-scrim").hidden=false;$("#hist2-sheet").hidden=false;$("#hist2-sheet").scrollTop=0}
 function plCenter(){const card=$("#plate-card");if(!card)return;card.style.paddingLeft=card.style.paddingRight="";
   if(!card.classList.contains("fs")||!matchMedia("(orientation:landscape)").matches)return;
@@ -5329,6 +5330,7 @@ window.addEventListener("scroll",()=>{const pop=$("#locpop");if(pop&&!pop.hidden
 $("#inv-view").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b)Inv.setView(b.dataset.v)});
 $("#st-add").addEventListener("click",stAdd);
 $("#st-fr").addEventListener("change",()=>{S.prot.storeDef=Object.assign({},S.prot.storeDef,{fr:$("#st-fr").value.trim()});queueSave("protocols")});
+$("#st-lab").addEventListener("change",()=>{S.prot.storeDef=Object.assign({},S.prot.storeDef,{lab:$("#st-lab").value.trim()});queueSave("protocols")});
 $("#st-box").addEventListener("change",()=>{S.prot.storeDef=Object.assign({},S.prot.storeDef,{box:$("#st-box").value.trim()});queueSave("protocols")});
 $("#st-list").addEventListener("input",e=>{const i=e.target.closest("[data-sk]");if(!i)return;const r=i.closest("[data-si]");const x=(S.prot.stored||[]).find(y=>y.id===r.dataset.si);if(!x)return;x[i.dataset.sk]=i.value;queueSave("protocols");$("#st-sum").innerHTML=stSum(S.prot.stored)});
 $("#st-list").addEventListener("click",e=>{const r=e.target.closest("[data-si]");if(!r)return;const L=S.prot.stored||[];const x=L.find(y=>y.id===r.dataset.si);if(!x)return;
